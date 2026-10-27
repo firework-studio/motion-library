@@ -1,0 +1,14 @@
+# Dependencies
+node_modules/
+
+# HyperFrames state and render output
+.hyperframes/
+renders/
+
+# Environment and secrets
+.env
+.env.*
+
+# System
+.DS_Store
+*.log
