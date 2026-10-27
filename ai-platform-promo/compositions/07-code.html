@@ -1,0 +1,548 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      font-family: "Inter", sans-serif;
+    }
+    .c-full {
+      position: absolute;
+      inset: 0;
+    }
+    #c-sky {
+      background:
+        radial-gradient(ellipse 55% 50% at 50% 42%, #ffffff 0%, rgba(255, 255, 255, 0) 100%),
+        radial-gradient(ellipse 90% 70% at 30% 110%, #7fb3ea 0%, rgba(127, 179, 234, 0) 70%),
+        linear-gradient(180deg, #eaf3fc 0%, #d4e7f9 55%, #9fc6ef 100%);
+    }
+    #c-forest-wrap {
+      opacity: 0;
+    }
+    #c-forest {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+      object-fit: cover;
+    }
+    #c-red {
+      opacity: 0;
+      background: linear-gradient(180deg, rgba(225, 8, 26, 0.92) 0%, rgba(200, 10, 28, 0.7) 30%, rgba(120, 6, 16, 0.35) 65%, rgba(60, 0, 8, 0.15) 100%);
+    }
+    #c-sel {
+      position: absolute;
+      left: 708px;
+      top: 480px;
+      width: 504px;
+      height: 120px;
+      background: #1f8fff;
+      opacity: 0;
+    }
+    #c-sel2 {
+      position: absolute;
+      left: 624px;
+      top: 442px;
+      width: 494px;
+      height: 110px;
+      background: #ffffff;
+      opacity: 0;
+    }
+    .c-chip {
+      position: absolute;
+      left: 0;
+      top: 0;
+      transform-origin: 0 0;
+      line-height: 54px;
+      padding: 0 6px;
+      font-size: 44px;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      color: #ffffff;
+      background: #2a8cff;
+      opacity: 0;
+    }
+
+    /* the editor window: 1240 x 732, positioned by its centre */
+    #c-win {
+      position: absolute;
+      left: 340px;
+      top: 174px;
+      width: 1240px;
+      height: 732px;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+      opacity: 0;
+    }
+    #c-wbg {
+      background: rgba(9, 14, 26, 0.9);
+    }
+    #c-wsky {
+      opacity: 0;
+      background:
+        radial-gradient(ellipse 55% 50% at 50% 42%, #ffffff 0%, rgba(255, 255, 255, 0) 100%),
+        radial-gradient(ellipse 90% 70% at 30% 110%, #7fb3ea 0%, rgba(127, 179, 234, 0) 70%),
+        linear-gradient(180deg, #eaf3fc 0%, #d4e7f9 55%, #9fc6ef 100%);
+    }
+    #c-chrome {
+      opacity: 0;
+    }
+    #c-wred {
+      opacity: 0;
+      background: radial-gradient(ellipse 80% 60% at 30% 0%, rgba(110, 0, 12, 0.45) 0%, rgba(20, 0, 4, 0.6) 100%);
+    }
+    #c-title {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1240px;
+      height: 78px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    }
+    .c-dot {
+      position: absolute;
+      top: 32px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+    }
+    #c-menu {
+      position: absolute;
+      left: 110px;
+      top: 29px;
+      font-size: 15px;
+      color: #aab2c0;
+      word-spacing: 18px;
+      white-space: nowrap;
+    }
+    #c-tools {
+      position: absolute;
+      right: 26px;
+      top: 26px;
+      width: 120px;
+      height: 26px;
+      fill: none;
+      stroke: #8b94a3;
+      stroke-width: 1.6;
+    }
+    #c-gutter-line {
+      position: absolute;
+      left: 118px;
+      top: 78px;
+      width: 1px;
+      height: 620px;
+      background: rgba(255, 255, 255, 0.05);
+    }
+    #c-code {
+      position: absolute;
+      left: 0;
+      top: 104px;
+      width: 1240px;
+    }
+    .c-line {
+      position: relative;
+      height: 38.5px;
+      display: flex;
+      align-items: center;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 20px;
+      color: #dfe3ea;
+      white-space: pre;
+    }
+    .c-num {
+      position: absolute;
+      left: 46px;
+      width: 40px;
+      text-align: right;
+      color: #5d6676;
+      font-size: 17px;
+    }
+    .c-bar {
+      position: absolute;
+      left: 136px;
+      top: 0;
+      width: 600px;
+      height: 38.5px;
+      transform-origin: 0 50%;
+    }
+    .c-bar.ok {
+      background: linear-gradient(90deg, #18e23c 0%, #14d838 50%, rgba(20, 216, 56, 0) 100%);
+    }
+    .c-bar.bad {
+      background: linear-gradient(90deg, #c4121e 0%, #a00e18 50%, rgba(160, 14, 24, 0) 100%);
+    }
+    .c-txt {
+      position: absolute;
+      left: 156px;
+      display: flex;
+      align-items: center;
+    }
+    .c-src {
+      clip-path: inset(0 100% 0 0);
+    }
+    /* on a highlighted line the blue tokens deepen so they stay readable on green */
+    .c-line {
+      --fc: #3fa6ff;
+      --kc: #7b86ff;
+    }
+    .k { color: var(--kc); }
+    .f { color: var(--fc); }
+    .s { color: #63b8ff; }
+    .c-mark {
+      width: 24px;
+      height: 24px;
+      margin-left: 14px;
+      fill: none;
+      stroke-width: 3.4;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .c-mark.ok { stroke: #3ee24f; }
+    .c-mark.bad { stroke: #ff2b3a; }
+    #c-fixing {
+      margin-left: 60px;
+      font-size: 18px;
+      color: #6d717a;
+      clip-path: inset(0 100% 0 0);
+    }
+    .cur {
+      background: #ffffff;
+      color: #0b0b0b;
+    }
+    #c-mcur {
+      position: absolute;
+      left: 150px;
+      top: 108px;
+      width: 36px;
+      height: 24px;
+      background: #e0189a;
+      opacity: 0;
+    }
+    #c-status {
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 1240px;
+      height: 34px;
+      border-top: 1px solid rgba(255, 255, 255, 0.07);
+      font-size: 13px;
+      color: #8b94a3;
+      white-space: nowrap;
+    }
+    #c-status span {
+      position: absolute;
+      top: 9px;
+    }
+    /* exit: one inverted frame, then one frame of dark signal glitch */
+    #c-inv {
+      background: #ffffff;
+      mix-blend-mode: difference;
+      opacity: 0;
+    }
+    #c-glitch {
+      background: #121826;
+      opacity: 0;
+    }
+    .c-streak {
+      position: absolute;
+      height: 6px;
+      border-radius: 3px;
+      filter: blur(3px);
+    }
+    #c-cube {
+      position: absolute;
+      left: 680px;
+      top: 100px;
+      width: 520px;
+      height: 520px;
+      filter: drop-shadow(0 0 10px rgba(80, 90, 255, 0.55));
+      opacity: 0;
+    }
+  </style>
+  <div id="root" data-composition-id="code" data-width="1920" data-height="1080">
+    <div id="c-sky" class="c-full"></div>
+    <div id="c-forest-wrap" class="c-full">
+      <img id="c-forest" src="assets/images/forest.png" alt="" />
+    </div>
+    <div id="c-red" class="c-full"></div>
+    <div id="c-sel"></div>
+
+    <div id="c-win" data-layout-allow-overflow data-layout-allow-overlap>
+      <div id="c-wbg" class="c-full"></div>
+      <div id="c-wred" class="c-full"></div>
+      <div id="c-wsky" class="c-full"></div>
+      <div id="c-chrome" class="c-full">
+      <div id="c-title">
+        <div class="c-dot" style="left: 24px; background: #ff5f57"></div>
+        <div class="c-dot" style="left: 48px; background: #febc2e"></div>
+        <div class="c-dot" style="left: 72px; background: #28c840"></div>
+        <div id="c-menu">File Edit View Go Run Terminal Window Help</div>
+        <svg id="c-tools" viewBox="0 0 120 26"><path d="M6 6 L18 13 L6 20 Z" /><rect x="48" y="5" width="18" height="16" rx="2" /><path d="M57 5 V21" /><circle cx="98" cy="13" r="1.4" /><circle cx="105" cy="13" r="1.4" /><circle cx="112" cy="13" r="1.4" /></svg>
+      </div>
+      <div id="c-gutter-line"></div>
+      <div id="c-mcur"></div>
+      <div id="c-code">
+        <div class="c-line"><span class="c-num">1</span><span class="c-bar ok"></span><span class="c-txt"><span class="c-src"><span class="k">def</span> <span class="f">make_launch_video</span>(brief):</span><svg class="c-mark ok" viewBox="0 0 24 24"><path d="M4 13 L10 19 L21 5" /></svg></span></div>
+        <div class="c-line"><span class="c-num">2</span><span class="c-bar ok"></span><span class="c-txt"><span class="c-src">    refs = <span class="f">find_references</span>(brief)</span><svg class="c-mark ok" viewBox="0 0 24 24"><path d="M4 13 L10 19 L21 5" /></svg></span></div>
+        <div class="c-line"><span class="c-num">3</span><span class="c-bar ok"></span><span class="c-txt"><span class="c-src">    shots = <span class="f">plan_shots</span>(refs)</span><svg class="c-mark ok" viewBox="0 0 24 24"><path d="M4 13 L10 19 L21 5" /></svg></span></div>
+        <div class="c-line"><span class="c-num">4</span><span class="c-bar ok"></span><span class="c-txt"><span class="c-src">    style = <span class="f">pick_style</span>(shots)</span><svg class="c-mark ok" viewBox="0 0 24 24"><path d="M4 13 L10 19 L21 5" /></svg></span></div>
+        <div class="c-line"><span class="c-num">5</span></div>
+        <div class="c-line"><span class="c-num">6</span><span id="c-bar6" class="c-bar bad"></span><span class="c-txt"><span id="c-src6" class="c-src"></span><span style="position: relative; display: inline-flex"><svg id="c-x6" class="c-mark bad" viewBox="0 0 24 24"><path d="M5 5 L19 19 M19 5 L5 19" /></svg><svg id="c-ok6" class="c-mark ok" viewBox="0 0 24 24" style="position: absolute; left: 0; top: 0"><path d="M4 13 L10 19 L21 5" /></svg></span><span id="c-fixing">Fixing issue ...</span></span></div>
+        <div class="c-line"><span class="c-num">7</span></div>
+        <div class="c-line"><span class="c-num">8</span><span class="c-bar ok"></span><span class="c-txt"><span class="c-src">    <span class="k">for</span> shot <span class="k">in</span> shots:</span><svg class="c-mark ok" viewBox="0 0 24 24"><path d="M4 13 L10 19 L21 5" /></svg></span></div>
+        <div class="c-line"><span class="c-num">9</span><span class="c-bar ok"></span><span class="c-txt"><span class="c-src">        frame = <span class="f">animate</span>(shot, style)</span><svg class="c-mark ok" viewBox="0 0 24 24"><path d="M4 13 L10 19 L21 5" /></svg></span></div>
+        <div class="c-line"><span class="c-num">10</span><span class="c-bar ok"></span><span class="c-txt"><span class="c-src">        frame = <span class="f">polish</span>(frame)</span><svg class="c-mark ok" viewBox="0 0 24 24"><path d="M4 13 L10 19 L21 5" /></svg></span></div>
+        <div class="c-line"><span class="c-num">11</span><span class="c-bar ok"></span><span class="c-txt"><span class="c-src">        <span class="k">if not</span> frame.on_beat:</span><svg class="c-mark ok" viewBox="0 0 24 24"><path d="M4 13 L10 19 L21 5" /></svg></span></div>
+        <div class="c-line"><span class="c-num">12</span><span class="c-bar ok"></span><span class="c-txt"><span class="c-src">            frame = <span class="f">retime</span>(frame)</span><svg class="c-mark ok" viewBox="0 0 24 24"><path d="M4 13 L10 19 L21 5" /></svg></span></div>
+        <div class="c-line"><span class="c-num">13</span></div>
+        <div class="c-line"><span class="c-num">14</span><span class="c-bar ok"></span><span class="c-txt"><span class="c-src">    <span class="k">return</span> <span class="f">export</span>(shots)</span><svg class="c-mark ok" viewBox="0 0 24 24"><path d="M4 13 L10 19 L21 5" /></svg></span></div>
+      </div>
+      <canvas id="c-cube" width="1040" height="1040"></canvas>
+      <div id="c-status">
+        <span style="left: 26px">main</span>
+        <span style="left: 110px">Python 3.12</span>
+        <span style="left: 820px">Ln 6, Col 18</span>
+        <span style="left: 930px">Spaces: 4</span>
+        <span style="left: 1020px">UTF-8</span>
+        <span style="left: 1085px">LF</span>
+        <span style="left: 1130px">Python</span>
+      </div>
+      </div>
+    </div>
+      <div id="c-sel2"></div>
+    <div id="c-chip1" class="c-chip">Secc</div>
+    <div id="c-chip2" class="c-chip">nds.</div>
+    <div id="c-inv" class="c-full"></div>
+    <div id="c-glitch" class="c-full">
+      <div class="c-streak" style="left: 860px; top: 360px; width: 120px; background: #3a5bd0"></div>
+      <div class="c-streak" style="left: 1000px; top: 338px; width: 140px; background: #8a2a5a"></div>
+      <div class="c-streak" style="left: 1150px; top: 420px; width: 90px; background: #2a3f8a"></div>
+      <div class="c-streak" style="left: 820px; top: 520px; width: 160px; background: #5a2a6a"></div>
+      <div class="c-streak" style="left: 1190px; top: 590px; width: 70px; background: #2a6aaa"></div>
+      <div class="c-streak" style="left: 1080px; top: 700px; width: 30px; background: #1a8a6a"></div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    const clamp01 = (v) => Math.min(1, Math.max(0, v));
+
+    // ---- line 6: typed with typos, then rewritten under a sweeping block cursor ----
+    const WRONG = 'rendr_time^ = "SEC0MDS"';
+    const RIGHT = 'render_time = "SECONDS"';
+    const NOISE = '@#%&^*<>_?/=+0123456789ABCDEF';
+    const FIX = [2.9, 4.24]; // local seconds: the cursor sweeps the line
+    const hash = (a, b) => {
+      let h = (a * 374761393 + b * 668265263) | 0;
+      h = (h ^ (h >>> 13)) * 1274126177;
+      return (h ^ (h >>> 16)) >>> 0;
+    };
+    const esc = (c) => (c === "<" ? "&lt;" : c === ">" ? "&gt;" : c === "&" ? "&amp;" : c);
+    const src6 = document.querySelector("#c-src6");
+    const line6 = (t) => {
+      const p = clamp01((t - FIX[0]) / (FIX[1] - FIX[0]));
+      const done = t >= FIX[1] + 0.02;
+      const cur = Math.floor(p * RIGHT.length);
+      const frame = Math.floor(t * 30);
+      let html = "";
+      for (let i = 0; i < RIGHT.length; i++) {
+        let ch;
+        if (done || (p > 0 && i < cur - 2)) ch = RIGHT[i];
+        else if (p > 0 && i <= cur + 1) ch = NOISE[hash(i, frame) % NOISE.length];
+        else ch = WRONG[i];
+        const cls = i >= 14 ? "s" : "";
+        const isCur = !done && p > 0 && i === cur;
+        html += `<span class="${isCur ? "cur" : cls}">${esc(ch)}</span>`;
+      }
+      src6.innerHTML = "    " + html;
+    };
+
+    // ---- the voxel cube: a dot-matrix heightfield drawn on a canvas from time alone ----
+    // Columns of glowing dots; the top starts uneven like terrain and settles flat, the base fades
+    // into the dark, and the whole block keeps turning about its vertical axis.
+    const cube = document.querySelector("#c-cube");
+    const ctx = cube.getContext("2d");
+    const CUBE_IN = 4.28;
+    const N = 22; // dots along each horizontal edge
+    const H = 24; // dots up the side
+    const mix = (a, b, u) => a.map((v, i) => v + (b[i] - v) * u);
+    const smooth = (a, b, x) => {
+      const u = clamp01((x - a) / (b - a));
+      return u * u * (3 - 2 * u);
+    };
+    // a stepped dome: the centre is tallest and the rim drops a few dots, flattening slightly over time
+    const heights = (t) => {
+      const drop = 3.2 - 1.2 * smooth(0, 1.3, t);
+      const out = [];
+      for (let i = 0; i < N; i++) {
+        out.push([]);
+        for (let j = 0; j < N; j++) {
+          const r = Math.hypot(i - (N - 1) / 2, j - (N - 1) / 2) / ((N - 1) / 2) / Math.SQRT2; // 0 centre … 1 corner
+          out[i].push(H - Math.round(drop * r * r * 1.6));
+        }
+      }
+      return out;
+    };
+    const TOP_A = [34, 186, 250], TOP_B = [30, 160, 250];
+    const SIDE_HI = [30, 175, 255], SIDE_MID = [72, 78, 255], SIDE_LO = [136, 34, 250];
+    const drawCube = (t) => {
+      ctx.clearRect(0, 0, 1040, 1040);
+      if (t < CUBE_IN) return;
+      const u = t - CUBE_IN;
+      const yaw = ((-20 - 40 * gsap.parseEase("power1.out")(clamp01(u / 1.4))) * Math.PI) / 180;
+      const pitch = (13 * Math.PI) / 180;
+      const S = 22; // dot spacing, canvas px at 2x
+      const cy = Math.cos(yaw), sy = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
+      const c0 = (N - 1) / 2;
+      const proj = (x, y, z) => {
+        const X = (x - c0) * S, Y = (y - H / 2) * S, Z = (z - c0) * S;
+        const rx = X * cy + Z * sy;
+        const rz = -X * sy + Z * cy;
+        return [520 + rx, 560 - (Y * cp - rz * sp), rz * cp + Y * sp];
+      };
+      // soft glow behind the block
+      const g = ctx.createRadialGradient(520, 470, 20, 520, 470, 470);
+      g.addColorStop(0, "rgba(30, 140, 255, 0.42)");
+      g.addColorStop(0.5, "rgba(50, 60, 230, 0.16)");
+      g.addColorStop(1, "rgba(40, 20, 160, 0)");
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, 1040, 1040);
+
+      const hm = heights(u);
+      const at = (i, j) => (i < 0 || j < 0 || i >= N || j >= N ? 0 : hm[i][j]);
+      // the two side directions that face the camera at this yaw
+      const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]].filter(([di, dj]) => -di * sy + dj * cy > 0);
+      const dots = [];
+      for (let i = 0; i < N; i++) {
+        for (let j = 0; j < N; j++) {
+          const h = hm[i][j];
+          const top = proj(i, h, j);
+          dots.push([top[0], top[1], top[2], mix(TOP_A, TOP_B, (i + (N - 1 - j)) / (2 * (N - 1))), 0.9]);
+          dirs.forEach(([di, dj], k) => {
+            for (let y = at(i + di, j + dj); y < h; y++) {
+              const p = proj(i + di * 0.5, y + 0.5, j + dj * 0.5);
+              const v = y / H; // 0 base … 1 top
+              let col = v > 0.45 ? mix(SIDE_MID, SIDE_HI, Math.pow((v - 0.45) / 0.55, 0.8)) : mix(SIDE_LO, SIDE_MID, v / 0.45);
+              if (di * cy + dj * sy < 0) col = col.map((c) => c * 0.62); // the left-facing side sits in shadow
+              dots.push([p[0], p[1], p[2], col, 0.05 + 0.95 * smooth(-0.05, 0.4, v)]);
+            }
+          });
+        }
+      }
+      dots.sort((a, b) => a[2] - b[2]);
+      const R = S * 0.36;
+      dots.forEach(([x, y, , col, alpha]) => {
+        if (alpha <= 0.02) return;
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = `rgb(${col[0] | 0},${col[1] | 0},${col[2] | 0})`;
+        ctx.shadowColor = ctx.fillStyle;
+        ctx.shadowBlur = 9;
+        ctx.beginPath();
+        ctx.arc(x, y, R, 0, 6.2832);
+        ctx.fill();
+      });
+      ctx.globalAlpha = 1;
+      ctx.shadowBlur = 0;
+    };
+
+    // highlights and check marks start hidden; each one appears when its line is checked
+    tl.set(".c-bar", { scaleX: 0 }, 0);
+    tl.set(".c-mark", { scale: 0 }, 0);
+
+    const clock = { t: 0 };
+    const render = (t) => {
+      line6(t);
+      drawCube(t);
+      const dots = Math.floor(t * 4) % 4;
+      document.querySelector("#c-fixing").textContent = "Fixing issue " + ".".repeat(dots);
+    };
+    tl.fromTo(clock, { t: 0 }, { t: 5.67, duration: 5.67, ease: "none", onUpdate: () => render(clock.t) }, 0);
+
+    // ---- shot 12 intro: "Seconds." is selected; the whole sky shrinks into the editor window ----
+    tl.set("#c-sel", { opacity: 1 }, 0.057);
+    tl.set("#c-sel", { opacity: 0 }, 0.090);
+    tl.set("#c-sel2", { opacity: 1 }, 0.090);
+    tl.set("#c-sel2", { opacity: 0 }, 0.123);
+    tl.set(["#c-sky"], { opacity: 0 }, 0.090);
+    tl.set("#c-forest-wrap", { opacity: 1 }, 0.090);
+    tl.set("#c-win", { opacity: 1 }, 0.090);
+    // the sky inside the window thins out to the dark editor, the chrome comes up behind it
+    tl.set("#c-wsky", { opacity: 1 }, 0.090);
+    tl.to("#c-wsky", { opacity: 0.72, duration: 0.03 }, 0.090);
+    tl.to("#c-wsky", { opacity: 0, duration: 0.14, ease: "power1.in" }, 0.160);
+    tl.to("#c-chrome", { opacity: 1, duration: 0.15, ease: "power1.out" }, 0.160);
+    tl.fromTo("#c-win", { x: 0, y: 0, scale: 1.494 }, { scale: 1, duration: 1.15, ease: "power3.out" }, 0.090);
+    tl.to("#c-win", { y: 20, duration: 0.3, ease: "power2.out" }, 0.090);
+    tl.to("#c-win", { y: 0, duration: 0.85, ease: "sine.inOut" }, 0.390);
+
+    tl.set("#c-wbg", { opacity: 0 }, 0.090);
+    tl.to("#c-wbg", { opacity: 0.55, duration: 0.07 }, 0.157);
+    tl.to("#c-wbg", { opacity: 1, duration: 0.13 }, 0.227);
+
+    // the selected word splits into two chips that swap size and colour, then collapse into the cursor
+    const BLUE = "#2a8cff", PINK = "#f06ad8";
+    const chip = (t, a, b) => {
+      tl.set("#c-chip1", { x: a[0], y: a[1], scale: a[2], backgroundColor: a[3], opacity: 1 }, t);
+      tl.set("#c-chip2", { x: b[0], y: b[1], scale: b[2], backgroundColor: b[3], opacity: 1 }, t);
+    };
+    chip(0.123, [470, 384, 1.41, BLUE], [648, 274, 1.48, BLUE]);
+    chip(0.157, [518, 384, 1.48, BLUE], [696, 274, 1.48, BLUE]);
+    chip(0.190, [466, 326, 0.83, BLUE], [590, 264, 1.41, PINK]);
+    chip(0.223, [422, 322, 1.31, PINK], [600, 283, 0.83, BLUE]);
+    tl.set(["#c-chip1", "#c-chip2"], { opacity: 0 }, 0.257);
+    tl.set("#c-mcur", { opacity: 1 }, 0.257);
+    tl.set("#c-mcur", { opacity: 0 }, 0.390);
+
+    // every line types at once, each a little later than the one above
+    gsap.utils.toArray(".c-src").forEach((el, i) => {
+      const n = el.id === "c-src6" ? RIGHT.length + 4 : el.textContent.length;
+      tl.to(el, { clipPath: "inset(0 0% 0 0)", duration: n / 46, ease: `steps(${n})` }, 0.37 + i * 0.045);
+    });
+
+    // a slow drift up while the code sits complete
+    tl.to("#c-win", { y: -125, scale: 0.97, duration: 0.65, ease: "sine.inOut" }, 1.3);
+    // the forest behind keeps drifting, like footage from a slowly panning camera
+    tl.fromTo("#c-forest", { x: -140, y: 0, scale: 1.2 }, { x: 140, y: -20, scale: 1.24, duration: 1.9, ease: "none" }, 0.1);
+
+    // ---- shot 13: cut to a close-up that keeps rising while every line is checked ----
+    tl.set("#c-win", { x: 415, y: 834, scale: 1.87 }, 2.0);
+    tl.set("#c-forest", { scale: 1.5, x: 120, y: 260 }, 2.0);
+    tl.to("#c-win", { x: 409, y: 311, duration: 0.9, ease: "power2.out" }, 2.0);
+    tl.to("#c-win", { x: 482, y: 338, scale: 2.18, duration: 1.15, ease: "sine.inOut" }, 2.9);
+    tl.to("#c-win", { x: 493, y: -30, scale: 2.2, duration: 0.21, ease: "power2.inOut" }, 4.05);
+    tl.to("#c-forest", { x: 260, y: 330, scale: 1.6, duration: 2.26, ease: "none" }, 2.0);
+
+    const lines = gsap.utils.toArray(".c-line");
+    const CHECK_AT = { 1: 2.04, 2: 2.1, 3: 2.16, 4: 2.24, 6: 2.38, 8: 2.43, 9: 2.48, 10: 2.53, 11: 2.58, 12: 2.63, 14: 2.7 };
+    Object.entries(CHECK_AT).forEach(([n, t]) => {
+      const line = lines[n - 1];
+      tl.to(line.querySelector(".c-bar"), { scaleX: 1, duration: 0.1, ease: "power2.out" }, t);
+      if (n !== "6") tl.to(line, { "--fc": "#0a4dff", "--kc": "#0d8a2a", duration: 0.08 }, t);
+      const mark = n === "6" ? line.querySelector("#c-x6") : line.querySelector(".c-mark");
+      tl.to(mark, { scale: 1, duration: 0.14, ease: "back.out(2.5)" }, t + 0.06);
+    });
+    // the error turns the world red
+    tl.to("#c-red", { opacity: 1, duration: 0.15, ease: "power1.out" }, 2.38);
+    tl.to("#c-wred", { opacity: 1, duration: 0.15 }, 2.38);
+    tl.to("#c-fixing", { clipPath: "inset(0 0% 0 0)", duration: 0.3, ease: "steps(15)" }, 2.95);
+
+    // ---- shot 14: cut wide; the fix is in, the highlights clear, a voxel cube builds ----
+    tl.set(["#c-red", "#c-wred", "#c-fixing", "#c-x6"], { opacity: 0 }, 4.28);
+    tl.set(".c-bar", { scaleX: 0 }, 4.28);
+    tl.set(lines, { "--fc": "#3fa6ff", "--kc": "#7b86ff" }, 4.28);
+    tl.set("#c-ok6", { scale: 1 }, 4.28);
+    tl.set("#c-cube", { opacity: 1 }, 4.28);
+    tl.set("#c-win", { x: 0, y: 539, scale: 0.98 }, 4.28);
+    tl.set("#c-forest", { x: -180, y: -20, scale: 1.25 }, 4.28);
+    tl.to("#c-win", { y: -17, scale: 1.0, duration: 1.32, ease: "power2.out" }, 4.28);
+    tl.to("#c-forest", { x: 170, y: 0, scale: 1.4, duration: 1.32, ease: "power1.out" }, 4.28);
+
+    // ---- exit into the next shot: an inverted flash frame, then a glitch frame ----
+    tl.set("#c-inv", { opacity: 1 }, 5.59);
+    tl.set("#c-glitch", { opacity: 1 }, 5.625);
+
+    window.__timelines["code"] = tl;
+  </script>
+</template>

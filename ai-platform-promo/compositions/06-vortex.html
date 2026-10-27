@@ -1,0 +1,266 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      font-family: "Inter", sans-serif;
+    }
+    /* the ripple shows on the card side first and opens leftward over a wide feather (no seams) */
+    #v-bg {
+      position: absolute;
+      inset: 0;
+      --lx: 1050px;
+      -webkit-mask-image: linear-gradient(90deg, transparent var(--lx), #000 calc(var(--lx) + 520px));
+      mask-image: linear-gradient(90deg, transparent var(--lx), #000 calc(var(--lx) + 520px));
+    }
+    #v-ripple {
+      position: absolute;
+      left: -640px;
+      top: -1060px;
+      width: 3200px;
+      height: 3200px;
+      filter: blur(16px);
+      /* the rings live just outside the card ring and spread outward with it, leaving the rest of the
+         frame (the bar, the coast) untouched at first */
+      --outer: 260px;
+      -webkit-mask-image: radial-gradient(circle, transparent 0 260px, #000 400px, #000 var(--outer), transparent calc(var(--outer) + 340px));
+      mask-image: radial-gradient(circle, transparent 0 260px, #000 400px, #000 var(--outer), transparent calc(var(--outer) + 340px));
+      background:
+        repeating-radial-gradient(
+          circle,
+          rgba(140, 200, 248, 0.5) 0px,
+          rgba(105, 182, 246, 0.66) 45px,
+          rgba(55, 150, 240, 0.88) 85px,
+          rgba(105, 182, 246, 0.66) 125px,
+          rgba(140, 200, 248, 0.5) 170px
+        );
+    }
+    /* the light-blue ground arrives after the ripple, so the prompt stays visible through it at first */
+    #v-base {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      background: radial-gradient(circle at 50% 50%, #ffffff 0%, #e2f1fd 35%, #b9dcf8 100%);
+    }
+    /* the white centre opens only once the ring of cards has closed */
+    #v-halo {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      background: radial-gradient(circle at 50% 50%, #ffffff 0 210px, rgba(255, 255, 255, 0) 340px);
+    }
+    #v-sky {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      background:
+        radial-gradient(ellipse 55% 50% at 50% 42%, #ffffff 0%, rgba(255, 255, 255, 0) 100%),
+        radial-gradient(ellipse 90% 70% at 30% 110%, #7fb3ea 0%, rgba(127, 179, 234, 0) 70%),
+        linear-gradient(180deg, #eaf3fc 0%, #d4e7f9 55%, #9fc6ef 100%);
+    }
+    #v-cards {
+      position: absolute;
+      inset: 0;
+    }
+    .v-arm {
+      position: absolute;
+      left: 960px;
+      top: 540px;
+      width: 0;
+      height: 0;
+    }
+    .v-card {
+      position: absolute;
+      left: -310px;
+      top: -165px;
+      width: 620px;
+      height: 330px;
+      border-radius: 26px;
+      overflow: hidden;
+      box-shadow: 0 22px 44px rgba(10, 40, 90, 0.28);
+      opacity: 0;
+      --tint: 1;
+    }
+    /* a freshly dealt card is washed in the ripple's blue, then shows its poster */
+    .v-card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, #0a3cff 0%, #2f8bff 55%, #bfe6ff 100%);
+      opacity: var(--tint);
+    }
+    .v-title {
+      position: absolute;
+      left: 36px;
+      top: 30px;
+      white-space: nowrap;
+    }
+    .v-cap {
+      position: absolute;
+      left: 36px;
+      bottom: 26px;
+      font-family: "Space Mono", monospace;
+      font-size: 17px;
+      opacity: 0.75;
+    }
+    .t-a { background: #0c0c0e; color: #ffffff; }
+    .t-a .v-title { font-family: "League Gothic", sans-serif; font-size: 150px; line-height: 0.82; color: #ffffff; }
+    .t-a .v-title::first-line { color: #ff7a1a; }
+    .t-b { background: repeating-linear-gradient(-12deg, #c3121a 0 18px, #e01822 18px 36px); color: #ffffff; }
+    .t-b .v-title { font-family: "Archivo Black", sans-serif; font-size: 84px; line-height: 0.95; top: 100px; }
+    .t-c { background: #ffd400; color: #0b0b0b; }
+    .t-c .v-title { font-family: "Archivo Black", sans-serif; font-size: 116px; line-height: 0.86; letter-spacing: -0.03em; }
+    .t-d { background: radial-gradient(ellipse 70% 90% at 70% 40%, #ff8a1a 0%, #c33a00 45%, #2a0700 100%); color: #ffe0c2; }
+    .t-d .v-title { font-family: "Playfair Display", serif; font-style: italic; font-size: 112px; top: 70px; }
+    .t-e { background: #ff2e63; color: #ffffff; }
+    .t-e .v-title { font-family: "Montserrat", sans-serif; font-size: 50px; line-height: 1.05; }
+    .t-e .v-title b { font-weight: 900; font-size: 64px; }
+    .t-f { background: repeating-radial-gradient(circle at 85% 50%, #0b1a8c 0 22px, #13259e 22px 44px); color: #ffffff; }
+    .t-f .v-title { font-family: "Archivo Black", sans-serif; font-style: italic; font-size: 112px; line-height: 0.86; }
+    .t-g { background: #1d1f22; color: #ffffff; }
+    .t-g .v-title { font-family: "Oswald", sans-serif; font-weight: 700; font-size: 128px; top: 70px; color: #1d1f22; -webkit-text-stroke: 2px #ffffff; }
+    .t-h { background: conic-gradient(from 20deg at 30% 60%, #ff2e63, #ffd400, #18c27a, #1e5bff, #8a2be2, #ff2e63); color: #0b0b0b; }
+    .t-h .v-title { font-family: "Archivo Black", sans-serif; font-size: 104px; line-height: 0.86; }
+    .t-i { background: #f2efe8; color: #0b0b0b; }
+    .t-i .v-title { font-family: "Space Mono", monospace; font-weight: 700; font-size: 54px; top: 110px; }
+    #v-btn {
+      position: absolute;
+      left: 885px;
+      top: 465px;
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(10, 70, 255, 0.35);
+    }
+    /* glossy sphere: a coloured light that can turn, rim shading on top, the arrow above both */
+    #v-btn .btn-face {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 85%, #36e4ff 0%, #18b4ff 30%, #0a70ff 58%, #0a4cf2 82%, #0838d8 100%);
+    }
+    #v-btn .btn-rim {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: radial-gradient(ellipse 60% 38% at 50% 14%, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 100%);
+      box-shadow:
+        inset 0 8px 12px rgba(2, 20, 130, 0.28),
+        inset 0 -8px 14px rgba(140, 235, 255, 0.35),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+    }
+    #v-arrow {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 150px;
+      height: 150px;
+      fill: none;
+      stroke: #ffffff;
+      stroke-width: 7;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    #v-word {
+      position: absolute;
+      left: 0;
+      top: 490px;
+      width: 1920px;
+      height: 100px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 98px;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      color: #2a6fe0;
+    }
+    #v-word span {
+      opacity: 0;
+    }
+  </style>
+  <div data-hf-id="hf-nnny" id="root" data-composition-id="vortex" data-width="1920" data-height="1080" data-motion-blur="on">
+    <div data-hf-id="hf-myrb" id="v-bg">
+      <div data-hf-id="hf-7pmd" id="v-base"></div>
+      <div data-hf-id="hf-09y8" id="v-ripple"></div>
+      <div data-hf-id="hf-ii24" id="v-halo"></div>
+      <div data-hf-id="hf-7ufd" id="v-sky"></div>
+    </div>
+    <div data-hf-id="hf-2jc2" id="v-cards" data-layout-allow-overflow data-layout-allow-overlap>
+<div data-hf-id="hf-46e1" class="v-arm" data-angle="-3.0" data-r="470"><div data-hf-id="hf-1qf7" class="v-card t-a" data-tilt="-4"><div data-hf-id="hf-6mwj" class="v-title">EASE<br data-hf-id="hf-x5px">OUT</div><div data-hf-id="hf-k6e1" class="v-cap">power3.out / 0.6s</div></div></div>
+      <div data-hf-id="hf-9qch" class="v-arm" data-angle="25.5" data-r="506"><div data-hf-id="hf-ykw3" class="v-card t-b" data-tilt="0"><div data-hf-id="hf-w5po" class="v-title">MATCH CUT</div><div data-hf-id="hf-ycyj" class="v-cap">cut on the motion</div></div></div>
+      <div data-hf-id="hf-s0fp" class="v-arm" data-angle="42.0" data-r="542"><div data-hf-id="hf-144q" class="v-card t-c" data-tilt="4"><div data-hf-id="hf-qipo" class="v-title">WHIP<br data-hf-id="hf-rsrt">PAN</div><div data-hf-id="hf-qdwo" class="v-cap">0.2s smear</div></div></div>
+      <div data-hf-id="hf-mksk" class="v-arm" data-angle="70.5" data-r="488"><div data-hf-id="hf-90sd" class="v-card t-d" data-tilt="-1"><div data-hf-id="hf-q0pe" class="v-title">Slow Mo</div><div data-hf-id="hf-edc9" class="v-cap">120 fps</div></div></div>
+      <div data-hf-id="hf-nuz6" class="v-arm" data-angle="87.0" data-r="524"><div data-hf-id="hf-mtr3" class="v-card t-e" data-tilt="3"><div data-hf-id="hf-adg0" class="v-title">your story<br data-hf-id="hf-szow"><b data-hf-id="hf-v3k5">moves</b><br data-hf-id="hf-sldv">in frames</div><div data-hf-id="hf-yakt" class="v-cap">storyboard 01</div></div></div>
+      <div data-hf-id="hf-06bb" class="v-arm" data-angle="115.5" data-r="470"><div data-hf-id="hf-jzh0" class="v-card t-f" data-tilt="-2"><div data-hf-id="hf-kfqs" class="v-title">PUSH<br data-hf-id="hf-qluq">IN</div><div data-hf-id="hf-bdd4" class="v-cap">camera / 1.2x</div></div></div>
+      <div data-hf-id="hf-j6q1" class="v-arm" data-angle="132.0" data-r="506"><div data-hf-id="hf-bh1k" class="v-card t-g" data-tilt="2"><div data-hf-id="hf-3oim" class="v-title">STAGGER</div><div data-hf-id="hf-1dd7" class="v-cap">80ms apart</div></div></div>
+      <div data-hf-id="hf-kce9" class="v-arm" data-angle="160.5" data-r="542"><div data-hf-id="hf-r1ib" class="v-card t-h" data-tilt="-3"><div data-hf-id="hf-inqa" class="v-title">KINETIC<br data-hf-id="hf-q7jp">TYPE</div><div data-hf-id="hf-zc0t" class="v-cap">words in motion</div></div></div>
+      <div data-hf-id="hf-quul" class="v-arm" data-angle="177.0" data-r="488"><div data-hf-id="hf-1sfl" class="v-card t-i" data-tilt="1"><div data-hf-id="hf-7iu6" class="v-title">hold the frame.</div><div data-hf-id="hf-unkj" class="v-cap">0.5s + 0.3s a word</div></div></div>
+      <div data-hf-id="hf-t8ah" class="v-arm" data-angle="205.5" data-r="524"><div data-hf-id="hf-yk5f" class="v-card t-a" data-tilt="-4"><div data-hf-id="hf-4lfe" class="v-title">SPEED<br data-hf-id="hf-regs">RAMP</div><div data-hf-id="hf-87c1" class="v-cap">0.2x → 4x</div></div></div>
+      <div data-hf-id="hf-feun" class="v-arm" data-angle="222.0" data-r="470"><div data-hf-id="hf-maj2" class="v-card t-c" data-tilt="0"><div data-hf-id="hf-jall" class="v-title">LOOP</div><div data-hf-id="hf-2z1w" class="v-cap">seamless / 4s</div></div></div>
+      <div data-hf-id="hf-mac3" class="v-arm" data-angle="250.5" data-r="506"><div data-hf-id="hf-lyw7" class="v-card t-b" data-tilt="4"><div data-hf-id="hf-onrr" class="v-title">ON THE BEAT</div><div data-hf-id="hf-gmdv" class="v-cap">128 bpm</div></div></div>
+      <div data-hf-id="hf-wd02" class="v-arm" data-angle="267.0" data-r="542"><div data-hf-id="hf-sncv" class="v-card t-f" data-tilt="-1"><div data-hf-id="hf-h6id" class="v-title">ZOOM<br data-hf-id="hf-r05r">THROUGH</div><div data-hf-id="hf-3ueb" class="v-cap">button → world</div></div></div>
+      <div data-hf-id="hf-3xi3" class="v-arm" data-angle="295.5" data-r="488"><div data-hf-id="hf-m2d2" class="v-card t-h" data-tilt="3"><div data-hf-id="hf-6i8k" class="v-title">OVER<br data-hf-id="hf-p0mm">SHOOT</div><div data-hf-id="hf-6jw4" class="v-cap">back.out(1.4)</div></div></div>
+      <div data-hf-id="hf-mmcp" class="v-arm" data-angle="312.0" data-r="524"><div data-hf-id="hf-17c3" class="v-card t-c" data-tilt="-2"><div data-hf-id="hf-kujw" class="v-title">FRAME<br data-hf-id="hf-ombl">BY FRAME</div><div data-hf-id="hf-vpnd" class="v-cap">30 / second</div></div></div>
+      <div data-hf-id="hf-k07z" class="v-arm" data-angle="340.5" data-r="470"><div data-hf-id="hf-qoo1" class="v-card t-b" data-tilt="2"><div data-hf-id="hf-6y8i" class="v-title">COLOR FLOOD</div><div data-hf-id="hf-3hv3" class="v-cap">0.4s inOut</div></div></div>
+    </div>
+    <div data-hf-id="hf-jjbe" id="v-btn"><div id="v-face" class="btn-face"></div><div class="btn-rim"></div><svg data-hf-id="hf-qem5" id="v-arrow" viewBox="0 0 150 150"><path data-hf-id="hf-mvrs" d="M75 110 V42 M48 68 L75 41 L102 68" /></svg></div>
+    <div data-hf-id="hf-2xuy" id="v-word"><span data-hf-id="hf-fmnq">S</span><span data-hf-id="hf-xwr0">e</span><span data-hf-id="hf-ypd2">c</span><span data-hf-id="hf-txoq">o</span><span data-hf-id="hf-tjdp">n</span><span data-hf-id="hf-xifz">d</span><span data-hf-id="hf-scgm">s</span><span data-hf-id="hf-a3l0" id="v-dot">.</span></div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+
+    // shot 10: the blue ripple opens out from the send button together with the cards
+    tl.fromTo("#v-ripple", { scale: 1 }, { scale: 1.3, duration: 2.1, ease: "none" }, 0);
+    tl.to("#v-ripple", { "--outer": "1800px", duration: 0.75, ease: "power1.in" }, 0);
+    tl.to("#v-bg", { "--lx": "-700px", duration: 0.45, ease: "power1.in" }, 0.05);
+    tl.to("#v-base", { opacity: 1, duration: 0.3, ease: "power1.inOut" }, 0.32);
+    tl.to("#v-halo", { opacity: 1, duration: 0.18, ease: "power1.out" }, 0.28);
+
+    // the button never leaves the frame: it drifts to the centre, then keeps shrinking once the ring is full
+    tl.fromTo("#v-btn", { x: 34, y: 0, scale: 1.62 }, { x: 0, y: 0, scale: 1.2, duration: 0.22, ease: "power2.inOut" }, 0.02);
+    tl.to("#v-btn", { scale: 0.95, duration: 0.6, ease: "sine.inOut" }, 0.3);
+
+    // the arrow turns once in place, clockwise like a clock hand, while the cards are dealt
+    tl.fromTo("#v-arrow", { rotation: 0, transformOrigin: "50% 50%" }, { rotation: 360, transformOrigin: "50% 50%", duration: 0.75, ease: "power1.out" }, 0);
+    // the coloured light on the sphere swings round more slowly than the arrow, from lower left to upper right
+    tl.fromTo("#v-face", { rotation: 0 }, { rotation: 180, duration: 0.9, ease: "power1.out" }, 0);
+
+    // cards are dealt clockwise starting at the button's upper right: each slides out along its own
+    // radius washed in blue, then the blue clears to show the poster
+    const arms = gsap.utils.toArray(".v-arm");
+    const START = -60; // degrees, upper right
+    arms.forEach((arm) => {
+      const angle = parseFloat(arm.dataset.angle);
+      const r = parseFloat(arm.dataset.r) - 40; // keeps a white gap around the button
+      const card = arm.firstElementChild;
+      const tilt = parseFloat(card.dataset.tilt);
+      const order = (((angle - START) % 360) + 360) % 360 / 360; // 0 … 1 clockwise from the start
+      const t = order * 0.3;
+      tl.set(arm, { rotation: angle }, 0);
+      tl.set(card, { opacity: 1 }, t);
+      tl.fromTo(card, { x: r - 25, scale: 0.68, rotation: tilt - 8 }, { x: r, scale: 0.74, rotation: tilt, duration: 0.3, ease: "power2.out" }, t);
+      tl.fromTo(card, { "--tint": 1 }, { "--tint": 0, duration: 0.08, ease: "power1.in" }, t + 0.02);
+      // shot 11: the petals blow outward and clear the centre
+      tl.to(card, { x: r * 2.6, scale: 1.1, duration: 0.55, ease: "power1.in" }, 0.66 + order * 0.06);
+    });
+    tl.fromTo("#v-cards", { rotation: 0, scale: 1 }, { rotation: 40, scale: 1.06, duration: 1.6, ease: "power1.out" }, 0);
+    // the ring is centred on the button while the button settles to the middle of the frame
+    tl.fromTo("#v-cards", { x: 34 }, { x: 0, duration: 0.22, ease: "power2.inOut" }, 0.02);
+
+    // the button lifts away and "Seconds." types in, blue settling to ink
+    tl.to("#v-btn", { y: -640, duration: 0.25, ease: "power2.in" }, 0.95);
+    tl.to("#v-sky", { opacity: 1, duration: 0.4, ease: "power1.inOut" }, 0.95);
+    tl.fromTo("#v-word", { scale: 1.12 }, { scale: 1, duration: 0.8, ease: "power2.out" }, 1.0);
+    const letters = gsap.utils.toArray("#v-word span");
+    letters.forEach((el, i) => {
+      const t = 1.02 + i * 0.045;
+      tl.fromTo(el, { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.1 }, t);
+      if (el.id !== "v-dot") tl.to(el, { color: "#111418", duration: 0.15 }, t + 0.16);
+    });
+
+    window.__timelines["vortex"] = tl;
+  </script>
+</template>

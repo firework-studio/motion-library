@@ -1,0 +1,673 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Inter Tight";
+      font-weight: 700;
+      src: url("assets/fonts/InterTight-Bold.woff2") format("woff2");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      font-family: "Inter", sans-serif;
+      background: #f1ebe2;
+    }
+    .t-full {
+      position: absolute;
+      inset: 0;
+    }
+    /* rough, embossed paper (baked by agent-workdir/scripts/paper.py) */
+    #t-paper {
+      background: url("assets/images/paper.png") center / cover;
+    }
+    #t-warm-grain {
+      background: url("assets/images/paper.png") center / cover;
+      mix-blend-mode: multiply;
+      opacity: 0;
+    }
+    #t-warm {
+      opacity: 0;
+      background:
+        radial-gradient(ellipse 60% 55% at 70% 40%, rgba(255, 250, 220, 0.9) 0%, rgba(255, 250, 220, 0) 100%),
+        linear-gradient(160deg, #f4ecc4 0%, #f2e6b0 50%, #efe0a2 100%);
+    }
+    #t-haze {
+      background: #f4f3f1;
+    }
+    .t-dot {
+      position: absolute;
+      left: -9px;
+      top: -9px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #f3a21a;
+      box-shadow: 0 0 calc(var(--glow, 0) * 22px) calc(var(--glow, 0) * 8px) rgba(255, 220, 60, 0.9);
+    }
+    .t-name {
+      position: absolute;
+      left: 16px;
+      top: -15px;
+      font-size: 24px;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+      color: #26221e;
+      white-space: nowrap;
+    }
+    .t-val {
+      position: absolute;
+      left: 16px;
+      top: 15px;
+      padding: 1px 6px;
+      border-radius: 5px;
+      background: rgba(255, 255, 255, 0.55);
+      box-shadow: inset 0 0 0 1px rgba(60, 50, 40, 0.12);
+      font-size: 14px;
+      color: #5a534c;
+      white-space: nowrap;
+    }
+    .t-lab.flip .t-name {
+      left: auto;
+      right: 16px;
+    }
+    .t-lab.flip .t-val {
+      left: auto;
+      right: 16px;
+    }
+    .t-val b {
+      font-weight: 700;
+    }
+    .up { color: #2f9e52; }
+    .dn { color: #d23b3b; }
+    .t-lab,
+    .d-lab {
+      position: absolute;
+      width: 0;
+      height: 0;
+    }
+    .d-lab {
+      left: 960px;
+      top: 540px;
+      opacity: 0;
+    }
+    #t-tree {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+      transform-origin: 0 0;
+      opacity: 0;
+    }
+    #t-barktex {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+    }
+    #t-canvas,
+    #t-fall {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+    }
+  </style>
+  <div id="root" data-composition-id="tree" data-width="1920" data-height="1080">
+    <div id="t-paper" class="t-full"></div>
+    <div id="t-warm" class="t-full"></div>
+    <div id="t-warm-grain" class="t-full"></div>
+    <div id="t-decoys" class="t-full" data-layout-allow-overflow data-layout-allow-overlap data-layout-ignore>
+      <div class="d-lab" data-x="367" data-y="573" data-z="392"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>References</span><span class="t-val" data-layout-allow-occlusion>6 <b class="up" data-layout-allow-occlusion>&#8593;</b></span></div>
+      <div class="d-lab" data-x="-1013" data-y="279" data-z="719"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Notes</span><span class="t-val" data-layout-allow-occlusion>6 <b class="dn" data-layout-allow-occlusion>&#8595;</b></span></div>
+      <div class="d-lab" data-x="-265" data-y="-575" data-z="1310"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Plans</span><span class="t-val" data-layout-allow-occlusion>3 <b class="up" data-layout-allow-occlusion>&#8593;</b></span></div>
+      <div class="d-lab" data-x="1137" data-y="-634" data-z="527"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Revisions</span><span class="t-val" data-layout-allow-occlusion>48 <b class="up" data-layout-allow-occlusion>&#8593;</b></span></div>
+      <div class="d-lab" data-x="1030" data-y="-488" data-z="1397"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Pending</span><span class="t-val" data-layout-allow-occlusion>342 <b class="up" data-layout-allow-occlusion>&#8593;</b></span></div>
+      <div class="d-lab" data-x="13" data-y="387" data-z="1355"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Prompts</span><span class="t-val" data-layout-allow-occlusion>48 <b class="dn" data-layout-allow-occlusion>&#8595;</b></span></div>
+      <div class="d-lab" data-x="-851" data-y="361" data-z="562"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Clients</span><span class="t-val" data-layout-allow-occlusion>342 <b class="up" data-layout-allow-occlusion>&#8593;</b></span></div>
+      <div class="d-lab" data-x="927" data-y="115" data-z="1726"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Trends</span><span class="t-val" data-layout-allow-occlusion>342 <b class="up" data-layout-allow-occlusion>&#8593;</b></span></div>
+      <div class="d-lab" data-x="-23" data-y="-252" data-z="583"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Scripts</span><span class="t-val" data-layout-allow-occlusion>27 <b class="up" data-layout-allow-occlusion>&#8593;</b></span></div>
+      <div class="d-lab" data-x="777" data-y="-57" data-z="1544"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Shots</span><span class="t-val" data-layout-allow-occlusion>22 <b class="dn" data-layout-allow-occlusion>&#8595;</b></span></div>
+      <div class="d-lab" data-x="846" data-y="96" data-z="875"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Completed</span><span class="t-val" data-layout-allow-occlusion>48 <b class="up" data-layout-allow-occlusion>&#8593;</b></span></div>
+      <div class="d-lab" data-x="-933" data-y="382" data-z="1598"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Renders</span><span class="t-val" data-layout-allow-occlusion>3 <b class="up" data-layout-allow-occlusion>&#8593;</b></span></div>
+      <div class="d-lab" data-x="784" data-y="427" data-z="584"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Growth</span><span class="t-val" data-layout-allow-occlusion>6 <b class="dn" data-layout-allow-occlusion>&#8595;</b></span></div>
+      <div class="d-lab" data-x="-984" data-y="-636" data-z="1841"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Views</span><span class="t-val" data-layout-allow-occlusion>22 <b class="up" data-layout-allow-occlusion>&#8593;</b></span></div>
+      <div class="d-lab" data-x="330" data-y="609" data-z="711"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Feedback</span><span class="t-val" data-layout-allow-occlusion>27 <b class="up" data-layout-allow-occlusion>&#8593;</b></span></div>
+      <div class="d-lab" data-x="-771" data-y="251" data-z="395"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Approved</span><span class="t-val" data-layout-allow-occlusion>7 <b class="dn" data-layout-allow-occlusion>&#8595;</b></span></div>
+      <div class="d-lab" data-x="351" data-y="256" data-z="785"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Rejected</span><span class="t-val" data-layout-allow-occlusion>342 <b class="up" data-layout-allow-occlusion>&#8593;</b></span></div>
+      <div class="d-lab" data-x="513" data-y="366" data-z="1617"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Footage</span><span class="t-val" data-layout-allow-occlusion>22 <b class="up" data-layout-allow-occlusion>&#8593;</b></span></div>
+      <div class="d-lab" data-x="-632" data-y="-591" data-z="1487"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Storyboards</span><span class="t-val" data-layout-allow-occlusion>3 <b class="up" data-layout-allow-occlusion>&#8593;</b></span></div>
+      <div class="d-lab" data-x="736" data-y="446" data-z="426"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Exports</span><span class="t-val" data-layout-allow-occlusion>342 <b class="up" data-layout-allow-occlusion>&#8593;</b></span></div>
+      <div class="d-lab" data-x="939" data-y="-4" data-z="536"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Moodboards</span><span class="t-val" data-layout-allow-occlusion>7 <b class="up" data-layout-allow-occlusion>&#8593;</b></span></div>
+      <div class="d-lab" data-x="1040" data-y="43" data-z="481"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Assets</span><span class="t-val" data-layout-allow-occlusion>12 <b class="up" data-layout-allow-occlusion>&#8593;</b></span></div>
+      <div class="d-lab" data-x="390" data-y="-633" data-z="734"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Templates</span><span class="t-val" data-layout-allow-occlusion>27 <b class="dn" data-layout-allow-occlusion>&#8595;</b></span></div>
+      <div class="d-lab" data-x="142" data-y="470" data-z="1250"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Music</span><span class="t-val" data-layout-allow-occlusion>7 <b class="up" data-layout-allow-occlusion>&#8593;</b></span></div>
+      <div class="d-lab" data-x="-835" data-y="-16" data-z="537"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Team</span><span class="t-val" data-layout-allow-occlusion>7 <b class="dn" data-layout-allow-occlusion>&#8595;</b></span></div>
+      <div class="d-lab" data-x="-217" data-y="-49" data-z="534"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Feedback</span><span class="t-val" data-layout-allow-occlusion>3 <b class="up" data-layout-allow-occlusion>&#8593;</b></span></div>
+      <div class="d-lab" data-x="658" data-y="223" data-z="503"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Shots</span><span class="t-val" data-layout-allow-occlusion>48 <b class="up" data-layout-allow-occlusion>&#8593;</b></span></div>
+      <div class="d-lab" data-x="153" data-y="756" data-z="1415"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Clients</span><span class="t-val" data-layout-allow-occlusion>48 <b class="dn" data-layout-allow-occlusion>&#8595;</b></span></div>
+      <div class="d-lab" data-x="913" data-y="-20" data-z="1277"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Prompts</span><span class="t-val" data-layout-allow-occlusion>12 <b class="up" data-layout-allow-occlusion>&#8593;</b></span></div>
+      <div class="d-lab" data-x="-878" data-y="665" data-z="833"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Renders</span><span class="t-val" data-layout-allow-occlusion>22 <b class="dn" data-layout-allow-occlusion>&#8595;</b></span></div>
+      <div class="d-lab" data-x="-338" data-y="330" data-z="1587"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Drafts</span><span class="t-val" data-layout-allow-occlusion>7 <b class="up" data-layout-allow-occlusion>&#8593;</b></span></div>
+      <div class="d-lab" data-x="-451" data-y="-270" data-z="589"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Captions</span><span class="t-val" data-layout-allow-occlusion>342 <b class="dn" data-layout-allow-occlusion>&#8595;</b></span></div>
+      <div class="d-lab" data-x="-1132" data-y="-703" data-z="843"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Music</span><span class="t-val" data-layout-allow-occlusion>27 <b class="up" data-layout-allow-occlusion>&#8593;</b></span></div>
+      <div class="d-lab" data-x="1228" data-y="-55" data-z="494"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Colors</span><span class="t-val" data-layout-allow-occlusion>342 <b class="dn" data-layout-allow-occlusion>&#8595;</b></span></div>
+      <div class="d-lab" data-x="-321" data-y="202" data-z="872"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Fonts</span><span class="t-val" data-layout-allow-occlusion>342 <b class="up" data-layout-allow-occlusion>&#8593;</b></span></div>
+      <div class="d-lab" data-x="159" data-y="557" data-z="1647"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>References</span><span class="t-val" data-layout-allow-occlusion>12 <b class="up" data-layout-allow-occlusion>&#8593;</b></span></div>
+      <div class="d-lab" data-x="-519" data-y="128" data-z="1338"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Notes</span><span class="t-val" data-layout-allow-occlusion>342 <b class="up" data-layout-allow-occlusion>&#8593;</b></span></div>
+      <div class="d-lab" data-x="394" data-y="-587" data-z="565"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Plans</span><span class="t-val" data-layout-allow-occlusion>3 <b class="up" data-layout-allow-occlusion>&#8593;</b></span></div>
+      <div class="d-lab" data-x="1169" data-y="193" data-z="1876"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Revisions</span><span class="t-val" data-layout-allow-occlusion>12 <b class="up" data-layout-allow-occlusion>&#8593;</b></span></div>
+      <div class="d-lab" data-x="185" data-y="-441" data-z="520"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Pending</span><span class="t-val" data-layout-allow-occlusion>27 <b class="dn" data-layout-allow-occlusion>&#8595;</b></span></div>
+    </div>
+    <div id="t-tree" data-layout-allow-overflow data-layout-allow-overlap>
+      <img id="t-barktex" src="assets/images/bark.png" alt="" />
+      <canvas id="t-canvas" width="1920" height="1080"></canvas>
+      <div id="t-labels">
+        <div class="t-lab" style="left: 800px; top: 186px"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>References</span><span class="t-val" data-layout-allow-occlusion>89 <b class="up" data-layout-allow-occlusion>&#8593;</b></span></div>
+        <div class="t-lab" style="left: 1015px; top: 192px"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Notes</span><span class="t-val" data-layout-allow-occlusion>23 <b class="dn" data-layout-allow-occlusion>&#8595;</b></span></div>
+        <div class="t-lab" style="left: 1310px; top: 150px"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Plans</span><span class="t-val" data-layout-allow-occlusion>6 <b class="up" data-layout-allow-occlusion>&#8593;</b></span></div>
+        <div class="t-lab" style="left: 1390px; top: 246px"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Revisions</span><span class="t-val" data-layout-allow-occlusion>12 <b class="up" data-layout-allow-occlusion>&#8593;</b></span></div>
+        <div class="t-lab" style="left: 1590px; top: 270px"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Pending</span><span class="t-val" data-layout-allow-occlusion>3 <b class="dn" data-layout-allow-occlusion>&#8595;</b></span></div>
+        <div class="t-lab" style="left: 610px; top: 315px"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Prompts</span><span class="t-val" data-layout-allow-occlusion>342 <b class="up" data-layout-allow-occlusion>&#8593;</b></span></div>
+        <div class="t-lab" style="left: 820px; top: 351px"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Clients</span><span class="t-val" data-layout-allow-occlusion>126 <b class="up" data-layout-allow-occlusion>&#8593;</b></span></div>
+        <div class="t-lab" style="left: 470px; top: 381px"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Trends</span><span class="t-val" data-layout-allow-occlusion>Q2 18%</span></div>
+        <div class="t-lab" style="left: 650px; top: 390px"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Scripts</span><span class="t-val" data-layout-allow-occlusion>15 <b class="up" data-layout-allow-occlusion>&#8593;</b></span></div>
+        <div class="t-lab" style="left: 1210px; top: 432px"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Shots</span><span class="t-val" data-layout-allow-occlusion>48 <b class="up" data-layout-allow-occlusion>&#8593;</b></span></div>
+        <div class="t-lab" style="left: 1505px; top: 396px"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Completed</span><span class="t-val" data-layout-allow-occlusion>31 <b class="up" data-layout-allow-occlusion>&#8593;</b></span></div>
+        <div class="t-lab" style="left: 1490px; top: 474px"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Renders</span><span class="t-val" data-layout-allow-occlusion>17 <b class="dn" data-layout-allow-occlusion>&#8595;</b></span></div>
+        <div class="t-lab" style="left: 380px; top: 504px"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Growth</span><span class="t-val" data-layout-allow-occlusion>+24%</span></div>
+        <div class="t-lab" style="left: 200px; top: 603px"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Views</span><span class="t-val" data-layout-allow-occlusion>2.4M <b class="up" data-layout-allow-occlusion>&#8593;</b></span></div>
+        <div class="t-lab" style="left: 1210px; top: 573px"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Feedback</span><span class="t-val" data-layout-allow-occlusion>27 <b class="up" data-layout-allow-occlusion>&#8593;</b></span></div>
+        <div class="t-lab" style="left: 1450px; top: 573px"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Approved</span><span class="t-val" data-layout-allow-occlusion>21 <b class="up" data-layout-allow-occlusion>&#8593;</b></span></div>
+        <div class="t-lab" style="left: 1475px; top: 636px"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Rejected</span><span class="t-val" data-layout-allow-occlusion>6 <b class="dn" data-layout-allow-occlusion>&#8595;</b></span></div>
+        <div class="t-lab" style="left: 930px; top: 708px"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Footage</span><span class="t-val" data-layout-allow-occlusion>4.8 GB</span></div>
+        <div class="t-lab" style="left: 1215px; top: 708px"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Storyboards</span><span class="t-val" data-layout-allow-occlusion>16 <b class="up" data-layout-allow-occlusion>&#8593;</b></span></div>
+        <div class="t-lab" style="left: 1230px; top: 771px"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Exports</span><span class="t-val" data-layout-allow-occlusion>7 <b class="up" data-layout-allow-occlusion>&#8593;</b></span></div>
+        <div class="t-lab" style="left: 590px; top: 837px"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Moodboards</span><span class="t-val" data-layout-allow-occlusion>64 <b class="up" data-layout-allow-occlusion>&#8593;</b></span></div>
+        <div class="t-lab" style="left: 840px; top: 807px"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Assets</span><span class="t-val" data-layout-allow-occlusion>42 <b class="up" data-layout-allow-occlusion>&#8593;</b></span></div>
+        <div class="t-lab" style="left: 845px; top: 879px"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Templates</span><span class="t-val" data-layout-allow-occlusion>22 <b class="up" data-layout-allow-occlusion>&#8593;</b></span></div>
+        <div class="t-lab" style="left: 1150px; top: 918px"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Music</span><span class="t-val" data-layout-allow-occlusion>19 <b class="up" data-layout-allow-occlusion>&#8593;</b></span></div>
+        <div class="t-lab" style="left: 1050px; top: 990px"><i class="t-dot"></i><span class="t-name" data-layout-allow-occlusion>Team</span><span class="t-val" data-layout-allow-occlusion>11 <b class="up" data-layout-allow-occlusion>&#8593;</b></span></div>
+      </div>
+    </div>
+    <canvas id="t-fall" width="1920" height="1080"></canvas>
+    <div id="t-haze" class="t-full"></div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    const clamp01 = (v) => Math.min(1, Math.max(0, v));
+    const smooth = (a, b, x) => {
+      const u = clamp01((x - a) / (b - a));
+      return u * u * (3 - 2 * u);
+    };
+    const hash = (a, b) => {
+      let h = (a * 374761393 + b * 668265263) | 0;
+      h = (h ^ (h >>> 13)) * 1274126177;
+      return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+    };
+    const easeOut = gsap.parseEase("power2.out");
+    const backOut = gsap.parseEase("back.out(2.2)");
+
+    // ---- shot 15: the camera flies forward through labels scattered in depth ----
+    const decoys = gsap.utils.toArray(".d-lab").map((el, i) => ({
+      el,
+      x: +el.dataset.x,
+      y: +el.dataset.y,
+      z: +el.dataset.z,
+      tint: ["#f3a21a", "#e8455a", "#7cc79a", "#e6d14a", "#f07a3a"][i % 5],
+    }));
+    const FOCAL = 900;
+    const camZ = (t) => 300 * gsap.parseEase("power1.in")(clamp01(t / 1.8));
+    // the camera circles a point in the middle of the field, swinging from left to right
+    const PIVOT = 1050;
+    const yaw = (t) => (-55 + 95 * gsap.parseEase("sine.inOut")(clamp01(t / 1.8))) * (Math.PI / 180);
+    const drawDecoys = (t) => {
+      const cz = camZ(t);
+      const a = yaw(t);
+      const ca = Math.cos(a), sa = Math.sin(a);
+      decoys.forEach((d) => {
+        const rz = d.z - PIVOT;
+        const x = d.x * ca - rz * sa;
+        const dz = PIVOT + d.x * sa + rz * ca - cz;
+        if (dz < 60 || t > 1.8) {
+          d.el.style.opacity = 0;
+          return;
+        }
+        const s = FOCAL / dz;
+        const blur = Math.min(8, Math.max(0, Math.abs(dz - 700) - 220) / 60) + 5 * (1 - smooth(0.05, 0.3, t));
+        const fadeNear = smooth(60, 260, dz);
+        const fadeIn = smooth(0.02, 0.35, t);
+        const fadeOut = 1 - smooth(1.45, 1.75, t);
+        d.el.style.opacity = fadeNear * fadeIn * fadeOut;
+        d.el.style.transform = `translate(${x * s}px, ${d.y * s}px) scale(${s * 1.25})`;
+        d.el.style.filter = `blur(${blur.toFixed(1)}px)`;
+        // mixed colours at first, settling to the orange dots
+        const k = smooth(0.2, 0.6, t);
+        d.el.querySelector(".t-dot").style.background = gsap.utils.interpolate(d.tint, "#f3a21a", k);
+        d.el.querySelector(".t-name").style.color = gsap.utils.interpolate(d.tint, "#26221e", k);
+      });
+    };
+
+    // ---- shot 16–17: a tree grows from the lower left, a branch reaching every label ----
+    const labels = gsap.utils.toArray(".t-lab").map((el) => ({ el, x: parseFloat(el.style.left), y: parseFloat(el.style.top) }));
+    const sub = (a, b) => [a[0] - b[0], a[1] - b[1]];
+    const add = (a, b) => [a[0] + b[0], a[1] + b[1]];
+    const mul = (a, k) => [a[0] * k, a[1] * k];
+    const len = (a) => Math.hypot(a[0], a[1]);
+    const norm = (a) => mul(a, 1 / (len(a) || 1));
+    const perp = (a) => [-a[1], a[0]];
+    // a smooth (Catmull-Rom) curve through a list of points, sampled at u in 0..1
+    const along = (pts, u) => {
+      const n = pts.length - 1;
+      const f = Math.min(n - 1e-6, Math.max(0, u * n));
+      const k = Math.floor(f);
+      const t = f - k;
+      const p0 = pts[Math.max(0, k - 1)], p1 = pts[k], p2 = pts[k + 1], p3 = pts[Math.min(n, k + 2)];
+      const c = (i) =>
+        0.5 * (2 * p1[i] + (-p0[i] + p2[i]) * t + (2 * p0[i] - 5 * p1[i] + 4 * p2[i] - p3[i]) * t * t + (-p0[i] + 3 * p1[i] - 3 * p2[i] + p3[i]) * t * t * t);
+      return [c(0), c(1)];
+    };
+
+    // The tree traced from the reference: it leans right like a branch in the wind, six limbs sweep out
+    // of the trunk in long S-curves, fork again and again, and every last twig ends at a label.
+    // Traced on the 1752 x 922 reference frame.
+    const S = 1920 / 1752;
+    // scaled down a touch and lowered so the top twigs and their labels clear the frame edge
+    const T = (pts) => pts.map(([x, y]) => [x * S * 0.95 + 10, y * S * 0.95 + 60]);
+    const TREE = [
+      // [points, start width, end width, label index or -1]
+      [[[-60, 980], [100, 820], [230, 705], [300, 640]], 80, 62, -1], // trunk
+      [[[300, 640], [380, 560], [450, 480], [560, 420], [700, 330], [800, 300], [900, 260], [1000, 220], [1100, 205], [1200, 190], [1300, 170], [1400, 150], [1497, 135]], 48, 5, 4],
+      [[[1020, 215], [1050, 150], [1100, 110], [1180, 70], [1226, 25]], 13, 3, 2],
+      [[[1240, 182], [1270, 140], [1298, 115]], 7, 2, 3],
+      [[[720, 322], [730, 240], [760, 170], [790, 110], [805, 60]], 14, 3, 0],
+      [[[790, 140], [850, 110], [926, 66]], 7, 2, 1],
+      [[[735, 272], [745, 240], [757, 220]], 6, 2, 6],
+      [[[440, 470], [470, 380], [520, 300], [545, 240], [549, 190]], 14, 3, 5],
+      [[[515, 300], [560, 280], [601, 263]], 6, 2, 8],
+      [[[470, 342], [460, 290], [440, 252]], 8, 2, 7],
+      [[[262, 640], [310, 560], [350, 480], [357, 387]], 15, 3, 12],
+      [[[250, 610], [230, 530], [187, 480]], 12, 3, 13],
+      [[[330, 620], [450, 560], [600, 480], [700, 420], [800, 400], [900, 370], [1000, 350], [1100, 340], [1200, 330], [1300, 300], [1360, 270], [1416, 248]], 36, 4, 10],
+      [[[1300, 302], [1360, 310], [1427, 316]], 6, 2, 11],
+      [[[1060, 337], [1100, 300], [1137, 285]], 7, 2, 9],
+      [[[620, 470], [700, 450], [820, 430], [900, 450], [1000, 470], [1100, 460], [1200, 440], [1300, 420], [1385, 405]], 20, 3, 15],
+      [[[1250, 432], [1320, 460], [1388, 467]], 6, 2, 16],
+      [[[1040, 466], [1080, 430], [1108, 421]], 6, 2, 14],
+      [[[330, 625], [450, 600], [580, 570], [700, 590], [800, 600], [900, 595], [1000, 580], [1100, 540], [1140, 522]], 24, 3, 18],
+      [[[1020, 578], [1080, 595], [1144, 600]], 6, 2, 19],
+      [[[820, 598], [850, 560], [869, 547]], 6, 2, 17],
+      [[[290, 700], [380, 730], [480, 750], [600, 730], [700, 700], [794, 660]], 20, 3, 21],
+      [[[690, 704], [740, 720], [795, 725]], 6, 2, 22],
+      [[[500, 748], [530, 710], [548, 690]], 6, 2, 20],
+      [[[300, 712], [400, 770], [500, 810], [650, 800], [800, 790], [900, 770], [1000, 745], [1050, 750], [1090, 770]], 22, 3, 23],
+      [[[880, 788], [930, 815], [985, 830]], 6, 2, 24],
+    ];
+    // labels whose text sits to the left of their dot
+    const FLIP = new Set([0, 7, 12, 13]);
+    // the growing front travels at one steady speed through the whole tree: a limb starts the moment
+    // the front of its parent passes the point it grows from, so there is never a pause
+    const SPEED = 1700; // px per second
+    const lengthOf = (p) => {
+      let L = 0;
+      for (let k = 1; k <= 80; k++) L += len(sub(along(p, k / 80), along(p, (k - 1) / 80)));
+      return L;
+    };
+    const limbs = [];
+    TREE.forEach(([pts, w0, w1, li], i) => {
+      const p = T(pts);
+      let start = 2.1;
+      if (i > 0) {
+        let best = null;
+        limbs.forEach((q) => {
+          for (let k = 0; k <= 80; k++) {
+            const c = along(q.p, k / 80);
+            const d = len(sub(c, p[0]));
+            if (!best || d < best[0]) best = [d, c, q, k / 80];
+          }
+        });
+        p[0] = best[1];
+        start = best[2].start + (best[3] * best[2].L) / SPEED;
+      }
+      const L = lengthOf(p);
+      if (li >= 0) {
+        const tip = p[p.length - 1];
+        const l = labels[li];
+        l.x = tip[0];
+        l.y = tip[1];
+        l.el.style.left = `${tip[0]}px`;
+        l.el.style.top = `${tip[1]}px`;
+        if (FLIP.has(li)) l.el.classList.add("flip");
+      }
+      limbs.push({ p, L, w: [w0 * S * 0.9, w1 * S * 0.9], start, dur: L / SPEED });
+    });
+    const trunk = limbs[0];
+
+    const canvas = document.querySelector("#t-canvas");
+    const ctx = canvas.getContext("2d");
+    // branches are drawn as a flat silhouette with torn edges, then painted with a crumpled-paper
+    // bark texture and laid on the page with a soft drop shadow, like a paper cut-out
+    const shape = document.createElement("canvas");
+    shape.width = 1920;
+    shape.height = 1080;
+    const sctx = shape.getContext("2d");
+    const barkTex = document.querySelector("#t-barktex");
+    const drawLimb = (limb, t, idx) => {
+      const g = clamp01((t - limb.start) / limb.dur);
+      if (g <= 0) return;
+      const STEPS = 140;
+      const n = Math.max(2, Math.ceil(STEPS * g));
+      const TIP = 160; // px behind the front over which the limb swells from a point to full width
+      let prev = along(limb.p, 0);
+      sctx.lineCap = "round";
+      sctx.strokeStyle = "#000";
+      for (let i = 1; i <= n; i++) {
+        const u = (g * i) / n;
+        const pt = along(limb.p, u);
+        const rough = 1 + 0.22 * (hash(idx, i) - 0.5) + 0.1 * Math.sin(i * 0.9 + idx) + 0.06 * Math.sin(i * 2.7 + idx * 3);
+        const behind = (g - u) * limb.L; // distance from the growing front
+        const swell = g >= 1 ? 1 : 0.12 + 0.88 * smooth(0, TIP, behind);
+        const w = (limb.w[0] + (limb.w[1] - limb.w[0]) * u) * rough * swell;
+        sctx.lineWidth = w;
+        sctx.beginPath();
+        sctx.moveTo(prev[0], prev[1]);
+        sctx.lineTo(pt[0], pt[1]);
+        sctx.stroke();
+        // torn-paper edge: short fibres bristle out of both sides
+        if (w > 5) {
+          const d = norm(sub(pt, prev));
+          const nrm = perp(d);
+          sctx.lineWidth = 2;
+          for (let f = 0; f < 3; f++) {
+            const side = f % 2 ? 1 : -1;
+            const h = hash(idx * 131 + i, f);
+            const at = add(add(prev, mul(sub(pt, prev), h)), mul(nrm, side * w * 0.45));
+            const tip = add(at, add(mul(nrm, side * (0.8 + 2.2 * hash(i, idx + f))), mul(d, (h - 0.5) * 7)));
+            sctx.beginPath();
+            sctx.moveTo(at[0], at[1]);
+            sctx.lineTo(tip[0], tip[1]);
+            sctx.stroke();
+          }
+        }
+        prev = pt;
+      }
+    };
+
+    // a band near the base of the trunk is cut away to leave room for the project name
+    const BAND = [0.28, 0.66];
+    const cutBand = () => {
+      sctx.save();
+      sctx.globalCompositeOperation = "destination-out";
+      sctx.lineCap = "butt";
+      sctx.lineWidth = trunk.w[0] + 30;
+      sctx.beginPath();
+      for (let k = 0; k <= 20; k++) {
+        const q = along(trunk.p, BAND[0] + ((BAND[1] - BAND[0]) * k) / 20);
+        if (k === 0) sctx.moveTo(q[0], q[1]);
+        else sctx.lineTo(q[0], q[1]);
+      }
+      sctx.stroke();
+      sctx.restore();
+    };
+
+    // a few sprigs along the limbs, each a short stem with a couple of leaves and a small cluster of
+    // blossoms at three stages: a tight bud, a half-open flower and a full bloom. Everything is laid down
+    // in short, overlapping, semi-opaque strokes so it reads as oil paint rather than flat vector.
+    const flora = [];
+    // [limb, u, side, kind] — kept away from the label tips; each pops on its own beat
+    // leaves and blossoms on the limbs and forks only, alternating sides, never on the label twigs
+    const KINDS = ["leaf2", "bloom", "leaf", "leaf2", "bloom", "leaf"];
+    const PLACE = [];
+    TREE.forEach(([, w0], li) => {
+      if (li === 0 || w0 < 13) return;
+      const us = w0 >= 20 ? [0.35, 0.7] : [0.5];
+      us.forEach((u, k) => PLACE.push([li, u, (li + k) % 2 ? 1 : -1, KINDS[(li * 2 + k) % KINDS.length]]));
+    });
+    PLACE.filter(([, , , kind]) => kind !== "buds" && kind !== "bud").forEach(([li, u, side, kind], n) => {
+      const limb = limbs[li];
+      const p = along(limb.p, u);
+      const dir = norm(sub(along(limb.p, Math.min(1, u + 0.02)), along(limb.p, Math.max(0, u - 0.02))));
+      const out = [dir[0] * 0.35 + perp(dir)[0] * side, dir[1] * 0.35 + perp(dir)[1] * side];
+      const grown = limb.start + limb.dur * u;
+      const at = Math.max(grown + 0.15, 3.75 + hash(n, 17) * 1.1);
+      flora.push({ p, ang: Math.atan2(out[1], out[0]), at, kind, n });
+    });
+
+    // one dab of paint: a short soft ellipse
+    const dab = (x, y, rx, ry, a, col, alpha) => {
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = col;
+      ctx.beginPath();
+      ctx.ellipse(x, y, rx, ry, a, 0, 6.2832);
+      ctx.fill();
+    };
+    const mixc = (c1, c2, u) => {
+      const a = parseInt(c1.slice(1), 16), b = parseInt(c2.slice(1), 16);
+      const ch = (sh) => Math.round(((a >> sh) & 255) * (1 - u) + ((b >> sh) & 255) * u);
+      return `rgb(${ch(16)},${ch(8)},${ch(0)})`;
+    };
+    // a leaf built from strokes laid along its length, darker on one side of the midrib
+    const paintLeaf = (L, seed) => {
+      const W = L * 0.36;
+      for (let k = 0; k < 26; k++) {
+        const u = hash(seed, k);
+        const v = hash(k, seed) * 2 - 1;
+        const half = Math.sin(Math.PI * u) * W * (0.9 + 0.1 * hash(seed + 5, k));
+        const x = u * L;
+        const y = v * half * 0.8;
+        const col = mixc(v < 0 ? "#5f8a33" : "#3f6a26", v < 0 ? "#a9c76c" : "#6f9a3f", hash(seed + 9, k));
+        dab(x, y, L * 0.14, W * 0.32, 0.18 * v, col, 0.55);
+      }
+      ctx.globalAlpha = 0.6;
+      ctx.strokeStyle = "#c9dc9a";
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(L * 0.06, 0);
+      ctx.quadraticCurveTo(L * 0.5, -1, L * 0.9, 0);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    };
+    // a petal laid in strokes from a pink base to a creamy white edge
+    const paintPetal = (R, seed, open) => {
+      for (let k = 0; k < 14; k++) {
+        const u = 0.25 + 0.75 * hash(seed, k);
+        const v = (hash(k, seed) * 2 - 1) * Math.sin(Math.PI * u) * R * 0.42 * open;
+        const col = mixc("#e79aac", "#fff6ef", Math.min(1, u * 1.1));
+        dab(u * R, v, R * 0.24, R * 0.16 * (0.6 + open * 0.4), 0, col, 0.5);
+      }
+    };
+    const paintBud = (R, seed) => {
+      for (let k = 0; k < 10; k++) {
+        const u = hash(seed, k);
+        dab(u * R * 1.2, (hash(k, seed) - 0.5) * R * 0.6, R * 0.35, R * 0.28, 0, mixc("#d9788f", "#f7cfd7", u), 0.6);
+      }
+      ctx.save();
+      for (const a of [-0.55, 0.55]) {
+        ctx.save();
+        ctx.rotate(a);
+        for (let k = 0; k < 5; k++) dab(R * 0.3 + k * 1.5, 0, R * 0.32, R * 0.12, 0, k % 2 ? "#6e9a3c" : "#4f7a2c", 0.6);
+        ctx.restore();
+      }
+      ctx.restore();
+    };
+    const paintFlower = (R, seed, open) => {
+      for (let k = 0; k < 5; k++) {
+        ctx.save();
+        ctx.rotate((k * 2 * Math.PI) / 5 + hash(seed, k) * 0.2);
+        paintPetal(R, seed * 7 + k, open);
+        ctx.restore();
+      }
+      for (let k = 0; k < 8; k++) {
+        const a = k * 0.8;
+        dab(Math.cos(a) * R * 0.18, Math.sin(a) * R * 0.18, 2.2, 2.2, 0, k % 2 ? "#d39a35" : "#f0c45a", 0.9);
+      }
+    };
+    const drawItem = (f, s) => {
+      ctx.save();
+      ctx.translate(f.p[0], f.p[1]);
+      ctx.rotate(f.ang);
+      ctx.scale(s * 1.35, s * 1.35);
+      if (f.kind === "leaf") {
+        paintLeaf(40, f.n * 5 + 1);
+      } else if (f.kind === "leaf2") {
+        ctx.save();
+        ctx.rotate(-0.35);
+        paintLeaf(42, f.n * 5 + 2);
+        ctx.restore();
+        ctx.save();
+        ctx.rotate(0.4);
+        paintLeaf(32, f.n * 5 + 3);
+        ctx.restore();
+      } else if (f.kind === "bloom") {
+        ctx.translate(4, 0);
+        paintFlower(17, f.n + 11, 1);
+      } else if (f.kind === "bud") {
+        paintBud(9, f.n + 31);
+      } else {
+        // a little sprig of buds at different stages: tight, swelling, just opening
+        ctx.globalAlpha = 0.85;
+        ctx.strokeStyle = "#6a5a32";
+        ctx.lineWidth = 2.2;
+        ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.quadraticCurveTo(16, -3, 34, -10);
+        ctx.moveTo(14, -3);
+        ctx.quadraticCurveTo(22, 6, 30, 12);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+        ctx.save();
+        ctx.translate(34, -10);
+        ctx.rotate(-0.3);
+        paintFlower(8, f.n + 41, 0.4);
+        ctx.restore();
+        ctx.save();
+        ctx.translate(30, 12);
+        ctx.rotate(0.4);
+        paintBud(8, f.n + 51);
+        ctx.restore();
+        ctx.save();
+        ctx.translate(20, -4);
+        ctx.rotate(-0.9);
+        paintBud(6, f.n + 61);
+        ctx.restore();
+      }
+      ctx.restore();
+      ctx.globalAlpha = 1;
+    };
+    const drawFlora = (t) => {
+      ctx.save();
+      ctx.shadowColor = "rgba(60, 50, 20, 0.2)";
+      ctx.shadowBlur = 3;
+      ctx.shadowOffsetY = 1.5;
+      flora.forEach((f) => {
+        const s = backOut(clamp01((t - f.at) / 0.35));
+        if (s > 0) drawItem(f, s);
+      });
+      ctx.restore();
+    };
+
+    const drawTree = (t) => {
+      sctx.clearRect(0, 0, 1920, 1080);
+      limbs.forEach((l, i) => drawLimb(l, t, i));
+      cutBand();
+      // paint the silhouette with bark
+      if (barkTex.complete && barkTex.naturalWidth) {
+        sctx.save();
+        sctx.globalCompositeOperation = "source-in";
+        sctx.drawImage(barkTex, 0, 0, 1920, 1080);
+        sctx.restore();
+      }
+      ctx.clearRect(0, 0, 1920, 1080);
+      ctx.save();
+      ctx.shadowColor = "rgba(70, 40, 25, 0.38)";
+      ctx.shadowBlur = 7;
+      ctx.shadowOffsetX = 2;
+      ctx.shadowOffsetY = 4;
+      ctx.drawImage(shape, 0, 0);
+      ctx.restore();
+
+      // the project name sits in the cut-away band, running along the trunk
+      const tg = clamp01((t - trunk.start - 0.15) / 0.2);
+      if (tg > 0) {
+        const a0 = along(trunk.p, BAND[0] + 0.03);
+        const a1 = along(trunk.p, BAND[1] - 0.03);
+        const d = sub(a1, a0);
+        ctx.save();
+        ctx.globalAlpha = tg;
+        ctx.translate(a0[0], a0[1]);
+        ctx.rotate(Math.atan2(d[1], d[0]));
+        ctx.font = "74px 'League Gothic'";
+        ctx.textBaseline = "middle";
+        const label = "LAUNCH VIDEO";
+        const tw = ctx.measureText(label).width;
+        ctx.scale(len(d) / tw, 1); // fill the band
+        ctx.fillStyle = "#3b2419";
+        ctx.fillText(label, 0, 2);
+        ctx.restore();
+      }
+      drawFlora(t);
+    };
+
+    // yellow leaves drift down across the frame once the tree is in leaf
+    const fall = document.querySelector("#t-fall").getContext("2d");
+    const drifters = Array.from({ length: 22 }, (_, i) => ({
+      x: hash(i, 1) * 2100 - 90,
+      y: hash(i, 2) * 900 - 200,
+      v: 90 + hash(i, 3) * 120,
+      ph: hash(i, 4) * 6.28,
+      size: 7 + hash(i, 5) * 9,
+      at: 3.7 + hash(i, 6) * 0.9,
+    }));
+    const drawFall = (t) => {
+      fall.clearRect(0, 0, 1920, 1080);
+      drifters.forEach((d) => {
+        const u = t - d.at;
+        if (u <= 0) return;
+        const x = d.x + 40 * Math.sin(1.8 * u + d.ph) + 30 * u;
+        const y = d.y + d.v * u;
+        fall.save();
+        fall.globalAlpha = smooth(0, 0.3, u) * 0.85;
+        fall.translate(x, y);
+        fall.rotate(Math.sin(2.2 * u + d.ph) * 0.9);
+        fall.fillStyle = "#e8d23c";
+        fall.beginPath();
+        fall.ellipse(0, 0, d.size, d.size * 0.45, 0, 0, 6.2832);
+        fall.fill();
+        fall.restore();
+      });
+    };
+
+    const clock = { t: 0 };
+    const render = (t) => {
+      drawDecoys(t);
+      drawTree(t);
+      drawFall(t);
+    };
+    tl.fromTo(clock, { t: 0 }, { t: 5.34, duration: 5.34, ease: "none", onUpdate: () => render(clock.t) }, 0);
+
+    // a white haze lifts as the shot opens
+    tl.fromTo("#t-haze", { opacity: 1 }, { opacity: 0, duration: 0.3, ease: "power1.out" }, 0);
+
+    // the arranged labels drift in from the right with the camera's swing and surface in two waves:
+    // about half of them first, the rest a moment later
+    tl.set("#t-tree", { opacity: 1 }, 1.3);
+    tl.fromTo("#t-tree", { x: 260, y: 0, scale: 1 }, { x: 0, duration: 0.75, ease: "power2.out" }, 1.3);
+    gsap.utils.toArray(".t-lab").forEach((el, i) => {
+      const t = (hash(i, 9) < 0.5 ? 1.3 : 1.62) + hash(i, 4) * 0.18;
+      tl.fromTo(el, { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.3, ease: "power1.out" }, t);
+    });
+    tl.to("#t-tree", { x: -20, y: 10, scale: 1.02, duration: 3.2, ease: "none" }, 2.1);
+
+    // shot 17: a focus pull — everything blurs as the dots flare, and the ground turns warm
+    tl.fromTo("#t-tree", { filter: "blur(0px)" }, { filter: "blur(8px)", duration: 0.12, ease: "power1.in" }, 3.55);
+    tl.to("#t-tree", { filter: "blur(0px)", duration: 0.25, ease: "power1.out" }, 3.72);
+    tl.fromTo(".t-lab", { "--glow": 0 }, { "--glow": 1, duration: 0.12 }, 3.55);
+    tl.to(".t-lab", { "--glow": 0, duration: 0.3 }, 3.75);
+    tl.to("#t-warm", { opacity: 0.5, duration: 0.5, ease: "power1.inOut" }, 3.6);
+    tl.to("#t-warm-grain", { opacity: 0.6, duration: 0.5, ease: "power1.inOut" }, 3.6);
+
+    window.__timelines["tree"] = tl;
+  </script>
+</template>

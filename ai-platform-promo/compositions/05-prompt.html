@@ -1,0 +1,284 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      font-family: "Inter", sans-serif;
+    }
+    #p-all {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+    }
+    #p-cam {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+      transform-origin: 0 0;
+    }
+    #p-photo {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+      object-fit: cover;
+    }
+    #p-fx {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+      opacity: 0;
+      --r: -300px;
+      -webkit-mask-image: radial-gradient(circle at 50% 45%, transparent var(--r), #000 calc(var(--r) + 320px));
+      mask-image: radial-gradient(circle at 50% 45%, transparent var(--r), #000 calc(var(--r) + 320px));
+    }
+    #p-glow {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 30% 45% at 50% 48%, rgba(70, 215, 255, 0.75) 0%, rgba(70, 215, 255, 0) 100%),
+        radial-gradient(ellipse 35% 80% at 100% 50%, rgba(40, 210, 255, 0.8) 0%, rgba(40, 210, 255, 0) 100%),
+        radial-gradient(ellipse 30% 60% at 0% 90%, rgba(40, 200, 255, 0.6) 0%, rgba(40, 200, 255, 0) 100%);
+      mix-blend-mode: screen;
+    }
+    #p-photo-fx {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+      object-fit: cover;
+    }
+    #p-haze {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(235, 244, 250, 0.55) 0%, rgba(235, 244, 250, 0.2) 45%, rgba(235, 244, 250, 0) 70%);
+    }
+    #p-dialog {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+      perspective: 1400px;
+    }
+    #p-title {
+      position: absolute;
+      left: 0;
+      top: 352px;
+      width: 1920px;
+      text-align: center;
+      font-size: 58px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      color: #1c2430;
+    }
+    .p-ch {
+      display: inline-block;
+      white-space: pre;
+    }
+    #p-bar {
+      position: absolute;
+      left: 327px;
+      top: 485px;
+      width: 1257px;
+      height: 103px;
+      border-radius: 52px;
+      background: rgba(250, 252, 254, 0.78);
+      box-shadow:
+        0 18px 50px rgba(40, 70, 100, 0.16),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9);
+      opacity: 0;
+    }
+    #p-plus {
+      position: absolute;
+      left: 46px;
+      top: 37px;
+      width: 28px;
+      height: 28px;
+    }
+    #p-plus::before,
+    #p-plus::after {
+      content: "";
+      position: absolute;
+      background: #3c4450;
+      border-radius: 1px;
+    }
+    #p-plus::before {
+      left: 13px;
+      top: 0;
+      width: 2px;
+      height: 28px;
+    }
+    #p-plus::after {
+      left: 0;
+      top: 13px;
+      width: 28px;
+      height: 2px;
+    }
+    #p-input {
+      position: absolute;
+      left: 99px;
+      top: 33px;
+      font-size: 27px;
+      line-height: 36px;
+      color: #333b46;
+      white-space: nowrap;
+      clip-path: inset(0 100% 0 0);
+    }
+    #p-chip {
+      position: absolute;
+      left: 905px;
+      top: 35px;
+      font-size: 24px;
+      line-height: 34px;
+      color: #8a9099;
+      white-space: nowrap;
+    }
+    #p-chip svg {
+      width: 18px;
+      height: 12px;
+      margin-left: 8px;
+      fill: none;
+      stroke: #8a9099;
+      stroke-width: 2;
+    }
+    #p-mic {
+      position: absolute;
+      left: 1108px;
+      top: 33px;
+      width: 28px;
+      height: 38px;
+      fill: none;
+      stroke: #6a717b;
+      stroke-width: 2.2;
+      stroke-linecap: round;
+    }
+    #p-send {
+      position: absolute;
+      left: 1168px;
+      top: 17px;
+      width: 69px;
+      height: 69px;
+      border-radius: 50%;
+      overflow: hidden;
+      box-shadow: 0 6px 18px rgba(10, 70, 255, 0.35);
+    }
+    /* glossy sphere: a coloured light that can turn, rim shading on top, the arrow above both */
+    #p-send .btn-face {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 85%, #36e4ff 0%, #18b4ff 30%, #0a70ff 58%, #0a4cf2 82%, #0838d8 100%);
+    }
+    #p-send .btn-rim {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: radial-gradient(ellipse 60% 38% at 50% 14%, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 100%);
+      box-shadow:
+        inset 0 8px 12px rgba(2, 20, 130, 0.28),
+        inset 0 -8px 14px rgba(140, 235, 255, 0.35),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+    }
+    #p-arrow {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 69px;
+      height: 69px;
+      fill: none;
+      stroke: #ffffff;
+      stroke-width: 3.4;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+  </style>
+  <div data-hf-id="hf-efwt" id="root" data-composition-id="prompt" data-width="1920" data-height="1080">
+    <div data-hf-id="hf-ctdd" id="p-all">
+      <div data-hf-id="hf-u9r9" id="p-cam">
+        <img data-color-grading="{&quot;preset&quot;:null,&quot;intensity&quot;:1,&quot;adjust&quot;:{&quot;exposure&quot;:0,&quot;contrast&quot;:0,&quot;highlights&quot;:0,&quot;shadows&quot;:0,&quot;whites&quot;:0,&quot;blacks&quot;:0,&quot;temperature&quot;:0,&quot;tint&quot;:0,&quot;vibrance&quot;:0,&quot;saturation&quot;:0},&quot;details&quot;:{&quot;vignette&quot;:0,&quot;vignetteMidpoint&quot;:0.5,&quot;vignetteRoundness&quot;:0,&quot;vignetteFeather&quot;:0.65,&quot;grain&quot;:0,&quot;grainSize&quot;:0.25,&quot;grainRoughness&quot;:0.5},&quot;effects&quot;:{&quot;blur&quot;:0.45,&quot;pixelate&quot;:0,&quot;chromaBleed&quot;:0,&quot;tapeDamage&quot;:0,&quot;tapeTracking&quot;:0,&quot;tapeNoise&quot;:1,&quot;tapeSpeed&quot;:0.5,&quot;filmArtifacts&quot;:0,&quot;halftone&quot;:0,&quot;halftoneSize&quot;:0,&quot;twoInkPrint&quot;:0,&quot;twoInkPrintSize&quot;:0,&quot;ascii&quot;:0,&quot;asciiSize&quot;:0.06578947368421052,&quot;asciiInvert&quot;:0,&quot;asciiStyle&quot;:0,&quot;asciiColor&quot;:1,&quot;asciiRotation&quot;:0,&quot;dither&quot;:0,&quot;ditherSize&quot;:0,&quot;bloom&quot;:0,&quot;bloomRadius&quot;:8,&quot;monoScreen&quot;:0,&quot;monoScreenSize&quot;:0,&quot;monoScreenAngle&quot;:0,&quot;monoScreenSpread&quot;:0,&quot;monoScreenShape&quot;:0,&quot;monoScreenInvert&quot;:0,&quot;scanlines&quot;:0,&quot;scanlineCount&quot;:0,&quot;scanlineSoftness&quot;:0,&quot;chromaticAberration&quot;:0,&quot;chromaticAngle&quot;:0,&quot;crtCurvature&quot;:0,&quot;digitalGlitch&quot;:0,&quot;digitalGlitchColorSplit&quot;:0,&quot;digitalGlitchLineTear&quot;:0,&quot;digitalGlitchPixelate&quot;:0,&quot;digitalGlitchBlockAmount&quot;:0,&quot;digitalGlitchBlockDisplacement&quot;:0,&quot;digitalGlitchBlockOpacity&quot;:0,&quot;digitalGlitchSpeed&quot;:0,&quot;engraving&quot;:0,&quot;engravingSpacing&quot;:0.4117647058823529,&quot;engravingMinThickness&quot;:0.2,&quot;engravingMaxThickness&quot;:0.4571428571428572,&quot;engravingAngle&quot;:0.25,&quot;engravingContrast&quot;:0.4666666666666667,&quot;engravingSharpness&quot;:0.59,&quot;engravingWave&quot;:0.2,&quot;engravingWaveFrequency&quot;:0.2222222222222222,&quot;crosshatch&quot;:0,&quot;crosshatchSpacing&quot;:0.28,&quot;crosshatchThickness&quot;:0.25,&quot;crosshatchAngle&quot;:0.25,&quot;crosshatchContrast&quot;:0.3333333333333333,&quot;crosshatchEdges&quot;:0.5,&quot;crosshatchLineWeight&quot;:0,&quot;crosshatchWave&quot;:0.33,&quot;crosshatchWaveFrequency&quot;:0.2222222222222222,&quot;kuwahara&quot;:0,&quot;kuwaharaRadius&quot;:0.14285714285714285,&quot;kuwaharaSharpness&quot;:0.3125,&quot;kuwaharaSaturation&quot;:0.5},&quot;lut&quot;:null,&quot;colorSpace&quot;:&quot;rec709&quot;}" data-hf-id="hf-em3s" id="p-photo" style="--hf-color-grading-blur: 1" src="assets/images/coast.png" alt="">
+        <div data-hf-id="hf-zfre" id="p-fx"><img data-hf-id="hf-gwv6" id="p-photo-fx" src="assets/images/coast-halftone.png" alt="" /><div data-hf-id="hf-aroz" id="p-glow"></div></div>
+        <div data-hf-id="hf-gzzy" id="p-haze"></div>
+        <div data-hf-id="hf-8b3k" id="p-dialog">
+          <div data-hf-id="hf-ecms" id="p-title">What will we animate?</div>
+          <div data-hf-id="hf-cjtr" id="p-bar">
+            <div data-hf-id="hf-jj7k" id="p-plus"></div>
+            <div data-hf-id="hf-xl1f" id="p-input">Make a launch video that stops the scroll.</div>
+            <div data-hf-id="hf-80j9" id="p-chip">16:9 · 30s<svg data-hf-id="hf-qcqh" viewBox="0 0 18 12"><path data-hf-id="hf-zlu6" d="M2 3 L9 10 L16 3" /></svg></div>
+            <svg data-hf-id="hf-po6a" id="p-mic" viewBox="0 0 28 38"><rect data-hf-id="hf-wm22" x="8" y="2" width="12" height="22" rx="6" /><path data-hf-id="hf-535k" d="M3 18 C3 26 8 30 14 30 C20 30 25 26 25 18 M14 30 V37" /></svg>
+            <div data-hf-id="hf-3q8a" id="p-send"><div class="btn-face"></div><div class="btn-rim"></div><svg data-hf-id="hf-xybp" id="p-arrow" viewBox="0 0 69 69"><path data-hf-id="hf-ec3v" d="M34.5 50 V20 M22 32 L34.5 19.5 L47 32" /></svg></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+
+    // shot 9: the coast resolves out of a blur; the question lands, then the bar
+    tl.to("#p-all", { opacity: 1, duration: 0.08 }, 0);
+    tl.to("#p-photo", { "--hf-color-grading-blur": 0, duration: 0.38, ease: "power2.inOut" }, 0.08);
+    // a cyan print-dot screen with a fine mosaic covers the coast, then clears from the centre outward
+    tl.to("#p-fx", { opacity: 1, duration: 0.05 }, 0.11);
+    tl.to("#p-fx", { "--r": "1400px", duration: 0.7, ease: "power1.out" }, 0.12);
+    // the question arrives bent on an upward arc, like text on the inside of a lens, and flattens out:
+    // each letter starts lifted, turned and enlarged by its distance from the centre
+    const title = document.querySelector("#p-title");
+    const chars = [...title.textContent].map((ch) => {
+      const span = document.createElement("span");
+      span.className = "p-ch";
+      span.textContent = ch;
+      return span;
+    });
+    title.replaceChildren(...chars);
+    const box = title.getBoundingClientRect();
+    const cx = box.left + box.width / 2;
+    const half = chars.reduce((m, el) => {
+      const r = el.getBoundingClientRect();
+      return Math.max(m, Math.abs(r.left + r.width / 2 - cx));
+    }, 1);
+    const ARC = 120; // lift of the outermost letters, px
+    chars.forEach((el) => {
+      const r = el.getBoundingClientRect();
+      const u = (r.left + r.width / 2 - cx) / half; // -1 … 1
+      const slope = (-2 * ARC * u) / half;
+      tl.fromTo(
+        el,
+        { y: -ARC * u * u, rotation: (Math.atan(slope) * 180) / Math.PI, scale: 1 + 0.45 * u * u },
+        { y: 0, rotation: 0, scale: 1, duration: 0.55, ease: "expo.out" },
+        0.06,
+      );
+    });
+    tl.fromTo(
+      "#p-title",
+      { scale: 1.5, y: -130, filter: "blur(7px)" },
+      { scale: 1, y: 0, filter: "blur(0px)", duration: 0.55, ease: "expo.out" },
+      0.06,
+    );
+    tl.fromTo("#p-bar", { opacity: 0, scale: 1.12, y: 30 }, { opacity: 1, scale: 1, y: 0, duration: 0.4, ease: "expo.out" }, 0.14);
+
+    // the request types in while the camera eases forward
+    tl.to("#p-input", { clipPath: "inset(0 0% 0 0)", duration: 0.85, ease: "steps(42)" }, 0.32);
+    tl.fromTo("#p-cam", { x: 0, y: 0, scale: 1 }, { x: -38, y: -22, scale: 1.04, duration: 0.95, ease: "none" }, 0.3);
+
+    // push in to the send button, hold on it, and the arrow turns as it fires
+    tl.to("#p-cam", { x: -4155, y: -1294, scale: 3.43, duration: 0.3, ease: "power3.inOut" }, 1.18);
+    // the whole frame defocuses at the fastest part of the push and lands sharp
+    tl.to("#p-photo", { "--hf-color-grading-blur": 0.55, duration: 0.15, ease: "power1.in" }, 1.18);
+    tl.to("#p-photo", { "--hf-color-grading-blur": 0, duration: 0.18, ease: "power1.out" }, 1.33);
+    tl.fromTo("#p-dialog", { filter: "blur(0px)" }, { filter: "blur(7px)", duration: 0.15, ease: "power1.in" }, 1.18);
+    tl.to("#p-dialog", { filter: "blur(0px)", duration: 0.18, ease: "power1.out" }, 1.33);
+    tl.to("#p-cam", { x: -4436, y: -1365, scale: 3.55, duration: 0.72, ease: "power1.inOut" }, 1.48);
+
+    tl.set("#p-send", { opacity: 0 }, 1.96);
+
+    window.__timelines["prompt"] = tl;
+  </script>
+</template>

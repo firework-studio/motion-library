@@ -9,6 +9,7 @@ Each entry is a self-contained [HyperFrames](https://github.com/heygen-com/hyper
 | Entry | Date | Description |
 | --- | --- | --- |
 | [creative-canvas-promo](creative-canvas-promo) | 2026-10-26 | Launch teaser with a rolling counter, kinetic type, a typed prompt and whip transitions |
+| [ai-platform-promo](ai-platform-promo) | 2026-10-26 | Brand film from overload to order: branching lines, a fly-through ring, a card vortex, self-repairing code and a growing paper tree |
 
 ## Run an entry
 

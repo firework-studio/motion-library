@@ -1,0 +1,146 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Inter Tight";
+      font-weight: 700;
+      src: url("assets/fonts/InterTight-Bold.woff2") format("woff2");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+    }
+    #w-bg {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 75% 80% at 50% 50%, #f8fafc 0%, #eef4fa 55%, #d9e8f6 100%);
+    }
+    #w-grid {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      background-image:
+        repeating-linear-gradient(0deg, rgba(150, 175, 200, 0.16) 0 1px, transparent 1px 108px),
+        repeating-linear-gradient(90deg, rgba(150, 175, 200, 0.16) 0 1px, transparent 1px 120px);
+      background-position: 0 54px, 60px 0;
+    }
+    #w-stage {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #w-word {
+      position: relative;
+      font-family: "Inter Tight", sans-serif;
+      font-weight: 700;
+      font-size: 92px;
+      line-height: 92px;
+      letter-spacing: -0.025em;
+      color: #0b0b0d;
+      white-space: nowrap;
+    }
+    #w-word .w-ch {
+      opacity: 0;
+    }
+    .w-guide {
+      position: absolute;
+      border-color: rgba(110, 130, 150, 0.38);
+      border-style: solid;
+      border-width: 0;
+      opacity: 0;
+    }
+    #w-box {
+      left: -26px;
+      right: -26px;
+      top: -20px;
+      bottom: -20px;
+      border-width: 1px;
+    }
+    #w-top {
+      left: -150px;
+      right: -150px;
+      top: 6px;
+      border-top-width: 1px;
+    }
+    #w-base {
+      left: -150px;
+      right: -150px;
+      bottom: 6px;
+      border-top-width: 1px;
+    }
+    #w-vl {
+      left: -26px;
+      top: -90px;
+      bottom: -90px;
+      border-left-width: 1px;
+    }
+    #w-vr {
+      right: -26px;
+      top: -90px;
+      bottom: -90px;
+      border-left-width: 1px;
+    }
+    .w-circle {
+      width: 80px;
+      height: 80px;
+      top: 6px;
+      border-width: 1px;
+      border-radius: 50%;
+    }
+    #w-c1 {
+      left: -56px;
+    }
+    #w-c2 {
+      right: -56px;
+    }
+  </style>
+  <div data-hf-id="hf-avea" id="root" data-composition-id="wordmark" data-width="1920" data-height="1080">
+    <div data-hf-id="hf-g0o0" id="w-bg"></div>
+    <div data-hf-id="hf-z5ip" id="w-grid"></div>
+    <div data-hf-id="hf-a10p" id="w-stage">
+      <div data-hf-id="hf-v0cd" id="w-word" data-layout-allow-overlap>
+        <div data-hf-id="hf-rn35" id="w-box" class="w-guide"></div>
+        <div data-hf-id="hf-a42b" id="w-top" class="w-guide"></div>
+        <div data-hf-id="hf-irw1" id="w-base" class="w-guide"></div>
+        <div data-hf-id="hf-kdvw" id="w-vl" class="w-guide"></div>
+        <div data-hf-id="hf-xkgq" id="w-vr" class="w-guide"></div>
+        <div data-hf-id="hf-wihu" id="w-c1" class="w-guide w-circle"></div>
+        <div data-hf-id="hf-skdt" id="w-c2" class="w-guide w-circle"></div>
+        <span data-hf-id="hf-a40m" class="w-ch">F</span><span data-hf-id="hf-t0uf" class="w-ch">i</span><span data-hf-id="hf-25w2" class="w-ch">r</span><span data-hf-id="hf-xsir" class="w-ch">e</span><span data-hf-id="hf-3ct5" class="w-ch">w</span><span data-hf-id="hf-ttgh" class="w-ch">o</span><span data-hf-id="hf-mo46" class="w-ch">r</span><span data-hf-id="hf-s88d" class="w-ch">k</span><span data-hf-id="hf-jmj8" class="w-ch">&nbsp;</span><span data-hf-id="hf-ehdx" class="w-ch">S</span><span data-hf-id="hf-4jq8" class="w-ch">t</span><span data-hf-id="hf-45f7" class="w-ch">u</span><span data-hf-id="hf-y6ts" class="w-ch">d</span><span data-hf-id="hf-nsfb" class="w-ch">i</span><span data-hf-id="hf-zf5h" class="w-ch">o</span>
+      </div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+
+    // shot 8: the light ground settles, construction lines draw, the name types letter by letter
+    tl.fromTo("#w-bg", { opacity: 0 }, { opacity: 1, duration: 0.12 }, 0);
+    tl.fromTo("#w-grid", { opacity: 0 }, { opacity: 1, duration: 0.3 }, 0.08);
+
+    const guides = gsap.utils.toArray(".w-guide");
+    tl.fromTo("#w-box", { opacity: 0, clipPath: "inset(0 100% 0 0)" }, { opacity: 1, clipPath: "inset(0 0% 0 0)", duration: 0.6, ease: "steps(15)" }, 0.12);
+    tl.fromTo(["#w-top", "#w-base"], { opacity: 0, scaleX: 0.2 }, { opacity: 1, scaleX: 1, duration: 0.5, ease: "power2.out" }, 0.14);
+    tl.fromTo(["#w-vl", "#w-vr"], { opacity: 0, scaleY: 0.3 }, { opacity: 1, scaleY: 1, duration: 0.4, ease: "power2.out" }, 0.2);
+    tl.fromTo(["#w-c1", "#w-c2"], { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.3, ease: "power2.out" }, 0.55);
+
+    tl.set(".w-ch", { color: "#9aa3ad" }, 0);
+    tl.to(".w-ch", { opacity: 1, duration: 0.01, stagger: 0.04 }, 0.12);
+    tl.to(".w-ch", { color: "#0b0b0d", duration: 0.12, stagger: 0.04 }, 0.16);
+
+    // the guides clear and the name holds alone
+    tl.to(guides, { opacity: 0, duration: 0.25, stagger: 0.02 }, 1.3);
+    tl.to("#w-grid", { opacity: 0, duration: 0.35 }, 1.35);
+
+    // exit: the letters drift apart and blur away as the next shot arrives
+    gsap.utils.toArray(".w-ch").forEach((el, i) => {
+      tl.to(el, { x: (i - 7) * 9, opacity: 0, filter: "blur(5px)", duration: 0.22, ease: "power2.in" }, 1.5);
+    });
+
+    window.__timelines["wordmark"] = tl;
+  </script>
+</template>

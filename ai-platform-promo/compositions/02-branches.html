@@ -1,0 +1,365 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      font-family: "Inter", sans-serif;
+      color: #ffffff;
+    }
+    #b-cam {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+      transform-origin: 0 0;
+    }
+    #b-svg {
+      position: absolute;
+      left: 0;
+      top: 0;
+      overflow: visible;
+    }
+    .b-curve {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.85);
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-dasharray: 1 1;
+      stroke-dashoffset: 1;
+    }
+    #b-wave {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.85);
+      stroke-width: 1.7;
+    }
+    .b-halo {
+      position: absolute;
+      left: -170px;
+      top: -170px;
+      width: 340px;
+      height: 340px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(30, 80, 255, 0.26) 0%, rgba(20, 50, 200, 0.08) 35%, rgba(0, 0, 0, 0) 70%);
+    }
+    .b-core {
+      position: absolute;
+      left: -7px;
+      top: -7px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #4d7dff;
+      box-shadow:
+        0 0 8px 3px #1e5bff,
+        0 0 26px 8px rgba(30, 91, 255, 0.7);
+    }
+    .b-glow {
+      position: absolute;
+      left: 0;
+      top: 0;
+      opacity: 0;
+    }
+    .b-node {
+      position: absolute;
+      left: 0;
+      top: 0;
+    }
+    .b-pin {
+      position: absolute;
+      left: -5px;
+      top: -5px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #ffffff;
+      opacity: 0;
+    }
+    .b-tag {
+      position: absolute;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      white-space: nowrap;
+    }
+    .b-icon {
+      height: 52px;
+      flex: none;
+      opacity: 0;
+    }
+    .b-icon svg {
+      width: 100%;
+      height: 100%;
+      fill: none;
+      stroke: #ffffff;
+      stroke-width: 1.6;
+    }
+    .b-copy {
+      clip-path: inset(0 100% 0 0);
+    }
+    .b-title {
+      font-size: 28px;
+      line-height: 32px;
+      letter-spacing: -0.01em;
+    }
+    .b-sub {
+      font-size: 15px;
+      line-height: 19px;
+      color: #6b6b6b;
+    }
+    #b-ring {
+      position: absolute;
+      left: 960px;
+      top: 540px;
+      width: 0;
+      height: 0;
+    }
+    .b-rd {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 0;
+      height: 0;
+    }
+    .b-rd i {
+      position: absolute;
+      left: -55px;
+      top: -438px;
+      width: 110px;
+      height: 36px;
+      border-radius: 18px;
+      clip-path: inset(0 37px round 18px);
+      background: #ffffff;
+      opacity: 0;
+    }
+  </style>
+  <div data-hf-id="hf-597v" id="root" data-composition-id="branches" data-width="1920" data-height="1080">
+    <div data-hf-id="hf-dzjz" id="b-cam">
+      <svg data-hf-id="hf-pepv" id="b-svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+        <path data-hf-id="hf-93n5" id="b-wave" d="" />
+        <!-- one branch per node, in node order; each is a smooth spline through its waypoints -->
+        <path data-hf-id="hf-4kty" class="b-curve" pathLength="1" data-points="220,540 340,470 470,280 595,190" d="" />
+        <path data-hf-id="hf-5pi2" class="b-curve" pathLength="1" data-points="220,540 478,497 703,480 868,390 994,351" d="" />
+        <path data-hf-id="hf-ttgq" class="b-curve" pathLength="1" data-points="220,540 403,450 628,427 868,510 1063,615 1273,570 1453,405 1603,325" d="" />
+        <path data-hf-id="hf-z335" class="b-curve" pathLength="1" data-points="220,540 358,600 448,675 532,717" d="" />
+        <path data-hf-id="hf-6y0t" class="b-curve" pathLength="1" data-points="220,540 403,600 658,660 868,630 973,660 1033,750 1048,810" d="" />
+        <path data-hf-id="hf-nexv" class="b-curve" pathLength="1" data-points="220,540 478,585 778,675 1108,735 1348,675 1528,682 1648,795 1693,875" d="" />
+      </svg>
+
+      <div data-hf-id="hf-dhlt" id="b-src" class="b-glow"><div data-hf-id="hf-l5uh" class="b-halo"></div><div data-hf-id="hf-xcbq" class="b-core"></div></div>
+      <div data-hf-id="hf-9kse" id="b-dot" class="b-glow"><div data-hf-id="hf-y5yl" class="b-halo"></div><div data-hf-id="hf-w8iy" class="b-core"></div></div>
+
+      <div data-hf-id="hf-536e" id="b-n0" class="b-node" style="left: 595px; top: 190px">
+        <div data-hf-id="hf-poe0" class="b-pin"></div>
+        <div data-hf-id="hf-pedn" class="b-tag" style="left: -44px; top: -74px">
+          <div data-hf-id="hf-bcu3" class="b-icon" style="width: 78px"><svg data-hf-id="hf-49yj" viewBox="0 0 60 40"><path data-hf-id="hf-ifu3" d="M2 2 H58 V30 H22 L12 38 V30 H2 Z M12 11 H48 M12 20 H38" /></svg></div>
+          <div data-hf-id="hf-vkx4" class="b-copy"><div data-hf-id="hf-ffbm" class="b-title">9 new comments</div><div data-hf-id="hf-fmn2" class="b-sub">from client</div></div>
+        </div>
+      </div>
+      <div data-hf-id="hf-rlr1" id="b-n1" class="b-node" style="left: 994px; top: 351px">
+        <div data-hf-id="hf-8nf4" class="b-pin"></div>
+        <div data-hf-id="hf-t92p" class="b-tag" style="left: -28px; top: -74px">
+          <div data-hf-id="hf-fexp" class="b-icon" style="width: 54px"><svg data-hf-id="hf-q4oj" viewBox="0 0 52 52"><rect data-hf-id="hf-merb" x="2" y="2" width="22" height="18" /><rect data-hf-id="hf-99yu" x="28" y="2" width="22" height="26" /><rect data-hf-id="hf-scg2" x="2" y="24" width="22" height="26" /><rect data-hf-id="hf-hude" x="28" y="32" width="22" height="18" /></svg></div>
+          <div data-hf-id="hf-ygtc" class="b-copy"><div data-hf-id="hf-sxny" class="b-title">moodboard_v3</div><div data-hf-id="hf-1r03" class="b-sub">48 references</div></div>
+        </div>
+      </div>
+      <div data-hf-id="hf-vz1d" id="b-n2" class="b-node" style="left: 1603px; top: 325px">
+        <div data-hf-id="hf-7gi1" class="b-pin"></div>
+        <div data-hf-id="hf-ejq6" class="b-tag" style="left: -30px; top: -74px">
+          <div data-hf-id="hf-ccyp" class="b-icon" style="width: 58px"><svg data-hf-id="hf-ek3j" viewBox="0 0 56 52"><rect data-hf-id="hf-hj33" x="2" y="7" width="52" height="43" /><path data-hf-id="hf-8qsy" d="M2 18 H54 M15 1 V12 M41 1 V12 M11 28 H19 M24 28 H32 M37 28 H45 M11 39 H19 M24 39 H32" /></svg></div>
+          <div data-hf-id="hf-x9w9" class="b-copy"><div data-hf-id="hf-czjc" class="b-title">review at 5pm</div><div data-hf-id="hf-i2x7" class="b-sub">in 1h 32mins</div></div>
+        </div>
+      </div>
+      <div data-hf-id="hf-y8zl" id="b-n3" class="b-node" style="left: 532px; top: 717px">
+        <div data-hf-id="hf-7ut2" class="b-pin"></div>
+        <div data-hf-id="hf-syum" class="b-tag" style="left: -32px; top: 20px">
+          <div data-hf-id="hf-ii1l" class="b-icon" style="width: 50px"><svg data-hf-id="hf-7tpc" viewBox="0 0 44 52"><path data-hf-id="hf-u1si" d="M2 2 H30 L42 14 V50 H2 Z M30 2 V14 H42 M10 24 H34 M10 32 H34 M10 40 H24" /></svg></div>
+          <div data-hf-id="hf-xo7a" class="b-copy"><div data-hf-id="hf-y22a" class="b-title">prompt_v17.txt</div><div data-hf-id="hf-2hdc" class="b-sub">last edited 2m ago</div></div>
+        </div>
+      </div>
+      <div data-hf-id="hf-qktt" id="b-n4" class="b-node" style="left: 1048px; top: 810px">
+        <div data-hf-id="hf-6nvz" class="b-pin"></div>
+        <div data-hf-id="hf-ct48" class="b-tag" style="left: -34px; top: 20px">
+          <div data-hf-id="hf-xofy" class="b-icon" style="width: 66px"><svg data-hf-id="hf-5x92" viewBox="0 0 64 52"><rect data-hf-id="hf-69ag" x="2" y="2" width="60" height="48" /><path data-hf-id="hf-wpiw" d="M2 12 H62 M2 40 H62 M12 2 V12 M24 2 V12 M36 2 V12 M48 2 V12 M12 40 V50 M24 40 V50 M36 40 V50 M48 40 V50 M27 19 L39 26 L27 33 Z" /></svg></div>
+          <div data-hf-id="hf-wha7" class="b-copy"><div data-hf-id="hf-9v5s" class="b-title">launch_cut_v12.mp4</div><div data-hf-id="hf-04f0" class="b-sub">render failed</div></div>
+        </div>
+      </div>
+      <div data-hf-id="hf-i0mf" id="b-n5" class="b-node" style="left: 1693px; top: 875px">
+        <div data-hf-id="hf-7270" class="b-pin"></div>
+        <div data-hf-id="hf-5or1" class="b-tag" style="left: -150px; top: 22px">
+          <div data-hf-id="hf-tcdn" class="b-icon" style="width: 52px"><svg data-hf-id="hf-2v0z" viewBox="0 0 52 52"><circle data-hf-id="hf-qwfb" cx="26" cy="26" r="23" /><circle data-hf-id="hf-omzg" cx="26" cy="26" r="7" fill="#fff" /></svg></div>
+          <div data-hf-id="hf-wvl8" class="b-copy"><div data-hf-id="hf-66vz" class="b-title">launch tomorrow</div><div data-hf-id="hf-ym9f" class="b-sub">6 shots left</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div data-hf-id="hf-qep0" id="b-ring">
+      <div data-hf-id="hf-96ml" class="b-rd"><i data-hf-id="hf-wt6k"></i></div>
+      <div data-hf-id="hf-ta81" class="b-rd"><i data-hf-id="hf-zeb8"></i></div>
+      <div data-hf-id="hf-uh54" class="b-rd"><i data-hf-id="hf-y7e5"></i></div>
+      <div data-hf-id="hf-u2u3" class="b-rd"><i data-hf-id="hf-ylp6"></i></div>
+      <div data-hf-id="hf-s3ay" class="b-rd"><i data-hf-id="hf-0l8b"></i></div>
+      <div data-hf-id="hf-rozx" class="b-rd"><i data-hf-id="hf-0zjc"></i></div>
+      <div data-hf-id="hf-svx0" class="b-rd"><i data-hf-id="hf-zsm9"></i></div>
+      <div data-hf-id="hf-shlz" class="b-rd"><i data-hf-id="hf-06xa"></i></div>
+    </div>
+  </div>
+  <script>
+    // world: the signal origin sits at (220, 540); the wave runs in from the left
+    const O = { x: 220, y: 540 };
+    const W0 = -670;
+    const span = O.x - W0;
+    const easeOut = gsap.parseEase("power2.out");
+    const easeIn = gsap.parseEase("power2.in");
+    const clamp01 = (v) => Math.min(1, Math.max(0, v));
+    const smooth = (a, b, v) => {
+      const u = clamp01((v - a) / (b - a));
+      return u * u * (3 - 2 * u);
+    };
+
+    // the wave is a travelling signal: its front eases out from W0 to O, the packet rides
+    // just behind the front and settles mid-line, and its phase keeps running to the right
+    const WAVE_IN = [0.08, 0.85];
+    const WAVE_OUT = [4.45, 4.85];
+    const wavePath = (t) => {
+      const p = easeOut(clamp01((t - WAVE_IN[0]) / (WAVE_IN[1] - WAVE_IN[0])));
+      const q = easeIn(clamp01((t - WAVE_OUT[0]) / (WAVE_OUT[1] - WAVE_OUT[0])));
+      const front = W0 + span * p;
+      const tail = W0 + span * q;
+      if (p <= 0 || front - tail < 2) return "";
+      const centre = W0 + (front - W0) * (0.82 - 0.32 * p);
+      const amp = 60 * smooth(0.08, 0.45, p);
+      let d = "";
+      for (let x = tail; x <= front; x += 3) {
+        const env = Math.exp(-Math.pow((x - centre) / 150, 2)) * clamp01((front - x) / 70);
+        const y = O.y - amp * env * Math.sin((x - W0) / 16 - 10 * t);
+        d += (d ? " L" : "M") + x.toFixed(1) + " " + y.toFixed(2);
+      }
+      return d;
+    };
+
+    // one branch per node; each grows at its own pace and lands before its label types in
+    const GROW = [0.85, 0.8, 1.25, 0.8, 1.05, 1.35];
+    const curves = gsap.utils.toArray(".b-curve").map((el, i) => ({
+      el,
+      points: el.dataset.points.split(" ").map((p) => p.split(",").map(Number)),
+      phase: i * 1.7,
+      grow: [0.78 + i * 0.03, GROW[i]],
+      retract: [4.45 + i * 0.015, 0.4],
+    }));
+    const growEase = gsap.parseEase("power1.out");
+    const drawn = (c, t) => {
+      const g = growEase(clamp01((t - c.grow[0]) / c.grow[1]));
+      const r = easeIn(clamp01((t - c.retract[0]) / c.retract[1]));
+      return g * (1 - r);
+    };
+    // branches sway while they grow: inner waypoints drift on slow sines, origin and node stay put;
+    // a Catmull-Rom spline through the waypoints keeps every joint smooth
+    const curvePath = (c, t) => {
+      const sway = 1 - smooth(3.0, 3.6, t) * 0.7; // calmer once the overview lands
+      const last = c.points.length - 1;
+      const p = c.points.map(([x, y], k) => {
+        if (k === 0 || k === last) return [x, y];
+        const w = c.phase + k * 1.3;
+        return [x + 8 * sway * Math.sin(1.7 * t + w), y + 20 * sway * Math.sin(1.9 * t + w + 0.6)];
+      });
+      let d = `M${p[0][0]} ${p[0][1]}`;
+      for (let k = 0; k < last; k++) {
+        const p0 = p[Math.max(k - 1, 0)];
+        const p1 = p[k];
+        const p2 = p[k + 1];
+        const p3 = p[Math.min(k + 2, last)];
+        const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6];
+        const c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
+        d += ` C ${c1[0].toFixed(1)} ${c1[1].toFixed(1)}, ${c2[0].toFixed(1)} ${c2[1].toFixed(1)}, ${p2[0].toFixed(1)} ${p2[1].toFixed(1)}`;
+      }
+      return d;
+    };
+
+    const wave = document.querySelector("#b-wave");
+    const render = (t) => {
+      wave.setAttribute("d", wavePath(t));
+      curves.forEach((c) => {
+        c.el.setAttribute("d", curvePath(c, t));
+        c.el.style.strokeDashoffset = 1 - drawn(c, t);
+      });
+    };
+
+    const tl = gsap.timeline({ paused: true });
+    const cam = "#b-cam";
+    const clock = { t: 0 };
+    tl.fromTo(clock, { t: 0 }, { t: 5.4, duration: 5.4, ease: "none", onUpdate: () => render(clock.t) }, 0);
+
+    // shot 3: the source dot stays at W0; a second glow lands where the wave ends
+    tl.set(cam, { x: 1820, y: 0, scale: 1 }, 0);
+    tl.set("#b-src", { x: W0, y: O.y }, 0);
+    tl.fromTo("#b-src", { opacity: 0, scale: 0.3 }, { opacity: 1, scale: 1, duration: 0.2, ease: "expo.out" }, 0);
+    tl.to("#b-src", { opacity: 0.6, scale: 0.7, duration: 0.6 }, 0.8);
+    tl.set("#b-dot", { x: O.x, y: O.y }, 0);
+    tl.fromTo("#b-dot", { opacity: 0, scale: 0.3 }, { opacity: 1, scale: 1, duration: 0.25, ease: "expo.out" }, 0.75);
+    tl.to(cam, { x: 1210, duration: 0.2, ease: "power2.out" }, 0);
+    tl.to(cam, { x: 715, duration: 0.6, ease: "power1.inOut" }, 0.2);
+
+    // shot 4: branches grow while the camera drifts; then hard cuts to three close-ups and back out
+    const OVERVIEW_X = -28;
+    tl.to(cam, { x: 220, duration: 0.95, ease: "power1.inOut" }, 0.82);
+
+    const nodes = gsap.utils.toArray(".b-node");
+    tl.set(".b-pin", { opacity: 0, scale: 0 }, 0);
+    tl.set(".b-icon", { opacity: 0 }, 0);
+    tl.set(".b-copy", { clipPath: "inset(0 100% 0 0)" }, 0);
+    // a node: its pin lands with the branch, the icon fades in dim (sometimes before the branch
+    // arrives), then brightens as its label types in on the close-up
+    const reveal = (i, iconAt, typeAt) => {
+      const n = nodes[i];
+      const landed = Math.min(curves[i].grow[0] + curves[i].grow[1], typeAt - 0.1);
+      tl.to(n.querySelector(".b-pin"), { opacity: 1, scale: 1, duration: 0.15, ease: "back.out(3)" }, landed);
+      tl.to(n.querySelector(".b-icon"), { opacity: 0.4, duration: 0.15, ease: "sine.out" }, iconAt);
+      tl.to(n.querySelector(".b-icon"), { opacity: 1, duration: 0.12 }, typeAt);
+      tl.to(n.querySelector(".b-copy"), { clipPath: "inset(0 0% 0 0)", duration: 0.25, ease: "steps(12)" }, typeAt);
+    };
+    // a close-up: cut in, then push in slightly about the frame centre for the hold
+    const closeUp = (at, hold, s, x, y) => {
+      tl.set(cam, { x, y, scale: s }, at);
+      const k = 1.035;
+      tl.to(cam, { x: 960 - (960 - x) * k, y: 540 - (540 - y) * k, scale: s * k, duration: hold, ease: "none" }, at);
+    };
+
+    closeUp(1.8, 0.6, 1.66, -360, -75); // top left: comments, moodboard
+    reveal(0, 1.66, 1.82);
+    reveal(1, 1.69, 1.88);
+    closeUp(2.4, 0.6, 1.705, -347, -638); // bottom: prompt, launch cut
+    reveal(3, 1.69, 2.41);
+    reveal(4, 1.72, 2.46);
+    closeUp(3.0, 0.3, 2.05, -1918, -164); // top right: review
+    reveal(2, 2.1, 3.0);
+    tl.set(cam, { x: OVERVIEW_X, y: 0, scale: 1 }, 3.3); // overview
+    reveal(5, 2.3, 3.36);
+
+    // shot 5: everything retracts; the node pins gather into a ring
+    tl.to(".b-tag", { opacity: 0, filter: "blur(4px)", duration: 0.25, stagger: 0.03 }, 4.3);
+    tl.to("#b-dot", { scale: 0.6, opacity: 0.55, duration: 0.4 }, 4.55);
+    tl.to("#b-src", { opacity: 0, duration: 0.3 }, 4.55);
+
+    const R = 420;
+    const C = { x: 960, y: 540 };
+    const slots = [-135, -90, -45, 135, 90, 45, 0, 180]; // degrees, evenly spaced: one per node pin + 2 spare
+    nodes.forEach((n, i) => {
+      const a = (slots[i] * Math.PI) / 180;
+      const pin = n.querySelector(".b-pin");
+      const nx = parseFloat(n.style.left);
+      const ny = parseFloat(n.style.top);
+      tl.to(pin, { x: C.x - OVERVIEW_X + R * Math.cos(a) - nx, y: C.y + R * Math.sin(a) - ny, scale: 3.6, duration: 0.45, ease: "power3.inOut" }, 4.42 + i * 0.03);
+    });
+    const ringDots = gsap.utils.toArray(".b-rd");
+    ringDots.forEach((rd, i) => {
+      tl.set(rd, { rotation: slots[i] + 90 }, 0);
+    });
+    tl.fromTo(ringDots.slice(6).map((rd) => rd.firstElementChild), { opacity: 0, scale: 0 }, { opacity: 1, scale: 1, duration: 0.3, ease: "back.out(2)" }, 4.6);
+    tl.set(ringDots.slice(0, 6).map((rd) => rd.firstElementChild), { opacity: 1 }, 4.95);
+    tl.set(".b-pin", { opacity: 0 }, 4.95);
+
+    window.__timelines["branches"] = tl;
+  </script>
+</template>
