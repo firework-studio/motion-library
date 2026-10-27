@@ -1,0 +1,431 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Manrope";
+      src: url("assets/fonts/Manrope-Variable.ttf") format("truetype");
+      font-weight: 200 800;
+      font-display: block;
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: #ffffff;
+      font-family: "Manrope", sans-serif;
+    }
+    .layer {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+      filter: url(#cam-blur);
+    }
+    .abs {
+      position: absolute;
+    }
+
+    /* Text line */
+    .line {
+      font-size: 132px;
+      font-weight: 500;
+      letter-spacing: -0.064em;
+      color: #0a0a0a;
+      line-height: 1;
+      white-space: nowrap;
+    }
+    #word {
+      left: 330px;
+      top: 441px;
+      font-size: 133px;
+    }
+    #pill {
+      left: 1130px;
+      top: 431px;
+      width: 540px;
+      height: 154px;
+      border-radius: 48px;
+      background: #f8ff0b;
+    }
+    #pill-text {
+      left: 49px;
+      top: 3px;
+      font-size: 139px;
+      letter-spacing: -0.076em;
+    }
+
+    /* Counter */
+    .digit-col {
+      top: 378px;
+      width: 80px;
+      height: 300px;
+      perspective: 1000px;
+      -webkit-mask-image: linear-gradient(to bottom, transparent 25%, #000 31.5%, #000 65.5%, transparent 71%);
+      mask-image: linear-gradient(to bottom, transparent 25%, #000 31.5%, #000 65.5%, transparent 71%);
+    }
+    #tens {
+      left: 150px;
+    }
+    #units {
+      left: 234px;
+    }
+    .drum {
+      position: absolute;
+      left: 0;
+      top: 150px;
+      width: 80px;
+      height: 0;
+      transform-style: preserve-3d;
+    }
+    .drum span {
+      position: absolute;
+      left: 0;
+      top: -75px;
+      width: 80px;
+      height: 150px;
+      line-height: 150px;
+      text-align: center;
+      font-size: 114px;
+      font-weight: 500;
+      letter-spacing: -0.04em;
+      color: #0a0a0a;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Icon tiles */
+    .tile {
+      background: #ffffff;
+      border: 2px solid #d2d2d2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .mark {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #t-ring {
+      left: 180px;
+      top: 140px;
+      width: 164px;
+      height: 164px;
+      border-radius: 26px;
+      transform: rotate(-6deg);
+    }
+    #t-ring .logo {
+      width: 108px;
+      height: 108px;
+    }
+    #t-sail {
+      left: 886px;
+      top: 142px;
+      width: 128px;
+      height: 128px;
+      border-radius: 22px;
+      opacity: 0.55;
+      filter: blur(3px);
+    }
+    #t-sail .logo {
+      width: 74px;
+      height: 74px;
+    }
+    #t-ps {
+      left: 1527px;
+      top: 107px;
+      width: 250px;
+      height: 250px;
+      border-radius: 40px;
+      transform: rotate(6deg);
+    }
+    #t-ps .logo {
+      width: 176px;
+      height: 172px;
+    }
+    #t-ae {
+      left: 405px;
+      top: 788px;
+      width: 214px;
+      height: 214px;
+      border-radius: 36px;
+      transform: rotate(-10deg);
+    }
+    #t-ae .logo {
+      width: 162px;
+      height: 158px;
+    }
+    #t-jit {
+      left: 1021px;
+      top: 771px;
+      width: 177px;
+      height: 177px;
+      border-radius: 28px;
+    }
+    #t-jit .mark {
+      width: 118px;
+      height: 118px;
+      border-radius: 24px;
+      background: #1f1f1f;
+    }
+    #t-jit .word {
+      color: #ffffff;
+      font-size: 34px;
+      font-weight: 650;
+      letter-spacing: -0.02em;
+    }
+    #t-fig {
+      left: 1374px;
+      top: 870px;
+      width: 122px;
+      height: 122px;
+      border-radius: 22px;
+      transform: rotate(-3deg);
+      filter: blur(4px);
+    }
+    #t-fig .mark {
+      width: 90px;
+      height: 90px;
+      border-radius: 18px;
+      background: #0b0b0b;
+    }
+    #t-fig .logo {
+      height: 50px;
+    }
+
+    #stage {
+      position: absolute;
+      inset: 0;
+    }
+
+    /* End card */
+    #end {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #dots-end {
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(circle, #828282 2.4px, transparent 2.9px);
+      background-size: 24px 24px;
+      background-position: 4px 6px;
+      -webkit-mask-image: radial-gradient(ellipse 60% 55% at 50% 50%, transparent 30%, rgba(0, 0, 0, 0.45) 100%);
+      mask-image: radial-gradient(ellipse 60% 55% at 50% 50%, transparent 30%, rgba(0, 0, 0, 0.45) 100%);
+      opacity: 0;
+    }
+    #end-title {
+      position: relative;
+      font-size: 132px;
+      opacity: 0;
+    }
+    #end-title .ch {
+      display: inline-block;
+    }
+    #end-pill {
+      display: inline-block;
+      padding: 0 40px 6px;
+      border-radius: 48px;
+      background: #f8ff0b;
+    }
+
+    /* Dot grid background */
+    #dots {
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(circle, #828282 2.4px, transparent 2.9px);
+      background-size: 24px 24px;
+      background-position: 4px 6px;
+      /* Fades out from the top, measured from dot intensity at each height in the reference */
+      --fade: linear-gradient(
+        to bottom,
+        #000 0%,
+        rgba(0, 0, 0, 0.83) 8%,
+        rgba(0, 0, 0, 0.63) 14%,
+        rgba(0, 0, 0, 0.31) 19%,
+        rgba(0, 0, 0, 0.25) 27%,
+        rgba(0, 0, 0, 0.18) 36%,
+        transparent 45%
+      );
+      -webkit-mask-image: var(--fade);
+      mask-image: var(--fade);
+      opacity: 0;
+    }
+  </style>
+
+  <div id="root" data-composition-id="opening" data-width="1920" data-height="1080">
+    <div id="dots"></div>
+    <div id="stage">
+    <div id="icons" class="layer">
+      <div id="t-ring" class="abs tile"><img class="logo" src="assets/logos/kling.png" alt="" /></div>
+      <div id="t-sail" class="abs tile"><img class="logo" src="assets/logos/midjourney.svg" alt="" /></div>
+      <div id="t-ps" class="abs tile"><img class="logo" src="assets/logos/ps.svg" alt="" /></div>
+      <div id="t-ae" class="abs tile"><img class="logo" src="assets/logos/ae.svg" alt="" /></div>
+      <div id="t-jit" class="abs tile"><div class="mark"><span class="word">Jitter</span></div></div>
+      <div id="t-fig" class="abs tile"><div class="mark"><img class="logo" src="assets/logos/figma.svg" alt="" /></div></div>
+    </div>
+    <div id="text" class="layer">
+      <svg width="0" height="0" style="position: absolute">
+        <filter id="cam-blur" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur id="cam-blur-fx" stdDeviation="0 0" /></filter>
+        <filter id="blur-units" x="-20%" y="-60%" width="140%" height="220%"><feGaussianBlur id="blur-units-fx" stdDeviation="0 0" /></filter>
+        <filter id="blur-tens" x="-20%" y="-60%" width="140%" height="220%"><feGaussianBlur id="blur-tens-fx" stdDeviation="0 0" /></filter>
+      </svg>
+      <div id="counter" class="abs" style="left: 0; top: 0" data-motion-blur="off">
+        <div id="tens" class="abs digit-col" style="filter: url(#blur-tens)">
+          <div class="drum" id="tens-drum"><span>0</span><span>1</span><span>2</span></div>
+        </div>
+        <div id="units" class="abs digit-col" style="filter: url(#blur-units)">
+          <div class="drum" id="units-drum"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span></div>
+        </div>
+      </div>
+      <div id="word" class="abs line" data-var-text="word">subscriptions</div>
+      <div id="pill" class="abs">
+        <div id="pill-text" class="abs line" data-var-text="pill">to make</div>
+      </div>
+    </div>
+    </div>
+    <div id="end">
+      <div id="dots-end"></div>
+      <div id="end-title" class="line"><span class="word"><span class="ch">F</span><span class="ch">i</span><span class="ch">r</span><span class="ch">e</span><span class="ch">w</span><span class="ch">o</span><span class="ch">r</span><span class="ch">k</span></span> <span id="end-pill">Studio</span></div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      const FPS = 30;
+
+      // Camera: [scale, rotation, frame center x, frame center y] measured frame by frame from the reference video
+      // Text and icon layers are measured separately; the difference in their motion creates parallax
+      // ENDING = true: 5.6 s standalone cut (counter settles, Firework Studio end card); false: full-film mode, cutting away at 2.93 s as in the reference
+      const ENDING = false;
+      const CAM_TEXT = [[2.3553,-12.1564,1090.0528,1346.8641],[2.3539,-12.1396,1089.7253,1345.3898],[2.3495,-12.089,1088.7427,1340.9668],[2.3422,-12.0049,1087.1051,1333.595],[2.3321,-11.887,1084.8123,1323.2746],[2.319,-11.7355,1081.8646,1310.0055],[2.303,-11.5503,1078.2617,1293.7878],[2.2841,-11.3314,1074.0038,1274.6213],[2.2623,-11.0788,1069.0908,1252.5061],[2.2376,-10.7926,1063.5228,1227.4423],[2.21,-10.4727,1057.2997,1199.4297],[2.1795,-10.1192,1050.4215,1168.4685],[2.1461,-9.7319,1042.8883,1134.5586],[2.1098,-9.311,1034.7,1097.7],[2.072,-8.8732,1026.1842,1059.3671],[2.0347,-8.449,1018.0088,1021.9404],[1.998,-8.0465,1010.4215,986.0907],[1.9623,-7.6673,1003.5455,952.1899],[1.9274,-7.3088,997.4027,920.391],[1.8935,-6.9673,991.9549,890.718],[1.8604,-6.6394,987.1383,863.1222],[1.828,-6.3226,982.8827,837.5023],[1.7962,-6.0155,979.1217,813.7339],[1.765,-5.7176,975.7995,791.6923],[1.7344,-5.4291,972.8685,771.2512],[1.7044,-5.1506,970.2911,752.2892],[1.6751,-4.8829,968.0387,734.6907],[1.6466,-4.6268,966.0903,718.3482],[1.6187,-4.3824,964.4272,703.1631],[1.5917,-4.1488,963.0249,689.0494],[1.5654,-3.9248,961.8488,675.9346],[1.5398,-3.7091,960.8587,663.7578],[1.5148,-3.501,960.0185,652.4637],[1.4904,-3.3,959.3025,641.9973],[1.4664,-3.1064,958.6949,632.3037],[1.443,-2.9205,958.1862,623.33],[1.4201,-2.7423,957.7698,615.0274],[1.3977,-2.5718,957.4408,607.3518],[1.3757,-2.4082,957.1944,600.2644],[1.3543,-2.2509,957.0252,593.7321],[1.3334,-2.099,956.9256,587.7267],[1.3129,-1.9518,956.8861,582.2219],[1.2929,-1.809,956.8956,577.1884],[1.2734,-1.671,956.9414,572.5921],[1.2542,-1.5392,957.0081,568.394],[1.2354,-1.4168,957.0774,564.55],[1.2169,-1.3082,957.1289,561.0104],[1.1985,-1.2176,957.1458,557.7258],[1.1804,-1.1457,957.1255,554.6631],[1.1625,-1.0872,957.0878,551.8231],[1.1451,-1.0311,957.0735,549.2452],[1.1284,-0.9649,957.1313,546.9914],[1.1124,-0.8789,957.2977,545.1178],[1.0973,-0.7705,957.5807,543.6473],[1.0827,-0.6449,957.9542,542.5572],[1.0686,-0.5125,958.3691,541.7847],[1.0547,-0.3845,958.7757,541.2497],[1.041,-0.2687,959.1433,540.8806],[1.0274,-0.1685,959.4649,540.6319],[1.014,-0.083,959.7489,540.4892],[1.0008,-0.0094,960.0069,540.4654],[0.9878,0.0562,960.2468,540.5953],[0.9751,0.1174,960.472,540.9259],[0.9627,0.1769,960.6833,541.5053],[0.9506,0.2359,960.8795,542.3726],[0.9387,0.2944,961.0573,543.5513],[0.9272,0.352,961.2115,545.0494],[0.9159,0.4085,961.3385,546.8647],[0.9048,0.4638,961.4397,548.9957],[0.894,0.5185,961.5204,551.4516],[0.8834,0.5734,961.586,554.2578],[0.873,0.6298,961.6387,557.4544],[0.8629,0.6891,961.6781,561.0897],[0.853,0.7529,961.7033,565.2105],[0.8433,0.8191,961.7321,569.6426],[0.8339,0.8906,961.7098,574.5801],[0.8246,0.9754,961.7047,580.0509],[0.8156,1.0639,961.7011,586.1685],[0.807,1.157,961.7,593.2],[0.7987,1.257,961.7,599.2],[0.7907,1.366,961.8,606.3],[0.7829,1.486,961.8,614.7],[0.7755,1.617,961.8,624.6],[0.7684,1.762,961.8,636.5],[0.7616,1.938,961.8,651.6],[0.7551,2.043,961.7,671.9],[0.7488,2.325,961.7,688.9],[0.7426,2.125,961.6,724.5]];
+      const CAM_ICONS = [[2.3553,-12.1564,931.4166,484.1796],[2.3539,-12.1396,931.4467,484.2685],[2.3495,-12.089,931.5369,484.5351],[2.3422,-12.0049,931.6873,484.9795],[2.3321,-11.887,931.8979,485.6016],[2.319,-11.7355,932.1686,486.4015],[2.303,-11.5503,932.4994,487.3792],[2.2841,-11.3314,932.8905,488.5346],[2.2623,-11.0788,933.3417,489.8678],[2.2376,-10.7926,933.853,491.3787],[2.21,-10.4727,934.4245,493.0674],[2.1795,-10.1192,935.0562,494.9338],[2.1461,-9.7319,935.748,496.978],[2.1098,-9.311,936.5,499.2],[2.072,-8.8732,937.2821,501.5108],[2.0347,-8.449,938.0519,503.794],[1.998,-8.0465,938.7973,506.0299],[1.9623,-7.6673,939.5052,508.1965],[1.9274,-7.3088,940.168,510.2847],[1.8935,-6.9673,940.7791,512.293],[1.8604,-6.6394,941.3411,514.2379],[1.828,-6.3226,941.865,516.1419],[1.7962,-6.0155,942.3737,518.0424],[1.765,-5.7176,942.8955,519.9702],[1.7344,-5.4291,943.4631,521.951],[1.7044,-5.1506,944.1023,523.9865],[1.6751,-4.8829,944.8279,526.0565],[1.6466,-4.6268,945.6383,528.119],[1.6187,-4.3824,946.516,530.1176],[1.5917,-4.1488,947.4312,531.9922],[1.5654,-3.9248,948.3488,533.6897],[1.5398,-3.7091,949.2353,535.1703],[1.5148,-3.501,950.0646,536.4125],[1.4904,-3.3,950.8207,537.4115],[1.4664,-3.1064,951.499,538.1769],[1.443,-2.9205,952.1018,538.731],[1.4201,-2.7423,952.6376,539.1036],[1.3977,-2.5718,953.1175,539.3266],[1.3757,-2.4082,953.5541,539.4399],[1.3543,-2.2509,953.9561,539.4762],[1.3334,-2.099,954.3333,539.4681],[1.3129,-1.9518,954.6907,539.4394],[1.2929,-1.809,955.0324,539.4123],[1.2734,-1.671,955.3596,539.3962],[1.2542,-1.5392,955.6746,539.4002],[1.2354,-1.4168,955.9776,539.4231],[1.2169,-1.3082,956.2709,539.4637],[1.1985,-1.2176,956.5558,539.5158],[1.1804,-1.1457,956.8342,539.5734],[1.1625,-1.0872,957.1078,539.6315],[1.1451,-1.0311,957.378,539.6872],[1.1284,-0.9649,957.6455,539.7393],[1.1124,-0.8789,957.9113,539.788],[1.0973,-0.7705,958.1756,539.8343],[1.0827,-0.6449,958.4387,539.8804],[1.0686,-0.5125,958.7003,539.9303],[1.0547,-0.3845,958.9602,539.9912],[1.041,-0.2687,959.2178,540.0745],[1.0274,-0.1685,959.4719,540.1985],[1.014,-0.083,959.7211,540.3875],[1.0008,-0.0094,959.9636,540.6724],[0.9878,0.0562,960.1971,541.0888],[0.9751,0.1174,960.419,541.675],[0.9627,0.1769,960.6263,542.4688],[0.9506,0.2359,960.8159,543.5048],[0.9387,0.2944,960.9853,544.8126],[0.9272,0.352,961.1327,546.4168],[0.9159,0.4085,961.2581,548.3386],[0.9048,0.4638,961.3622,550.5976],[0.894,0.5185,961.447,553.214],[0.8834,0.5734,961.5146,556.2085],[0.873,0.6298,961.5678,559.6019],[0.8629,0.6891,961.6086,563.4117],[0.853,0.7529,961.6391,567.646],[0.8433,0.8191,961.669,571.6969],[0.8339,0.8906,961.686,576.1981],[0.8246,0.9754,961.6948,581.2553],[0.8156,1.0639,961.6989,587.0964],[0.807,1.157,961.7,594.0],[0.7987,1.257,961.7,600.2],[0.7907,1.366,961.8,607.5],[0.7829,1.486,961.8,616.2],[0.7755,1.617,961.8,626.7],[0.7684,1.762,961.8,639.8],[0.7616,1.938,961.8,654.6],[0.7551,2.043,961.7,674.6],[0.7488,2.325,961.7,688.9],[0.7426,2.125,961.6,724.5]];
+      const at = (k) => ({ x: k[2] - 960, y: k[3] - 540, rotation: k[1], scale: k[0] });
+      for (const [sel, keys] of [["#text", CAM_TEXT], ["#icons", CAM_ICONS]]) {
+        gsap.set(sel, { transformOrigin: "960px 540px", ...at(keys[0]) });
+        for (let i = 1; i < keys.length; i++) {
+          tl.to(sel, { ...at(keys[i]), duration: 1 / FPS, ease: "none" }, (i - 1) / FPS);
+        }
+      }
+
+      // Layer blur on the two fastest camera moves: the opening pull-back with rotation (uniform blur) and the closing downward whip (vertical blur)
+      gsap.set("#cam-blur-fx", { attr: { stdDeviation: "2.6 2.6" } });
+      tl.to("#cam-blur-fx", { attr: { stdDeviation: "0 0" }, duration: 0.7, ease: "power2.out" }, 0);
+      if (ENDING) tl.to("#cam-blur-fx", { attr: { stdDeviation: "0 10" }, duration: 0.25, ease: "power2.in" }, 3.6);
+      else tl.to("#cam-blur-fx", { attr: { stdDeviation: "0 8" }, duration: 0.23, ease: "power2.in" }, 2.7);
+
+      // Yellow tag: slides up from below while scaling from 90% to full size
+      gsap.set("#pill", { transformOrigin: "0% 50%" });
+      tl.fromTo("#pill", { y: 512 }, { y: 0, duration: 1.54, ease: "expo.out" }, 1.1);
+      tl.fromTo("#pill", { scale: 0.9 }, { scale: 1, duration: 0.35, ease: "power2.out" }, 1.1);
+
+      // Counter: each digit is a tightly curved wheel with 72° between digits, showing only one neighbor above and below
+      // The ones digit spins faster and faster, with vertical blur growing with speed; the tens digit turns slowly and continuously
+      const R = 100;
+      const STEP = 72;
+      const units = gsap.utils.toArray("#units-drum span");
+      const tensD = gsap.utils.toArray("#tens-drum span");
+      const face = (v) => ({
+        rotationX: (i) => (v - i) * STEP,
+        opacity: (i) => (Math.abs(i - v) < 0.5 ? 1 : 0),
+      });
+      gsap.set([...units, ...tensD], { transformOrigin: `50% 50% ${-R}px` });
+      gsap.set(units, face(0.35));
+      gsap.set(tensD, face(0));
+      gsap.set("#units", { opacity: 0 });
+      gsap.set("#tens", { clipPath: "inset(0% 0% 0% 100%)" });
+      tl.to("#units", { opacity: 1, duration: 0.06, ease: "none" }, 1.1);
+      tl.to("#tens", { clipPath: "inset(0% 0% 0% 0%)", duration: 0.12, ease: "power2.out" }, 1.36);
+
+      const blurAt = (fx, sd, dur, at) =>
+        tl.to(fx, { attr: { stdDeviation: `0 ${sd.toFixed(1)}` }, duration: dur, ease: "sine.inOut" }, at);
+      const roll = (spans, fx, from, to, start, end, ease) => {
+        const dur = end - start;
+        tl.to(spans, { ...face(to), duration: dur, ease }, start);
+        const sd = Math.min(9, ((to - from) / dur) * 0.3);
+        blurAt(fx, sd, dur / 2, start);
+        blurAt(fx, 0, dur / 2, start + dur / 2);
+      };
+
+      // [value, settle time]: read frame by frame from the 60 fps reference before 2.7 s, then easing to rest at 24
+      const UNITS = [
+        [1, 1.35], [2, 1.67], [3, 1.85], [4, 2.01], [5, 2.12], [6, 2.22], [7, 2.3],
+        [8, 2.385], [9, 2.45], [10, 2.51], [11, 2.57], [12, 2.62], [13, 2.665], [14, 2.7],
+        ...(ENDING
+          ? [[15, 2.74], [16, 2.785], [17, 2.835], [18, 2.89], [19, 2.95], [20, 3.02], [21, 3.1], [22, 3.18], [23, 3.26], [24, 3.36]]
+          : [[15, 2.735], [16, 2.77], [17, 2.8], [18, 2.835], [19, 2.855], [20, 2.87], [21, 2.89], [22, 2.905]]),
+      ];
+      let prev = [0.35, 1.12];
+      for (const [n, t] of UNITS) {
+        const gap = t - prev[1];
+        const start = gap > 0.15 ? t - Math.min(0.22, gap * 0.75) : prev[1];
+        roll(units, "#blur-units-fx", prev[0], n, start, t, gap > 0.08 ? "power2.inOut" : "power1.inOut");
+        prev = [n, t];
+      }
+      roll(tensD, "#blur-tens-fx", 0, 1, 1.72, 2.52, "none");
+      if (ENDING) roll(tensD, "#blur-tens-fx", 1, 2, 2.86, 3.02, "power1.inOut");
+      else roll(tensD, "#blur-tens-fx", 1, 2, 2.72, 2.9, "power1.in");
+
+      // 2.25–3.3 s: icons gather toward the text line and settle
+      // Full-film mode uses the reference's gather distance; the standalone cut uses 55% so the icons don't cover the text once settled
+      const K = ENDING ? 0.55 : 1;
+      const DRIFT = [
+        ["#t-ring", 0, 175 * K],
+        ["#t-sail", 0, 210 * K],
+        ["#t-ps", 56 * K, ENDING ? 70 : 325],
+        ["#t-ae", 12 * K, 42 * K],
+        ["#t-jit", 0, 64 * K],
+        ["#t-fig", 0, 44 * K],
+      ];
+      for (const [sel, dx, dy] of DRIFT) {
+        if (ENDING) tl.to(sel, { x: dx, y: dy, duration: 1.05, ease: "power2.inOut" }, 2.25);
+        else tl.to(sel, { x: dx, y: dy, duration: 0.68, ease: "power3.in" }, 2.25);
+      }
+
+      // Ending: the top dot grid fades in
+      tl.to("#dots", { opacity: 1, duration: 0.63, ease: "power2.in" }, 2.3);
+
+      if (ENDING) {
+        // Outro: at 3.6 s the camera whips down and the content drops out of frame with the top dot grid
+        tl.to(["#stage", "#dots"], { y: 1400, duration: 0.3, ease: "power3.in" }, 3.6);
+
+        // End card: each letter of Firework flies back in from its own side to assemble at the center, then the Studio tag slides up from below
+        // [direction angle (0° = right, 90° = down), distance in px, initial rotation]
+        const PIECES = [
+          [180, 820, -18], [225, 760, 12], [125, 780, -10], [270, 700, 16],
+          [90, 700, -14], [305, 760, 10], [55, 780, -16], [330, 820, 14],
+        ];
+        gsap.set("#end-title", { opacity: 1 });
+        gsap.utils.toArray("#end-title .ch").forEach((el, i) => {
+          const [deg, dist, rot] = PIECES[i];
+          const a = (deg * Math.PI) / 180;
+          const at = 3.78 + i * 0.05;
+          tl.fromTo(
+            el,
+            { x: Math.cos(a) * dist, y: Math.sin(a) * dist, rotation: rot, scale: 0.7 },
+            { x: 0, y: 0, rotation: 0, scale: 1, duration: 0.9, ease: "expo.out", immediateRender: true },
+            at,
+          );
+          tl.fromTo(el, { opacity: 0 }, { opacity: 1, duration: 0.15, ease: "none", immediateRender: true }, at);
+        });
+        gsap.set("#end-pill", { transformOrigin: "0% 50%" });
+        tl.fromTo(
+          "#end-pill",
+          { y: 420, scale: 0.9, opacity: 0 },
+          { y: 0, scale: 1, opacity: 1, duration: 0.85, ease: "expo.out", immediateRender: true },
+          4.08,
+        );
+        gsap.set("#dots-end", { y: -200 });
+        tl.to("#dots-end", { opacity: 1, duration: 0.4, ease: "power1.out" }, 3.75);
+        tl.to("#dots-end", { y: 0, duration: 1.0, ease: "expo.out" }, 3.75);
+
+      }
+
+      tl.set({}, {}, ENDING ? 5.6 : 2.933);
+      window.__timelines = window.__timelines || {};
+      window.__timelines["opening"] = tl;
+    })();
+  </script>
+</template>

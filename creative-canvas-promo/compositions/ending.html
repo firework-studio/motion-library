@@ -1,0 +1,80 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Manrope";
+      src: url("assets/fonts/Manrope-Variable.ttf") format("truetype");
+      font-weight: 200 800;
+      font-display: block;
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: #ffffff;
+      font-family: "Manrope", sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #dots-end {
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(circle, #828282 2.4px, transparent 2.9px);
+      background-size: 24px 24px;
+      background-position: 4px 6px;
+      -webkit-mask-image: radial-gradient(ellipse 60% 55% at 50% 50%, transparent 30%, rgba(0, 0, 0, 0.45) 100%);
+      mask-image: radial-gradient(ellipse 60% 55% at 50% 50%, transparent 30%, rgba(0, 0, 0, 0.45) 100%);
+      opacity: 0;
+    }
+    #end-title {
+      position: relative;
+      font-size: 132px;
+      font-weight: 500;
+      letter-spacing: -0.064em;
+      line-height: 1;
+      color: #0a0a0a;
+      white-space: nowrap;
+    }
+    #end-title .ch {
+      display: inline-block;
+    }
+    #end-pill {
+      display: inline-block;
+      padding: 0 40px 6px;
+      border-radius: 48px;
+      background: #f8ff0b;
+    }
+  </style>
+  <div id="root" data-composition-id="ending" data-width="1920" data-height="1080">
+    <div id="dots-end"></div>
+    <div id="end-title"><span class="word"><span class="ch">F</span><span class="ch">i</span><span class="ch">r</span><span class="ch">e</span><span class="ch">w</span><span class="ch">o</span><span class="ch">r</span><span class="ch">k</span></span> <span id="end-pill">Studio</span></div>
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      // End card: each letter of Firework flies back in from its own side to assemble at the center, then the Studio tag slides up from below
+      // [direction angle (0° = right, 90° = down), distance in px, initial rotation]
+      const PIECES = [
+        [180, 820, -18], [225, 760, 12], [125, 780, -10], [270, 700, 16],
+        [90, 700, -14], [305, 760, 10], [55, 780, -16], [330, 820, 14],
+      ];
+      gsap.utils.toArray("#end-title .ch").forEach((el, i) => {
+        const [deg, dist, rot] = PIECES[i];
+        const a = (deg * Math.PI) / 180;
+        const at = 0.04 + i * 0.05;
+        tl.fromTo(el, { x: Math.cos(a) * dist, y: Math.sin(a) * dist, rotation: rot, scale: 0.7 },
+          { x: 0, y: 0, rotation: 0, scale: 1, duration: 0.9, ease: "expo.out", immediateRender: true }, at);
+        tl.fromTo(el, { opacity: 0 }, { opacity: 1, duration: 0.15, ease: "none", immediateRender: true }, at);
+      });
+      gsap.set("#end-pill", { transformOrigin: "0% 50%" });
+      tl.fromTo("#end-pill", { y: 420, scale: 0.9, opacity: 0 },
+        { y: 0, scale: 1, opacity: 1, duration: 0.85, ease: "expo.out", immediateRender: true }, 0.34);
+      gsap.set("#dots-end", { y: -200 });
+      tl.to("#dots-end", { opacity: 1, duration: 0.4, ease: "power1.out" }, 0);
+      tl.to("#dots-end", { y: 0, duration: 1.0, ease: "expo.out" }, 0);
+      tl.set({}, {}, 2.2);
+      window.__timelines = window.__timelines || {};
+      window.__timelines["ending"] = tl;
+    })();
+  </script>
+</template>

@@ -1,0 +1,383 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Manrope";
+      src: url("assets/fonts/Manrope-Variable.ttf") format("truetype");
+      font-weight: 200 800;
+      font-display: block;
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: #1f1f1f;
+      font-family: "Manrope", sans-serif;
+      color: #ffffff;
+    }
+    .shot {
+      position: absolute;
+      inset: 0;
+    }
+    .abs {
+      position: absolute;
+    }
+
+    /* ---------- Shot A: window card ---------- */
+    #win {
+      left: 418px;
+      top: 213px;
+      width: 1079px;
+      height: 1400px;
+      border-radius: 80px;
+      background: #171717;
+      overflow: hidden;
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.03);
+    }
+    #win-pill {
+      left: 64px;
+      top: 70px;
+      width: 50px;
+      height: 26px;
+      border: 4px solid #ffffff;
+      border-radius: 14px;
+    }
+    #win-title {
+      left: 157px;
+      top: 54px;
+      font-size: 42px;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+    #win-dots {
+      left: 884px;
+      top: 66px;
+      font-size: 34px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: #d8d8d8;
+    }
+    #win-side {
+      left: 978px;
+      top: 66px;
+      width: 32px;
+      height: 32px;
+      border: 3px solid #d8d8d8;
+      border-radius: 6px;
+    }
+    #win-side::after {
+      content: "";
+      position: absolute;
+      left: 9px;
+      top: 2px;
+      width: 3px;
+      height: 22px;
+      background: #d8d8d8;
+    }
+    #win-head {
+      left: 70px;
+      top: 236px;
+      width: 820px;
+      font-size: 96px;
+      font-weight: 500;
+      letter-spacing: -0.055em;
+      line-height: 103px;
+    }
+    #win-sub {
+      left: 69px;
+      top: 470px;
+      width: 790px;
+      font-size: 33px;
+      font-weight: 500;
+      line-height: 48px;
+      color: #9a9a9a;
+    }
+    .tmpl {
+      left: 78px;
+      width: 780px;
+      height: 194px;
+      border-radius: 24px;
+      background: #2e2e2e;
+    }
+    #tmpl1 {
+      top: 619px;
+    }
+    #tmpl2 {
+      top: 833px;
+    }
+    .thumb {
+      position: absolute;
+      width: 72px;
+      height: 96px;
+      border-radius: 10px;
+      border: 4px solid #ffffff;
+      background: #f8ff0b;
+    }
+    .thumb.b {
+      background: #ffffff;
+      border-color: #ffffff;
+    }
+    .tmpl-title {
+      left: 230px;
+      top: 36px;
+      font-size: 28px;
+      font-weight: 600;
+    }
+    .tmpl-desc {
+      left: 230px;
+      top: 80px;
+      width: 500px;
+      font-size: 26px;
+      font-weight: 500;
+      line-height: 40px;
+      color: #9a9a9a;
+    }
+
+    /* ---------- Shot B: prompt panel ---------- */
+    #panel {
+      left: 240px;
+      top: -600px;
+      width: 1460px;
+      height: 1440px;
+      border-radius: 64px;
+      background: #171717;
+    }
+    #input {
+      left: 298px;
+      top: 486px;
+      width: 1324px;
+      height: 289px;
+      overflow: hidden;
+      border-radius: 36px;
+      background: #2f2f2f;
+    }
+    #prompt {
+      left: 42px;
+      top: 22px;
+      width: 1240px;
+      font-size: 40px;
+      font-weight: 500;
+      line-height: 74px;
+      letter-spacing: -0.005em;
+      color: #ececec;
+    }
+    #chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      height: 60px;
+      padding: 0 14px 0 6px;
+      margin-right: 14px;
+      border-radius: 10px;
+      background: #4e5000;
+      color: #eaf50c;
+      font-weight: 600;
+      vertical-align: middle;
+      position: relative;
+      top: -4px;
+    }
+    #chip-logo {
+      width: 48px;
+      height: 48px;
+      border-radius: 8px;
+      overflow: hidden;
+      display: block;
+    }
+    .line {
+      white-space: nowrap;
+    }
+    .line .w {
+      color: #8a8a8a;
+    }
+    .line .c {
+      display: inline-block;
+      opacity: 0;
+    }
+    #l1 {
+      display: inline-block;
+      vertical-align: top;
+    }
+    #l2 {
+      display: block;
+    }
+    .tool {
+      bottom: 21px;
+      font-size: 38px;
+      font-weight: 500;
+      line-height: 74px;
+    }
+    #t-plus {
+      left: 42px;
+      font-size: 54px;
+      font-weight: 300;
+    }
+    #t-at {
+      left: 138px;
+      font-size: 46px;
+    }
+    #t-actions {
+      left: 212px;
+    }
+    /* Mic and send arrow: one line-icon set with matching stroke width and height */
+    #t-mic {
+      left: 1150px;
+      bottom: 36px;
+      width: 44px;
+      height: 44px;
+    }
+    /* Hand cursor (hand-drawn): white fill, black outline, fingertip near the top-left corner */
+    #cursor {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 52px;
+      height: 60px;
+      transform-origin: 14px 4px;
+      filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.35));
+    }
+    #send {
+      left: 1226px;
+      bottom: 21px;
+      width: 75px;
+      height: 74px;
+      border-radius: 18px;
+      background: #f8ff0b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #send svg {
+      width: 34px;
+      height: 34px;
+    }
+  </style>
+  <div id="root" data-composition-id="ui" data-width="1920" data-height="1080" data-motion-blur="off">
+    <svg width="0" height="0" style="position: absolute">
+      <filter id="whipA" x="-5%" y="-30%" width="110%" height="160%" color-interpolation-filters="sRGB"><feGaussianBlur id="whipA-fx" stdDeviation="0 0" /></filter>
+      <filter id="whipB" x="-5%" y="-30%" width="110%" height="160%" color-interpolation-filters="sRGB"><feGaussianBlur id="whipB-fx" stdDeviation="0 0" /></filter>
+    </svg>
+    <div id="shotA" class="shot" style="filter: url(#whipA)">
+      <div id="worldA" class="shot">
+        <div id="win" class="abs">
+          <div id="win-pill" class="abs"></div>
+          <div id="win-title" class="abs" data-var-text="ui-title">New Project</div>
+          <div id="win-dots" class="abs">···</div>
+          <div id="win-side" class="abs"></div>
+          <div id="win-body" class="abs" style="left: 0; top: 0">
+            <div id="win-head" class="abs" data-var-text="ui-head">What should we make today?</div>
+            <div id="win-sub" class="abs" data-var-text="ui-sub">Describe it in a sentence, or start from a template.</div>
+            <div id="tmpl1" class="abs tmpl">
+              <div class="thumb" style="left: 34px; top: 40px; transform: rotate(-12deg)"></div>
+              <div class="thumb b" style="left: 88px; top: 34px; transform: rotate(8deg)"></div>
+              <div class="abs tmpl-title" data-var-text="ui-t1">Launch teaser</div>
+              <div class="abs tmpl-desc" data-var-text="ui-d1">A 10-second product reveal with kinetic type</div>
+            </div>
+            <div id="tmpl2" class="abs tmpl">
+              <div class="thumb b" style="left: 40px; top: 44px; transform: rotate(-6deg)"></div>
+              <div class="abs tmpl-title" data-var-text="ui-t2">Brand loop</div>
+              <div class="abs tmpl-desc" data-var-text="ui-d2">A seamless logo animation for social</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="shotB" class="shot" style="opacity: 0; filter: url(#whipB)">
+      <div id="worldB" class="shot">
+        <div id="panel" class="abs"></div>
+        <div id="input" class="abs">
+          <div id="prompt" class="abs"><span id="chip"><img id="chip-logo" src="assets/logos/firework-studio-light.svg" alt="" />Firework Studio</span><span id="l1" class="line"><span class="w"><span class="c">1</span><span class="c">0</span><span class="c">-</span><span class="c">s</span><span class="c">e</span><span class="c">c</span><span class="c">o</span><span class="c">n</span><span class="c">d</span></span> <span class="w"><span class="c">l</span><span class="c">a</span><span class="c">u</span><span class="c">n</span><span class="c">c</span><span class="c">h</span></span> <span class="w"><span class="c">t</span><span class="c">e</span><span class="c">a</span><span class="c">s</span><span class="c">e</span><span class="c">r</span><span class="c">,</span></span> <span class="w"><span class="c">b</span><span class="c">o</span><span class="c">l</span><span class="c">d</span></span> <span class="w"><span class="c">y</span><span class="c">e</span><span class="c">l</span><span class="c">l</span><span class="c">o</span><span class="c">w</span></span></span><span id="l2" class="line"><span class="w"><span class="c">a</span><span class="c">c</span><span class="c">c</span><span class="c">e</span><span class="c">n</span><span class="c">t</span><span class="c">s</span><span class="c">,</span></span> <span class="w"><span class="c">k</span><span class="c">i</span><span class="c">n</span><span class="c">e</span><span class="c">t</span><span class="c">i</span><span class="c">c</span></span> <span class="w"><span class="c">t</span><span class="c">y</span><span class="c">p</span><span class="c">e</span><span class="c">,</span></span> <span class="w"><span class="c">f</span><span class="c">a</span><span class="c">s</span><span class="c">t</span></span> <span class="w"><span class="c">c</span><span class="c">a</span><span class="c">m</span><span class="c">e</span><span class="c">r</span><span class="c">a</span></span> <span class="w"><span class="c">m</span><span class="c">o</span><span class="c">v</span><span class="c">e</span><span class="c">s</span><span class="c">,</span></span> <span class="w"><span class="c">c</span><span class="c">l</span><span class="c">e</span><span class="c">a</span><span class="c">n</span></span> <span class="w"><span class="c">w</span><span class="c">h</span><span class="c">i</span><span class="c">t</span><span class="c">e</span></span> <span class="w"><span class="c">s</span><span class="c">t</span><span class="c">u</span><span class="c">d</span><span class="c">i</span><span class="c">o</span></span></span></div>
+          <div id="t-plus" class="abs tool">+</div>
+          <div id="t-at" class="abs tool">@</div>
+          <div id="t-actions" class="abs tool">Actions</div>
+          <svg id="t-mic" class="abs" viewBox="0 0 24 24" fill="none" stroke="#ececec" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="8.5" y="2.5" width="7" height="12" rx="3.5" /><path d="M5 11.5a7 7 0 0 0 14 0M12 18.5v3" /></svg>
+          <div id="send" class="abs"><svg viewBox="0 0 24 24" fill="none" stroke="#111111" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19.5V4.5M5.5 11 12 4.5 18.5 11" /></svg></div>
+        </div>
+  <svg id="cursor" viewBox="0 0 52 60" fill="#ffffff" stroke="#111111" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" style="opacity: 0"><path d="M14 4c-2.6 0-4.6 2-4.6 4.6v26.2l-3.6-3.9c-1.9-2-5-2.1-6.9-.3-1.6 1.6-1.8 4.1-.4 5.9l12.7 17.1C13.4 56.4 16.6 58 20 58h16.5c6 0 10.9-4.9 10.9-10.9V31.6c0-2.5-2-4.5-4.5-4.5s-4.5 2-4.5 4.5v-2.3c0-2.5-2-4.5-4.5-4.5s-4.5 2-4.5 4.5v-1.8c0-2.5-2-4.5-4.5-4.5s-4.4 1.9-4.5 4.3V8.6C18.6 6 16.6 4 14 4z" /><path d="M24.4 29v10M33.4 29.3V39M42.4 31.6V39" fill="none" /></svg>
+      </div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      const T0 = 6.467; // Start of this shot in the full film; all times below are full-film times
+      const at = (t) => t - T0;
+      const PAN = {"A":[[6.467,-400.2,141.0],[6.5,-372.5,141.0],[6.534,-340.4,141.0],[6.567,-308.4,141.0],[6.6,-279.6,141.0],[6.634,-255.1,141.0],[6.667,-234.5,141.0],[6.7,-216.8,141.0],[6.734,-201.3,141.0],[6.767,-187.4,141.0],[6.8,-174.7,141.0],[6.834,-163.1,141.0],[6.867,-152.4,141.0],[6.9,-142.5,141.0],[6.934,-133.3,141.0],[6.967,-124.6,141.0],[7.0,-116.3,141.0],[7.034,-108.4,141.0],[7.067,-100.9,141.0],[7.1,-93.9,141.0],[7.134,-87.4,141.0],[7.167,-81.3,141.0],[7.2,-75.6,141.0],[7.234,-70.3,141.0],[7.267,-65.3,141.0],[7.3,-60.5,141.0],[7.334,-55.9,141.0],[7.367,-51.6,141.0],[7.4,-47.6,141.0],[7.434,-43.7,141.0],[7.467,-40.1,141.0],[7.5,-36.6,141.0],[7.534,-33.3,141.0],[7.567,-30.0,140.9],[7.6,-26.9,140.7],[7.634,-23.9,140.2],[7.667,-21.1,139.4],[7.7,-18.5,138.3],[7.734,-16.1,136.6],[7.767,-14.0,134.5],[7.8,-12.2,131.8],[7.834,-10.7,128.3],[7.867,-9.3,124.1],[7.9,-7.4,119.2],[7.934,-5.2,113.1],[7.967,-3.1,106.3],[8.0,-1.4,98.4],[8.034,-0.4,89.0],[8.067,-0.0,78.8],[8.1,0.0,67.3],[8.134,0.0,54.0],[8.167,0.0,39.8],[8.2,0.0,24.0],[8.234,0.0,6.1],[8.267,0.0,-13.0],[8.3,0.0,-33.7],[8.334,0.0,-56.9],[8.367,0.0,-81.4],[8.4,0.0,-107.7],[8.434,0.0,-137.0]],"B":[[8.45,0.0,425.4],[8.4833,0.0,395.1],[8.5167,0.0,364.7],[8.55,0.0,335.1],[8.5833,0.0,307.2],[8.6167,0.0,280.9],[8.65,0.0,257.4],[8.6833,0.0,236.4],[8.7167,0.0,217.8],[8.75,0.0,201.0],[8.7833,0.0,185.8],[8.8167,0.0,172.0],[8.85,0.0,159.4],[8.8833,0.0,147.8],[8.9167,0.0,137.2],[8.95,0.0,127.4],[8.9833,0.0,118.2],[9.0167,0.0,109.6],[9.05,0.0,101.4],[9.0833,0.0,93.7],[9.1167,0.0,86.4],[9.15,0.0,79.6],[9.1833,0.0,73.3],[9.2167,0.0,67.3],[9.25,0.0,61.5],[9.2833,0.0,56.0],[9.3167,0.0,50.8],[9.35,0.0,45.9],[9.3833,0.0,41.2],[9.4167,0.0,36.7],[9.45,0.0,32.5],[9.4833,0.0,28.5],[9.5167,0.0,24.7],[9.55,0.0,21.2],[9.5833,0.0,17.8],[9.6167,0.0,14.7],[9.65,0.0,11.6],[9.6833,0.0,8.7],[9.7167,0.0,5.9],[9.75,0.0,3.3],[9.7833,0.0,0.9],[9.8167,0.0,-1.4],[9.85,0.0,-3.7],[9.8833,0.0,-5.8],[9.9167,0.0,-7.8],[9.95,0.0,-9.7],[9.9833,0.0,-11.5],[10.0167,0.0,-13.2],[10.05,0.0,-15.0],[10.0833,0.0,-16.8],[10.1167,0.0,-18.5],[10.15,0.0,-20.4],[10.1833,0.0,-22.4],[10.2167,0.0,-24.6],[10.25,0.0,-26.8],[10.2833,0.0,-29.2],[10.3167,0.0,-31.6],[10.35,0.0,-34.1],[10.3833,0.0,-36.7],[10.4167,0.0,-39.4],[10.45,0.0,-42.2],[10.4833,0.0,-45.2],[10.5167,0.0,-48.5],[10.55,0.0,-52.2],[10.5833,0.0,-56.1],[10.6167,0.0,-60.2],[10.65,0.0,-64.3],[10.6833,0.0,-68.4],[10.7167,0.0,-72.5],[10.75,0.0,-76.6],[10.7833,0.0,-80.8],[10.8167,0.0,-85.1],[10.85,0.0,-89.8],[10.8833,0.0,-94.9],[10.9167,0.0,-100.2],[10.95,0.0,-105.3],[10.9833,0.0,-109.4]]}; // Per-frame pan for both shots [full-film time, x, y]: the window is measured from the reference, the prompt panel matches speed at the cut
+      const drive = (sel, keys) => {
+        gsap.set(sel, { x: keys[0][1], y: keys[0][2] });
+        for (let i = 1; i < keys.length; i++) {
+          tl.to(sel, { x: keys[i][1], y: keys[i][2], duration: keys[i][0] - keys[i - 1][0], ease: "none" }, at(keys[i - 1][0]));
+        }
+      };
+      drive("#worldA", PAN.A);
+      drive("#worldB", PAN.B);
+
+      // Whip transition: vertical blur builds as the window accelerates upward before the cut, then clears as the prompt panel decelerates after it
+      tl.to("#whipA-fx", { attr: { stdDeviation: "0 9" }, duration: 0.5, ease: "power2.in" }, at(7.95));
+      tl.set("#shotA", { opacity: 0 }, at(8.45));
+      tl.set("#shotB", { opacity: 1 }, at(8.45));
+      tl.fromTo("#whipB-fx", { attr: { stdDeviation: "0 9" } }, { attr: { stdDeviation: "0 0" }, duration: 0.4, ease: "power2.out" }, at(8.45));
+
+      // Window: the title bar is already there; from 6.73 s the body slides out from behind the left edge, about 150 px, easing to a stop over 0.75 s (measured from the reference)
+      tl.fromTo("#win-body", { x: -150 }, { x: 0, duration: 0.75, ease: "power3.out" }, at(6.73));
+      tl.fromTo("#win-body", { opacity: 0 }, { opacity: 1, duration: 0.1, ease: "none" }, at(6.73));
+
+      // Prompt content (tag + text), measured frame by frame from the reference:
+      // the yellow tag is fixed to the panel and rises with it, with no motion of its own;
+      // the text drops in relative to the panel (about 14 px, easing in over 0.35 s), offsetting it against the tag
+      tl.fromTo(["#l1", "#l2"], { y: -14 }, { y: 0, duration: 0.35, ease: "power2.out" }, at(8.5));
+      // Yellow tag: fades in from translucent and blurred
+      tl.fromTo("#chip", { opacity: 0.35, filter: "blur(3px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.22, ease: "power1.out" }, at(8.47));
+
+      // Prompt text, observed frame by frame in the reference:
+      // 1. Letters appear one by one, starting as translucent gray and settling to gray in about 0.1 s;
+      // 2. The word being typed stays gray; when the next word starts, the previous word turns white within about 0.15 s (words light up one at a time);
+      // 3. Short pauses between words make the text arrive in bursts, like streamed AI output
+      const T = [8.5, 8.521, 8.542, 8.563, 8.584, 8.605, 8.626, 8.647, 8.668, 8.724, 8.745, 8.766, 8.787, 8.808, 8.829, 8.885, 8.906, 8.927, 8.948, 8.969, 8.99, 9.011, 9.067, 9.088, 9.109, 9.13, 9.186, 9.207, 9.228, 9.249, 9.27, 9.291, 9.447, 9.469, 9.4913, 9.5138, 9.5365, 9.5595, 9.5828, 9.6064, 9.6651, 9.6892, 9.7135, 9.738, 9.7628, 9.7879, 9.8132, 9.8738, 9.8996, 9.9257, 9.952, 9.9786, 10.0404, 10.0675, 10.0949, 10.1225, 10.1854, 10.2135, 10.2418, 10.2705, 10.2994, 10.3285, 10.3929, 10.4225, 10.4524, 10.4826, 10.513, 10.5437, 10.6096, 10.6408, 10.6722, 10.7039, 10.7358, 10.803, 10.8355, 10.8682, 10.9011, 10.9344, 11.0028, 11.0365, 11.0705, 11.1048, 11.1393, 11.174];          // Appearance time of each letter
+      const WSTART = [8.5, 8.724, 8.885, 9.067, 9.186, 9.447, 9.6651, 9.8738, 10.0404, 10.1854, 10.3929, 10.6096, 10.803, 11.0028];    // Appearance time of the first letter of each word
+      gsap.utils.toArray("#prompt .c").forEach((el, i) => {
+        tl.fromTo(el, { opacity: 0 }, { opacity: 1, duration: 0.1, ease: "none", immediateRender: false }, at(T[i]));
+      });
+      gsap.utils.toArray("#prompt .w").forEach((el, i) => {
+        const brighten = i + 1 < WSTART.length ? WSTART[i + 1] : WSTART[i] + 0.35;
+        tl.to(el, { color: "#ececec", duration: 0.15, ease: "power1.out" }, at(brighten));
+        // 4. Tracking tightens: each word starts slightly wide (letter k shifted right by k × 1.6 px) and eases back within 0.45 s (each word narrows about 3% in the reference)
+        //    Done with per-letter x offsets for smooth sub-pixel motion, avoiding the per-frame reflow and stutter of animating letter-spacing
+        gsap.utils.toArray(el.querySelectorAll(".c")).forEach((ch, k) => {
+          gsap.set(ch, { x: k * 1.6 });
+          tl.to(ch, { x: 0, duration: 0.45, ease: "power2.out" }, at(WSTART[i]));
+        });
+      });
+      const l2Start = 9.447;
+
+      // "@ Actions": shortly after the second line starts typing, slides up from below the panel's bottom edge (about 38 px, easing to a stop over 0.4 s);
+      // the part hidden by the edge is revealed bottom-up (the panel's overflow: hidden does the masking); the "+" is there from the start.
+      // In the reference it appears only half visible and is fully shown after about 0.15 s, so it fades in while rising
+      gsap.set(["#t-at", "#t-actions"], { y: 38, opacity: 0 });
+      tl.to(["#t-at", "#t-actions"], { y: 0, duration: 0.4, ease: "power2.out" }, at(l2Start - 0.04));
+      tl.to(["#t-at", "#t-actions"], { opacity: 1, duration: 0.18, ease: "power1.out" }, at(l2Start - 0.04));
+
+      // Click send: the hand moves diagonally from the bottom right toward the send button, slowing to a stop over its lower right; on press the button shrinks to about 73% and springs back, and the hand presses with it
+      // Coordinates are measured frame by frame from the reference (converted to the prompt shot's world space, so the hand drifts with the panel after stopping)
+      const HAND = [[10.233, 1904, 1035], [10.3, 1771, 899], [10.367, 1665, 803], [10.433, 1618, 761],
+        [10.5, 1592, 737], [10.567, 1577, 725], [10.6, 1574, 722]];
+      gsap.set("#cursor", { x: HAND[0][1], y: HAND[0][2] });
+      tl.set("#cursor", { opacity: 1 }, at(10.233));
+      for (let i = 1; i < HAND.length; i++) {
+        tl.to("#cursor", { x: HAND[i][1], y: HAND[i][2], duration: HAND[i][0] - HAND[i - 1][0], ease: "none" }, at(HAND[i - 1][0]));
+      }
+      gsap.set("#send", { transformOrigin: "50% 50%" });
+      tl.to("#send", { scale: 0.73, duration: 0.13, ease: "power2.in" }, at(10.57));
+      tl.to("#send", { scale: 1, duration: 0.2, ease: "back.out(2)" }, at(10.7));
+      tl.to("#cursor", { scale: 0.86, duration: 0.13, ease: "power2.in" }, at(10.57));
+      tl.to("#cursor", { scale: 1, duration: 0.2, ease: "power2.out" }, at(10.7));
+
+      // Closing whip: the panel keeps accelerating upward, vertical blur builds over the last 0.15 s, cutting to the end card
+      tl.to("#whipB-fx", { attr: { stdDeviation: "0 10" }, duration: 0.15, ease: "power2.in" }, at(10.85));
+
+      tl.set({}, {}, at(11.0));
+      window.__timelines = window.__timelines || {};
+      window.__timelines["ui"] = tl;
+    })();
+  </script>
+</template>

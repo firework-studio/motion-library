@@ -8,6 +8,7 @@ Each entry is a self-contained [HyperFrames](https://github.com/heygen-com/hyper
 
 | Entry | Date | Description |
 | --- | --- | --- |
+| [creative-canvas-promo](creative-canvas-promo) | 2026-10-26 | Launch teaser with a rolling counter, kinetic type, a typed prompt and whip transitions |
 
 ## Run an entry
 

@@ -1,0 +1,45 @@
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="200" fill="#F4F2EE"/><defs>
+    <g id="glowu82"><circle cx="100" cy="100" r="34" fill="#FF5A1F"/><circle cx="72" cy="70" r="26" fill="#FF2E63"/><circle cx="132" cy="128" r="28" fill="#FFB020"/><circle cx="132" cy="66" r="18" fill="#7B5CFF"/></g>
+    <filter id="blu82" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="16"/></filter>
+    <filter id="bxu82" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="9"/></filter>
+    <filter id="shu82" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="7"/></filter>
+    <linearGradient id="gfu82" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity="0.55"/>
+      <stop offset=".45" stop-color="#fff" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0.3"/>
+    </linearGradient>
+    <linearGradient id="gsu82" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".95"/>
+      <stop offset=".5" stop-color="#fff" stop-opacity=".12"/>
+      <stop offset="1" stop-color="#fff" stop-opacity=".55"/>
+    </linearGradient>
+    <radialGradient id="hlu82" cx=".3" cy=".22" r=".45">
+      <stop offset="0" stop-color="#fff" stop-opacity=".7"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </radialGradient>
+  </defs><use href="#glowu82" filter="url(#blu82)" opacity="0.55"/><g><clipPath id="cu83"><path d="M100 22 H100 A18 18 0 0 1 118 40 V160 A18 18 0 0 1 100 178 H100 A18 18 0 0 1 82 160 V40 A18 18 0 0 1 100 22Z" transform="rotate(0 100 100)"/></clipPath><g transform="translate(0 9)"><path d="M100 22 H100 A18 18 0 0 1 118 40 V160 A18 18 0 0 1 100 178 H100 A18 18 0 0 1 82 160 V40 A18 18 0 0 1 100 22Z" transform="rotate(0 100 100)" fill="#000" opacity="0.14" filter="url(#shu82)"/></g><g clip-path="url(#cu83)">
+      <rect x="-60" y="-60" width="320" height="320" fill="#FF5A1F" opacity="0.22"/>
+      <use href="#glowu82" filter="url(#bxu82)" transform="translate(8 6) scale(1.02)" opacity=".95"/>
+      <path d="M100 22 H100 A18 18 0 0 1 118 40 V160 A18 18 0 0 1 100 178 H100 A18 18 0 0 1 82 160 V40 A18 18 0 0 1 100 22Z" transform="rotate(0 100 100)" fill="url(#gfu82)"/>
+      <path d="M100 22 H100 A18 18 0 0 1 118 40 V160 A18 18 0 0 1 100 178 H100 A18 18 0 0 1 82 160 V40 A18 18 0 0 1 100 22Z" transform="rotate(0 100 100)" fill="url(#hlu82)"/>
+    </g><path d="M100 22 H100 A18 18 0 0 1 118 40 V160 A18 18 0 0 1 100 178 H100 A18 18 0 0 1 82 160 V40 A18 18 0 0 1 100 22Z" transform="rotate(0 100 100)" fill="none" stroke="url(#gsu82)" stroke-width="1.6"/><clipPath id="cu84"><path d="M100 22 H100 A18 18 0 0 1 118 40 V160 A18 18 0 0 1 100 178 H100 A18 18 0 0 1 82 160 V40 A18 18 0 0 1 100 22Z" transform="rotate(36 100 100)"/></clipPath><g transform="translate(0 9)"><path d="M100 22 H100 A18 18 0 0 1 118 40 V160 A18 18 0 0 1 100 178 H100 A18 18 0 0 1 82 160 V40 A18 18 0 0 1 100 22Z" transform="rotate(36 100 100)" fill="#000" opacity="0.14" filter="url(#shu82)"/></g><g clip-path="url(#cu84)">
+      <rect x="-60" y="-60" width="320" height="320" fill="#FFB020" opacity="0.22"/>
+      <use href="#glowu82" filter="url(#bxu82)" transform="translate(3 9) scale(1.02)" opacity=".95"/>
+      <path d="M100 22 H100 A18 18 0 0 1 118 40 V160 A18 18 0 0 1 100 178 H100 A18 18 0 0 1 82 160 V40 A18 18 0 0 1 100 22Z" transform="rotate(36 100 100)" fill="url(#gfu82)"/>
+      <path d="M100 22 H100 A18 18 0 0 1 118 40 V160 A18 18 0 0 1 100 178 H100 A18 18 0 0 1 82 160 V40 A18 18 0 0 1 100 22Z" transform="rotate(36 100 100)" fill="url(#hlu82)"/>
+    </g><path d="M100 22 H100 A18 18 0 0 1 118 40 V160 A18 18 0 0 1 100 178 H100 A18 18 0 0 1 82 160 V40 A18 18 0 0 1 100 22Z" transform="rotate(36 100 100)" fill="none" stroke="url(#gsu82)" stroke-width="1.6"/><clipPath id="cu85"><path d="M100 22 H100 A18 18 0 0 1 118 40 V160 A18 18 0 0 1 100 178 H100 A18 18 0 0 1 82 160 V40 A18 18 0 0 1 100 22Z" transform="rotate(72 100 100)"/></clipPath><g transform="translate(0 9)"><path d="M100 22 H100 A18 18 0 0 1 118 40 V160 A18 18 0 0 1 100 178 H100 A18 18 0 0 1 82 160 V40 A18 18 0 0 1 100 22Z" transform="rotate(72 100 100)" fill="#000" opacity="0.14" filter="url(#shu82)"/></g><g clip-path="url(#cu85)">
+      <rect x="-60" y="-60" width="320" height="320" fill="#FF2E63" opacity="0.22"/>
+      <use href="#glowu82" filter="url(#bxu82)" transform="translate(-2 12) scale(1.02)" opacity=".95"/>
+      <path d="M100 22 H100 A18 18 0 0 1 118 40 V160 A18 18 0 0 1 100 178 H100 A18 18 0 0 1 82 160 V40 A18 18 0 0 1 100 22Z" transform="rotate(72 100 100)" fill="url(#gfu82)"/>
+      <path d="M100 22 H100 A18 18 0 0 1 118 40 V160 A18 18 0 0 1 100 178 H100 A18 18 0 0 1 82 160 V40 A18 18 0 0 1 100 22Z" transform="rotate(72 100 100)" fill="url(#hlu82)"/>
+    </g><path d="M100 22 H100 A18 18 0 0 1 118 40 V160 A18 18 0 0 1 100 178 H100 A18 18 0 0 1 82 160 V40 A18 18 0 0 1 100 22Z" transform="rotate(72 100 100)" fill="none" stroke="url(#gsu82)" stroke-width="1.6"/><clipPath id="cu86"><path d="M100 22 H100 A18 18 0 0 1 118 40 V160 A18 18 0 0 1 100 178 H100 A18 18 0 0 1 82 160 V40 A18 18 0 0 1 100 22Z" transform="rotate(108 100 100)"/></clipPath><g transform="translate(0 9)"><path d="M100 22 H100 A18 18 0 0 1 118 40 V160 A18 18 0 0 1 100 178 H100 A18 18 0 0 1 82 160 V40 A18 18 0 0 1 100 22Z" transform="rotate(108 100 100)" fill="#000" opacity="0.14" filter="url(#shu82)"/></g><g clip-path="url(#cu86)">
+      <rect x="-60" y="-60" width="320" height="320" fill="#FF8A3D" opacity="0.22"/>
+      <use href="#glowu82" filter="url(#bxu82)" transform="translate(-7 15) scale(1.02)" opacity=".95"/>
+      <path d="M100 22 H100 A18 18 0 0 1 118 40 V160 A18 18 0 0 1 100 178 H100 A18 18 0 0 1 82 160 V40 A18 18 0 0 1 100 22Z" transform="rotate(108 100 100)" fill="url(#gfu82)"/>
+      <path d="M100 22 H100 A18 18 0 0 1 118 40 V160 A18 18 0 0 1 100 178 H100 A18 18 0 0 1 82 160 V40 A18 18 0 0 1 100 22Z" transform="rotate(108 100 100)" fill="url(#hlu82)"/>
+    </g><path d="M100 22 H100 A18 18 0 0 1 118 40 V160 A18 18 0 0 1 100 178 H100 A18 18 0 0 1 82 160 V40 A18 18 0 0 1 100 22Z" transform="rotate(108 100 100)" fill="none" stroke="url(#gsu82)" stroke-width="1.6"/><clipPath id="cu87"><path d="M100 22 H100 A18 18 0 0 1 118 40 V160 A18 18 0 0 1 100 178 H100 A18 18 0 0 1 82 160 V40 A18 18 0 0 1 100 22Z" transform="rotate(144 100 100)"/></clipPath><g transform="translate(0 9)"><path d="M100 22 H100 A18 18 0 0 1 118 40 V160 A18 18 0 0 1 100 178 H100 A18 18 0 0 1 82 160 V40 A18 18 0 0 1 100 22Z" transform="rotate(144 100 100)" fill="#000" opacity="0.14" filter="url(#shu82)"/></g><g clip-path="url(#cu87)">
+      <rect x="-60" y="-60" width="320" height="320" fill="#7B5CFF" opacity="0.22"/>
+      <use href="#glowu82" filter="url(#bxu82)" transform="translate(-12 18) scale(1.02)" opacity=".95"/>
+      <path d="M100 22 H100 A18 18 0 0 1 118 40 V160 A18 18 0 0 1 100 178 H100 A18 18 0 0 1 82 160 V40 A18 18 0 0 1 100 22Z" transform="rotate(144 100 100)" fill="url(#gfu82)"/>
+      <path d="M100 22 H100 A18 18 0 0 1 118 40 V160 A18 18 0 0 1 100 178 H100 A18 18 0 0 1 82 160 V40 A18 18 0 0 1 100 22Z" transform="rotate(144 100 100)" fill="url(#hlu82)"/>
+    </g><path d="M100 22 H100 A18 18 0 0 1 118 40 V160 A18 18 0 0 1 100 178 H100 A18 18 0 0 1 82 160 V40 A18 18 0 0 1 100 22Z" transform="rotate(144 100 100)" fill="none" stroke="url(#gsu82)" stroke-width="1.6"/></g></svg>
