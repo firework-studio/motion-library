@@ -2,7 +2,7 @@
 
 A library of motion design references by Firework Studio, built with code.
 
-Each entry is a self-contained [HyperFrames](https://github.com/heygen-com/hyperframes) project: a finished video plus the plain HTML source that produces it. Browse an entry to see the result, run it locally, or point an AI agent at it and reuse a transition, a title animation, or a pacing pattern in your own work.
+Each entry is a self-contained [HyperFrames](https://github.com/heygen-com/hyperframes) project: the plain HTML source of a finished video. The rendered video is attached to the entry's [release](https://github.com/firework-studio/motion-library/releases). Browse an entry to see the result, run it locally, or point an AI agent at it and reuse a transition, a title animation, or a pacing pattern in your own work.
 
 ## Entries
 
@@ -29,8 +29,7 @@ npm run render    # Render to MP4
 ├── assets/           # Fonts, images, audio
 ├── package.json
 ├── hyperframes.json
-├── meta.json
-└── preview.mp4       # Rendered video
+└── meta.json
 ```
 
 ## License

@@ -1,9 +1,10 @@
 # Dependencies
 node_modules/
 
-# HyperFrames state and render output
+# HyperFrames state and render output (videos are attached to releases)
 .hyperframes/
 renders/
+*.mp4
 
 # Environment and secrets
 .env
