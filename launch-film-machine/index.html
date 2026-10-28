@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en" data-resolution="landscape">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <!-- the launch-film machine: isometric figure built with the anatomy skill (MIT), plus its runtime -->
+    <script src="assets/machine/machine.js"></script>
+    <!-- the thumbnail wall shared by shots 1 and 7 -->
+    <script src="assets/wall.js"></script>
+    <style>
+      @font-face {
+        font-family: "DM Sans";
+        font-weight: 400;
+        src: url("assets/fonts/DMSans-400.woff2") format("woff2");
+      }
+      @font-face {
+        font-family: "DM Sans";
+        font-weight: 600;
+        src: url("assets/fonts/DMSans-600.woff2") format("woff2");
+      }
+      /* The palette: cool white with the studio's flame orange (#FF5A1F, from the logo) as the one accent.
+         --beam-ink, --lamp-body and --lamp-core feed the projector shader as "r g b" in 0..1.
+         The .sp-stage block repaints the anatomy figure (its light-theme tokens). */
+      :root {
+        --ground: #eceef2; --card: #ffffff; --field: #ffffff; --ink: #0e0e13; --muted: #5e6370; --faint: #aeb3bd;
+        --line: #e1e4ea; --track: #e6e9ee; --chip: #f0f2f5; --accent: #ff5a1f; --accent-ink: #ff5a1f;
+        --beam-ink: 1 0.66 0.48; --lamp-body: 1 0.35 0.12; --lamp-core: 1 0.95 0.86;
+      }
+      .sp-stage.iso[data-theme="light"] {
+        --anatomy-paper: #ffffff; --anatomy-card: #ffffff; --anatomy-face: #ffffff; --anatomy-top: #ffffff;
+        --anatomy-shade-0: #d8dce3; --anatomy-shade-1: #e2e5eb; --anatomy-shade-2: #ebeef2; --anatomy-shade-3: #f4f5f8;
+        --anatomy-lit-top: #fff4ee; --anatomy-lit-shade: #ffe3d6;
+        --anatomy-hi: #1c1f26; --anatomy-mid: #828894; --anatomy-lo: #b2b7c0; --anatomy-faint: #d5d9e0; --anatomy-lit: #ff5a1f;
+        --anatomy-halo: #7d8594; --anatomy-dot: #2c3038; --sp-lcd: #16141c; --sp-lcd-num: #ff8a3d;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: var(--ground);
+      }
+      #root {
+        position: relative;
+        width: 100%;
+        height: 100%;
+      }
+      .w-thumb {
+        position: absolute;
+      }
+      .w-thumb img {
+        display: block;
+        border-radius: 10px;
+        object-fit: cover;
+      }
+      .w-word {
+        position: absolute;
+        width: 300px;
+        height: 30px;
+        text-align: center;
+        font-family: "DM Sans", sans-serif;
+        font-size: 22px;
+        line-height: 30px;
+        color: var(--muted);
+      }
+      .w-word span {
+        position: absolute;
+        left: 0;
+        right: 0;
+      }
+      .w-word span + span {
+        opacity: 0;
+      }
+      .w-word.w-cmd {
+        color: var(--ink);
+        font-weight: 600;
+      }
+      .w-far img {
+        border-radius: 7px;
+      }
+      .w-near img {
+        border-radius: 14px;
+      }
+      #ground {
+        position: absolute;
+        inset: 0;
+        background: var(--ground);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="39" data-width="1920" data-height="1080">
+      <div id="ground"></div>
+      <div id="intro" data-composition-id="intro" data-composition-src="compositions/01-intro.html" data-start="0" data-duration="4" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080" style="z-index: 2"></div>
+      <div id="card" data-composition-id="card" data-composition-src="compositions/02-card.html" data-start="4" data-duration="25" data-track-index="2" data-track-kind="graphics" data-width="1920" data-height="1080" style="z-index: 2"></div>
+      <div id="wall" data-composition-id="wall" data-composition-src="compositions/03-wall.html" data-start="29" data-duration="4" data-track-index="3" data-track-kind="graphics" data-width="1920" data-height="1080" style="z-index: 2"></div>
+      <div id="end" data-composition-id="end" data-composition-src="compositions/04-end.html" data-start="33" data-duration="6" data-track-index="4" data-track-kind="graphics" data-width="1920" data-height="1080" style="z-index: 2"></div>
+      <hf-audio-group id="music" data-fx-chain="{&quot;version&quot;: 1, &quot;nodes&quot;: [{&quot;type&quot;: &quot;gain&quot;, &quot;id&quot;: &quot;g1&quot;, &quot;label&quot;: &quot;Make-up gain&quot;, &quot;params&quot;: {&quot;gain&quot;: 12}}, {&quot;type&quot;: &quot;limiter&quot;, &quot;id&quot;: &quot;l1&quot;, &quot;label&quot;: &quot;Catch peaks&quot;, &quot;params&quot;: {&quot;limit&quot;: -1.5}}]}"></hf-audio-group>
+      <hf-audio-group id="sfx" data-fx-chain="{&quot;version&quot;: 1, &quot;nodes&quot;: [{&quot;type&quot;: &quot;gain&quot;, &quot;id&quot;: &quot;g1&quot;, &quot;label&quot;: &quot;Make-up gain&quot;, &quot;params&quot;: {&quot;gain&quot;: 12}}, {&quot;type&quot;: &quot;limiter&quot;, &quot;id&quot;: &quot;l1&quot;, &quot;label&quot;: &quot;Catch peaks&quot;, &quot;params&quot;: {&quot;limit&quot;: -1.5}}]}"></hf-audio-group>
+      <!-- score: four cuts of one track, aligned to bars and phrases.
+           a: intro and build. b: from the build into the chorus; its swell at 42.35 s lands on the beam (20.75 s).
+           c: the song's own chorus-to-outro turn at 154.34 s lands on shot 7 (28.94 s), entered over one bar of chorus.
+           d: eight bars later in the quiet outro, so its last chord (178.16 s) lands on the end title (33.3 s). -->
+      <audio id="score-a" data-audio-group="music" src="assets/music/score.mp3" data-start="0" data-media-start="2.4" data-duration="18.6" data-track-index="40" data-volume="0.3" data-fade-out="1.6"></audio>
+      <audio id="score-b" data-audio-group="music" src="assets/music/score.mp3" data-start="17.0" data-media-start="38.6" data-duration="11.94" data-track-index="41" data-volume="0.3" data-fade-in="1.6" data-fade-out="2.4"></audio>
+      <audio id="score-c" data-audio-group="music" src="assets/music/score.mp3" data-start="26.54" data-media-start="151.94" data-duration="5.06" data-track-index="42" data-volume="0.3" data-fade-in="2.4" data-fade-out="1.0"></audio>
+      <audio id="score-d" data-audio-group="music" src="assets/music/score.mp3" data-start="30.6" data-media-start="175.49" data-duration="8.4" data-track-index="43" data-volume="0.3" data-fade-in="1.0" data-fade-out="1.2"></audio>
+      <audio id="sfx-scatter" data-audio-group="sfx" src="assets/sfx/rush.mp3" data-start="3.5" data-duration="1.6" data-track-index="10" data-volume="0.22" data-fade-out="0.6"></audio>
+      <audio id="sfx-type" data-audio-group="sfx" src="assets/sfx/type.mp3" data-start="4.6" data-duration="2.6" data-track-index="11" data-volume="0.4" data-fade-out="0.3"></audio>
+      <audio id="sfx-send" data-audio-group="sfx" src="assets/sfx/tick.mp3" data-start="7.45" data-duration="0.47" data-track-index="12" data-volume="0.6"></audio>
+      <audio id="sfx-fold" data-audio-group="sfx" src="assets/sfx/sweep.mp3" data-start="7.85" data-duration="0.62" data-track-index="13" data-volume="0.25"></audio>
+      <audio id="sfx-build" data-audio-group="sfx" src="assets/sfx/build.mp3" data-start="8.55" data-duration="3.04" data-track-index="14" data-volume="0.55"></audio>
+      <audio id="sfx-lamp" data-audio-group="sfx" src="assets/sfx/lamp.mp3" data-start="12.2" data-duration="1.6" data-track-index="15" data-volume="0.7"></audio>
+      <audio id="sfx-lamp-pop" data-audio-group="sfx" src="assets/sfx/pop.mp3" data-start="12.25" data-duration="0.5" data-track-index="16" data-volume="0.25"></audio>
+      <audio id="sfx-take-fader" data-audio-group="sfx" src="assets/sfx/tick.mp3" data-start="12.15" data-duration="0.47" data-track-index="60" data-volume="0.4"></audio>
+      <audio id="sfx-click-drawer" data-audio-group="sfx" src="assets/sfx/tick.mp3" data-start="14.05" data-duration="0.47" data-track-index="61" data-volume="0.4"></audio>
+      <audio id="sfx-hand" data-audio-group="sfx" src="assets/sfx/sweep.mp3" data-start="35.5" data-duration="0.62" data-track-index="62" data-volume="0.15"></audio>
+      <audio id="sfx-drawer" data-audio-group="sfx" src="assets/sfx/rush.mp3" data-start="14.1" data-duration="0.9" data-track-index="17" data-volume="0.18" data-fade-out="0.4"></audio>
+      <audio id="sfx-grip" data-audio-group="sfx" src="assets/sfx/tick.mp3" data-start="14.95" data-duration="0.47" data-track-index="18" data-volume="0.45"></audio>
+      <audio id="sfx-release" data-audio-group="sfx" src="assets/sfx/tick.mp3" data-start="16.55" data-duration="0.47" data-track-index="19" data-volume="0.45"></audio>
+      <audio id="sfx-step-0" data-audio-group="sfx" src="assets/sfx/tick.mp3" data-start="17.0" data-duration="0.47" data-track-index="20" data-volume="0.5"></audio>
+      <audio id="sfx-step-1" data-audio-group="sfx" src="assets/sfx/tick.mp3" data-start="17.654" data-duration="0.47" data-track-index="21" data-volume="0.5"></audio>
+      <audio id="sfx-step-2" data-audio-group="sfx" src="assets/sfx/tick.mp3" data-start="18.309" data-duration="0.47" data-track-index="22" data-volume="0.5"></audio>
+      <audio id="sfx-step-3" data-audio-group="sfx" src="assets/sfx/tick.mp3" data-start="18.963" data-duration="0.47" data-track-index="23" data-volume="0.5"></audio>
+      <audio id="sfx-step-4" data-audio-group="sfx" src="assets/sfx/tick.mp3" data-start="19.618" data-duration="0.47" data-track-index="24" data-volume="0.5"></audio>
+      <audio id="sfx-step-5" data-audio-group="sfx" src="assets/sfx/tick.mp3" data-start="20.273" data-duration="0.47" data-track-index="25" data-volume="0.5"></audio>
+      <audio id="sfx-step-6" data-audio-group="sfx" src="assets/sfx/tick.mp3" data-start="20.927" data-duration="0.47" data-track-index="26" data-volume="0.5"></audio>
+      <audio id="sfx-step-7" data-audio-group="sfx" src="assets/sfx/tick.mp3" data-start="21.581" data-duration="0.47" data-track-index="27" data-volume="0.5"></audio>
+      <audio id="sfx-feed" data-audio-group="sfx" src="assets/sfx/sweep.mp3" data-start="20.0" data-duration="0.62" data-track-index="28" data-volume="0.25"></audio>
+      <audio id="sfx-projector" data-audio-group="sfx" src="assets/sfx/projector.mp3" data-start="20.7" data-duration="8.3" data-track-index="29" data-volume="0.45" data-fade-out="0.6"></audio>
+      <audio id="sfx-shrink" data-audio-group="sfx" src="assets/sfx/rush.mp3" data-start="29.1" data-duration="1.5" data-track-index="30" data-volume="0.25" data-fade-out="0.5"></audio>
+      <audio id="sfx-title" data-audio-group="sfx" src="assets/sfx/chimes.mp3" data-start="33.2" data-duration="3.37" data-track-index="31" data-volume="0.3"></audio>
+      <audio id="sfx-url" data-audio-group="sfx" src="assets/sfx/type.mp3" data-start="35.2" data-duration="1.4" data-track-index="32" data-volume="0.35" data-fade-out="0.2"></audio>
+    </div>
+    <script>
+      const tl = gsap.timeline({ paused: true });
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>

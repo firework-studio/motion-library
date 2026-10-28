@@ -1,0 +1,132 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 400;
+      src: url("assets/fonts/DMSans-400.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 500;
+      src: url("assets/fonts/DMSans-500.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 600;
+      src: url("assets/fonts/DMSans-600.woff2") format("woff2");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      font-family: "DM Sans", sans-serif;
+      color: var(--ink);
+    }
+    #e-title {
+      position: absolute;
+      left: 0;
+      top: 300px;
+      width: 1920px;
+      text-align: center;
+      font-family: "DM Sans", sans-serif;
+      font-weight: 600;
+      letter-spacing: -0.035em;
+      font-size: 150px;
+      line-height: 200px;
+      letter-spacing: -0.01em;
+    }
+    #e-sub {
+      position: absolute;
+      left: 0;
+      top: 520px;
+      width: 1920px;
+      text-align: center;
+      font-size: 38px;
+      color: var(--ink);
+    }
+    #e-row {
+      position: absolute;
+      left: 0;
+      top: 610px;
+      width: 1920px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 26px;
+    }
+    /* God's hand from Michelangelo's Creation of Adam (public domain), pointing at the address */
+    #e-hand { position: absolute; left: 253px; top: 569px; width: 300px; height: auto; }
+    #e-box {
+      width: 760px;
+      height: 70px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: var(--card);
+      display: flex;
+      align-items: center;
+      padding: 0 26px;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 28px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    #e-box b { font-weight: 500; color: var(--ink); }
+    #e-chev { margin-right: 16px; color: var(--faint); }
+    #e-caret { display: inline-block; width: 2px; height: 32px; margin-left: 3px; background: var(--ink); }
+    #e-sub b { font-weight: 400; color: var(--ink); }
+    #e-sub { color: var(--muted); }
+    #e-foot {
+      position: absolute;
+      left: 0;
+      top: 730px;
+      width: 1920px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      font-size: 28px;
+      color: var(--muted);
+    }
+    #e-foot img { width: 30px; height: 30px; display: block; }
+    /* text rises from behind its own line, then rests; it leaves by fading */
+    .rise { overflow: hidden; padding: 0.08em 0 0.16em; }
+    .rise-in { display: inline-block; will-change: transform; }
+  </style>
+  <div id="root" data-composition-id="end" data-width="1920" data-height="1080">
+    <div id="e-title" class="rise"><span class="rise-in">Firework Studio</span></div>
+    <div id="e-sub" class="rise"><span class="rise-in"><b>Send us a film you like,</b> and we rebuild its motion for your product.</span></div>
+    <div id="e-row">
+      <div id="e-box"><span id="e-typed"></span><span id="e-caret"></span></div>
+    </div>
+    <img id="e-hand" src="assets/images/hand.png" alt="" />
+    <div id="e-foot"><img src="assets/images/studio-mark.png" alt="" /><span>Firework Studio · open-source motion library · MIT</span></div>
+  </div>
+  <script>
+    (() => {
+      const CMD = "github.com/firework-studio/motion-library";
+      const typed = document.getElementById("e-typed");
+      const tl = gsap.timeline({ paused: true });
+      const clock = { t: 0 };
+      // typing 2.2-3.6 s; the repository path is set in the ink colour once typed
+      const render = (t) => {
+        const n = Math.round(CMD.length * Math.min(1, Math.max(0, (t - 2.2) / 1.4)));
+        const shown = CMD.slice(0, n);
+        const cut = "github.com/".length;
+        typed.innerHTML = shown.length <= cut ? shown : `${shown.slice(0, cut)}<b>${shown.slice(cut)}</b>`;
+      };
+      tl.to(clock, { t: 6, duration: 6, ease: "none", onUpdate: () => render(clock.t) }, 0);
+
+      // one thing at a time, and nothing moves once it is on screen
+      tl.fromTo("#e-title .rise-in", { yPercent: 105 }, { yPercent: 0, duration: 1.0, ease: "power4.out" }, 0.2);
+      tl.fromTo("#e-sub .rise-in", { yPercent: 105 }, { yPercent: 0, duration: 0.8, ease: "power4.out" }, 0.75);
+      tl.fromTo("#e-box", { opacity: 0 }, { opacity: 1, duration: 0.6, ease: "power2.out" }, 1.6);
+      // the hand glides in from the left while the address is typed, and stops just short of the box
+      tl.fromTo("#e-hand", { opacity: 0, x: -200 }, { opacity: 1, x: 0, duration: 0.7, ease: "power3.out" }, 2.5);
+      tl.fromTo("#e-caret", { opacity: 1 }, { opacity: 0, duration: 0.01, repeat: 7, yoyo: true, repeatDelay: 0.3 }, 3.7);
+      tl.fromTo("#e-foot", { opacity: 0 }, { opacity: 1, duration: 0.6, ease: "power2.out" }, 3.3);
+
+      render(0);
+      window.__timelines["end"] = tl;
+    })();
+  </script>
+</template>

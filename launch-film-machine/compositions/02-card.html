@@ -1,0 +1,426 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 400;
+      src: url("assets/fonts/DMSans-400.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 500;
+      src: url("assets/fonts/DMSans-500.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 600;
+      src: url("assets/fonts/DMSans-600.woff2") format("woff2");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      font-family: "DM Sans", sans-serif;
+      color: var(--ink);
+    }
+    /* the white card: prompt in shot 2, the figure plate in shots 3-6 */
+    #c-card {
+      position: absolute;
+      left: 210px;
+      top: 104px;
+      width: 1500px;
+      height: 800px;
+      border-radius: 18px;
+      background: var(--card);
+      box-shadow: inset 0 1px 0 0 #fff, 0 0 0 1px #0000000f, 0 1px 1px -0.5px #0000000a, 0 3px 3px -1.5px #0000000a, 0 6px 6px -3px #0000000a, 0 12px 12px -6px #0000000a, 0 30px 60px -20px #0000001a;
+      overflow: hidden;
+    }
+    .c-corner {
+      position: absolute;
+      top: 24px;
+      font-size: 22px;
+      letter-spacing: 0.01em;
+      color: var(--muted);
+    }
+    #c-you { left: 34px; }
+    #c-agent { right: 34px; display: flex; align-items: center; gap: 10px; }
+    .c-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ink); display: inline-block; }
+    /* shot 2: the input */
+    /* the prompt is plain large text after a ">" prompt, with no field around it */
+    #c-input {
+      position: absolute;
+      left: 40px;
+      top: 170px;
+      width: 1420px;
+      height: 560px;
+    }
+    #c-chev { position: absolute; left: 34px; top: 34px; font-size: 40px; line-height: 64px; color: var(--faint); }
+    #c-text {
+      position: absolute;
+      left: 76px;
+      top: 30px;
+      width: 1120px;
+      font-size: 44px;
+      line-height: 64px;
+      letter-spacing: -0.01em;
+      color: var(--ink);
+      white-space: pre-wrap;
+    }
+    #c-text b { font-weight: 700; }
+    #c-caret { display: inline-block; width: 3px; height: 40px; margin-left: 2px; vertical-align: -6px; background: var(--ink); }
+    #c-send {
+      position: absolute;
+      right: 24px;
+      bottom: 24px;
+      width: 46px;
+      height: 46px;
+      border-radius: 10px;
+      background: var(--chip);
+    }
+    #c-send-on { position: absolute; inset: 0; border-radius: 10px; background: var(--accent-ink); opacity: 0; }
+    #c-send svg { position: absolute; left: 13px; top: 13px; width: 20px; height: 20px; }
+    /* shots 3-6: the plate */
+    #c-bar {
+      position: absolute;
+      left: 34px;
+      top: 18px;
+      height: 50px;
+      padding: 0 20px;
+      border-radius: 10px;
+      background: var(--chip);
+      display: flex;
+      align-items: center;
+      font-size: 21px;
+      color: var(--muted);
+      white-space: nowrap;
+      opacity: 0;
+    }
+    #c-bar b { font-weight: 700; color: var(--ink); margin-right: 9px; }
+    #c-stage {
+      position: absolute;
+      left: 30px;
+      top: 92px;
+      width: 1080px;
+      height: 668px;
+    }
+    #c-stage-inner { position: absolute; inset: 0; }
+    #c-read {
+      /* no figure number: the title starts the column */
+      position: absolute;
+      left: 1100px;
+      top: 140px;
+      width: 360px;
+      opacity: 0;
+    }
+    #c-fig { font-size: 16px; color: var(--muted); }
+    #c-title { margin-top: 10px; font-weight: 600; letter-spacing: -0.025em; font-size: 56px; line-height: 62px; color: var(--ink); }
+    #c-title-i { font-weight: 500; letter-spacing: -0.02em; font-size: 48px; line-height: 56px; color: var(--muted); }
+    .c-block { position: absolute; left: 0; top: 200px; width: 360px; }
+    .c-label { font-size: 22px; color: var(--muted); white-space: nowrap; }
+    .c-label b { font-weight: 500; color: var(--ink); }
+    .c-num { margin-top: 4px; display: flex; align-items: baseline; gap: 12px; white-space: nowrap; }
+    .c-num .n { font-weight: 600; letter-spacing: -0.04em; font-size: 124px; line-height: 124px; color: var(--ink); font-variant-numeric: lining-nums tabular-nums; }
+    .c-num .u { font-weight: 500; font-size: 44px; color: var(--muted); }
+    .c-num .of { font-size: 21px; color: var(--muted); }
+    .c-bar { margin-top: 14px; height: 6px; display: flex; gap: 3px; }
+    .c-bar span { flex: 1; height: 6px; background: var(--track); position: relative; overflow: hidden; }
+    .c-bar span i { position: absolute; inset: 0; background: var(--accent-ink); transform-origin: 0 0; transform: scaleX(0); }
+    .c-sub { margin-top: 14px; font-size: 22px; color: var(--ink); white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .c-sub .g { color: var(--muted); }
+    /* a control strip under the numbers, like a fader: label, value, track, two end marks */
+    .c-ctl { margin-top: 30px; width: 360px; }
+    .c-ctl-head { display: flex; justify-content: space-between; font-size: 20px; color: var(--muted); }
+    .c-ctl-head b { font-weight: 500; color: var(--ink); font-variant-numeric: tabular-nums; }
+    .c-track { position: relative; margin-top: 12px; height: 6px; background: var(--track); }
+    .c-track i { position: absolute; left: 0; top: 0; bottom: 0; width: 100%; background: var(--accent-ink); transform-origin: 0 0; transform: scaleX(0); }
+    .c-knob { position: absolute; top: -9px; left: -12px; width: 24px; height: 24px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 1px #0000001f, 0 2px 6px -1px #00000033; }
+    .c-ends { display: flex; justify-content: space-between; margin-top: 12px; font-size: 18px; color: var(--muted); }
+    /* the easing curve the playhead steps along */
+    .c-graph { position: relative; margin-top: 26px; width: 360px; }
+    .c-graph svg { display: block; width: 360px; height: 110px; overflow: visible; }
+    #c-ghost { position: absolute; left: 0; top: 0; width: 1500px; height: 800px; z-index: 6; pointer-events: none; }
+    /* the header rule under "You type" and the agent name, as in the reference */
+    #c-rule { position: absolute; left: 34px; right: 34px; top: 62px; height: 1px; background: var(--line); }
+    /* the pointer that works the controls in shots 4 and 5 */
+    #c-cursor { position: absolute; left: 0; top: 0; width: 30px; height: 30px; opacity: 0; z-index: 5; transform-origin: 4px 3px; pointer-events: none; }
+    #c-cursor svg { display: block; width: 30px; height: 30px; filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.25)); }
+    .c-cap {
+      position: absolute;
+      left: 214px;
+      top: 930px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      font-size: 36px;
+      white-space: nowrap;
+      /* captions rise from behind their own line and fade out */
+      opacity: 0;
+      overflow: hidden;
+      padding: 4px 0 8px;
+    }
+    .c-cap .rise-in { display: flex; align-items: center; gap: 20px; will-change: transform; }
+    .c-cap .c-n { width: 34px; height: 34px; border-radius: 7px; border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; font-family: "JetBrains Mono", monospace; font-size: 14px; color: var(--muted); background: var(--card); }
+    .c-cap b { font-weight: 600; color: var(--ink); }
+    .c-cap span.g { color: var(--muted); }
+  </style>
+  <div data-hf-id="hf-czah" id="root" data-composition-id="card" data-width="1920" data-height="1080">
+    <div data-hf-id="hf-nety" id="c-card" data-layout-allow-overflow>
+      <div data-hf-id="hf-vn0b" class="c-corner" id="c-you">You type</div>
+      <div id="c-rule"></div>
+      <div data-hf-id="hf-x1wo" class="c-corner" id="c-agent"><span data-hf-id="hf-7ezp" class="c-dot" id="c-agent-dot"></span><span data-hf-id="hf-x04e">Firework Studio</span></div>
+      <div data-hf-id="hf-k7f5" id="c-input" data-layout-allow-occlusion>
+        <div data-hf-id="hf-3jo1" id="c-chev">&gt;</div>
+        <div data-hf-id="hf-bhqc" id="c-text"><b data-hf-id="hf-as5m" id="c-cmd"></b><span data-hf-id="hf-v9w6" id="c-typed"></span><span data-hf-id="hf-0ggn" id="c-caret"></span></div>
+        <div data-hf-id="hf-z5mv" id="c-send"><div data-hf-id="hf-37mr" id="c-send-on"></div><svg data-hf-id="hf-0n2h" viewBox="0 0 20 20"><path data-hf-id="hf-ykzo" d="M10 16V4M4.5 9.5 10 4l5.5 5.5" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /></svg></div>
+      </div>
+      <div data-hf-id="hf-8c3a" id="c-bar" data-layout-allow-occlusion><b data-hf-id="hf-pp1f">/firework</b><span data-hf-id="hf-p0ig">make a 30-second launch film for an AI platform, paced like the card vortex reference</span></div>
+      <div data-hf-id="hf-exbx" id="c-stage" data-layout-allow-occlusion data-layout-allow-overlap><div data-hf-id="hf-op9e" id="c-stage-inner"></div></div>
+      <div data-hf-id="hf-x9b9" id="c-read">
+        <div id="c-title">Launch film</div>
+        <div id="c-title-i">AI platform</div>
+        <div class="c-block" id="c-b-parts">
+          <div class="c-label">Drawing · <b id="c-parts-at">Bench</b></div>
+          <div class="c-num"><span class="n" id="c-parts">0</span><span class="of" id="c-parts-of">of 136 parts</span></div>
+          <div class="c-bar" id="c-parts-bar"></div>
+          <div class="c-sub"><span id="c-lines">0</span> <span class="g" id="c-lines-of">of 0 lines</span></div>
+        </div>
+        <div class="c-block" id="c-b-lamp" style="opacity: 0">
+          <div class="c-label">Lamp · <b id="c-lamp-at">warming up</b></div>
+          <div class="c-num"><span class="n" id="c-lamp">0</span><span class="u">K</span></div>
+          <div class="c-bar"><span><i id="c-lamp-bar"></i></span></div>
+          <div class="c-sub">Tungsten halogen <span class="g">· shutter closed</span></div>
+          <div class="c-ctl">
+            <div class="c-ctl-head"><span>Lamp</span><b id="c-lamp-pct">0%</b></div>
+            <div class="c-track"><i id="c-lamp-fill"></i><span class="c-knob" id="c-lamp-knob"></span></div>
+            <div class="c-ends"><span>Off</span><span>Full</span></div>
+          </div>
+        </div>
+        <div class="c-block" id="c-b-shots" style="opacity: 0">
+          <div class="c-label">Timeline · <b id="c-shots-at">waiting</b></div>
+          <div class="c-num"><span class="n" id="c-shots">0</span><span class="of">of 8 shots</span></div>
+          <div class="c-bar" id="c-shots-bar"><span><i></i></span><span><i></i></span><span><i></i></span><span><i></i></span><span><i></i></span><span><i></i></span><span><i></i></span><span><i></i></span></div>
+          <div class="c-sub">power3.out <span class="g">· 3.75 s a shot</span></div>
+          <div class="c-graph">
+            <div class="c-ctl-head"><span>Easing</span><b>power3.out</b></div>
+            <svg viewBox="0 0 360 110" id="c-curve"></svg>
+          </div>
+        </div>
+        <div class="c-block" id="c-b-frames" style="opacity: 0">
+          <div class="c-label">Projector · <b>running</b></div>
+          <div class="c-num"><span class="n" id="c-frames">0</span><span class="of">of 720 frames</span></div>
+          <div class="c-bar"><span><i id="c-frames-bar"></i></span></div>
+          <div class="c-sub">24 fps <span class="g">· TC <span id="c-tc">00:00:00:00</span></span></div>
+          <div class="c-ctl">
+            <div class="c-ctl-head"><span>Playhead</span><b id="c-play-pct">0%</b></div>
+            <div class="c-track"><i id="c-play-fill"></i><span class="c-knob" id="c-play-knob"></span></div>
+            <div class="c-ends"><span>0 s</span><span>30 s</span></div>
+          </div>
+        </div>
+      </div>
+      <img id="c-ghost" src="assets/images/machine-still.jpg" alt="" data-layout-ignore />
+      <div id="c-cursor"><svg viewBox="0 0 30 30"><path d="M4 3 L4 24 L9.5 18.8 L13.2 27 L17 25.4 L13.4 17.4 L21 17.2 Z" fill="#0e0e13" stroke="#ffffff" stroke-width="1.8" stroke-linejoin="round"/></svg></div>
+      <div data-hf-id="hf-ckxa" id="c-screen-wrap"><video data-hf-id="hf-vvmr" id="c-screen" class="clip" src="assets/video/screen-vortex.mp4" data-start="17.1" data-duration="7.9" data-track-index="5" muted playsinline style="width: 100%; height: 100%; object-fit: cover; display: block"></video></div>
+    </div>
+    <div data-hf-id="hf-o7xz" class="c-cap" id="c-cap1" data-layout-allow-overlap><span class="rise-in" data-layout-allow-overlap><b data-hf-id="hf-9b6o">You send one line.</b><span data-hf-id="hf-wgfi" class="g">The product, the length, and the film to follow.</span></span></div>
+    <div data-hf-id="hf-dcgc" class="c-cap" id="c-cap2" data-layout-allow-overlap><span class="rise-in" data-layout-allow-overlap><b data-hf-id="hf-dl9p">We take the reference apart.</b><span data-hf-id="hf-put3" class="g" id="c-cap2-n">Every shot, every move, written down.</span></span></div>
+    <div data-hf-id="hf-gbpx" class="c-cap" id="c-cap3" data-layout-allow-overlap><span class="rise-in" data-layout-allow-overlap><b data-hf-id="hf-jnof">Everything is built in code.</b><span data-hf-id="hf-zv6z" class="g">Even this lamp is a WebGL shader.</span></span></div>
+    <div data-hf-id="hf-wvtu" class="c-cap" id="c-cap4" data-layout-allow-overlap><span class="rise-in" data-layout-allow-overlap><b data-hf-id="hf-9rz3">Its timing is copied shot by shot.</b><span data-hf-id="hf-aqn7" class="g">8 shots, the same power3.out easing.</span></span></div>
+    <div data-hf-id="hf-0txv" class="c-cap" id="c-cap5" data-layout-allow-overlap><span class="rise-in" data-layout-allow-overlap><b data-hf-id="hf-4rjz">Your film comes out with its motion.</b><span data-hf-id="hf-uxa7" class="g">The code is open on GitHub.</span></span></div>
+  </div>
+  <script>
+    (() => {
+      const SM = window.FireworkMachine;
+      // shader colours come from the palette on the root, as "r g b" in 0..1
+      const rgb = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim().split(/\s+/).map(Number);
+      const machine = SM.mount(document.getElementById("c-stage-inner"), {
+        video: document.getElementById("c-screen-wrap"),
+        colors: { beam: rgb("--beam-ink"), body: rgb("--lamp-body"), core: rgb("--lamp-core") },
+      });
+      const clamp01 = (x) => Math.min(1, Math.max(0, x));
+      const span = (x, a, b) => clamp01((x - a) / (b - a));
+      const ease = (x) => { x = clamp01(x); return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+      const easeOut = (x) => 1 - Math.pow(1 - clamp01(x), 3);
+
+      // shot 2 text
+      const CMD = "/firework ";
+      const LINE = "make a 30-second launch film for an AI platform, paced like the card vortex reference";
+      const cmdEl = document.getElementById("c-cmd");
+      const typedEl = document.getElementById("c-typed");
+
+      // the machine's state as a pure function of scene time
+      // shot 3 (4.0-8.0) build · shot 4 (8.0-10.0) lamp · shot 5 (10.0-16.0) drawer, pick, timeline · shot 6 (16.0-25.0) projector
+      const STEP = 0.36;
+      function stateAt(t) {
+        const steps = span(t, 13.0, 13.0 + STEP * 7 / 0.55) * 7;
+        let head = -0.55;
+        if (t >= 12.75 && t < 13.0) head = -0.55 + 0.55 * ease(span(t, 12.75, 13.0));
+        else if (t >= 13.0) head = Math.min(7, Math.floor(steps) + easeOut(span(steps % 1, 0, 0.55)));
+        const lamp = ease(span(t, 8.2, 9.4));
+        return {
+          build: span(t, 4.5, 7.7),
+          drawer: span(t, 10.1, 10.8),
+          pick: span(t, 10.8, 12.75),
+          head,
+          feed: span(t, 16.0, 16.9),
+          lamp,
+          beam: ease(span(t, 16.7, 17.3)),
+          screen: ease(span(t, 17.1, 17.6)),
+          reel: Math.max(0, t - 16.7),
+          needle: t > 12.9 ? easeOut(span(t, 12.9, 16.0)) * 0.82 : 0,
+          frames: t >= 16.7 ? Math.min(720, (t - 16.7) * 92) : null,
+        };
+      }
+      const setText = (id, v) => { const el = document.getElementById(id); const text = String(v); if (el.textContent !== text) el.textContent = text; };
+      const fader = (id, v) => {
+        setText(id + "-pct", Math.round(v * 100) + "%");
+        document.getElementById(id + "-fill").style.transform = `scaleX(${v.toFixed(4)})`;
+        document.getElementById(id + "-knob").style.transform = `translateX(${(v * 360).toFixed(1)}px)`;
+      };
+      const timecode = (f) => {
+        const pad = (n) => String(n).padStart(2, "0");
+        return `00:00:${pad(Math.floor(f / 24))}:${pad(f % 24)}`;
+      };
+      // segmented build bar: one segment per assembly, as wide as its share of the parts
+      const first = machine.buildInfo(1);
+      setText("c-parts-of", `of ${first.totalParts} parts`);
+      setText("c-lines-of", `of ${first.totalLines.toLocaleString("en-US")} lines`);
+      const bar = document.getElementById("c-parts-bar");
+      bar.innerHTML = first.segments.map((seg) => `<span style="flex:${seg.total}"><i></i></span>`).join("");
+      const segFills = [...bar.querySelectorAll("i")];
+      const shotFills = [...document.getElementById("c-shots-bar").querySelectorAll("i")];
+      // the easing curve: x is time through one step, y is distance; a dot rides it
+      const CW = 360, CH = 96, CT = 8;
+      const yOf = (x) => CT + CH - (1 - Math.pow(1 - x, 3)) * CH;
+      const pts = Array.from({ length: 41 }, (_, i) => `${((i / 40) * CW).toFixed(1)} ${yOf(i / 40).toFixed(1)}`);
+      document.getElementById("c-curve").innerHTML =
+        `<line x1="0" y1="${CT + CH}" x2="${CW}" y2="${CT + CH}" style="stroke:var(--line)" stroke-width="1"/>` +
+        `<line x1="0" y1="${CT}" x2="${CW}" y2="${CT}" style="stroke:var(--track)" stroke-width="1"/>` +
+        `<path d="M${pts.join("L")}" fill="none" style="stroke:var(--ink)" stroke-width="2"/>` +
+        `<line id="c-curve-x" x1="0" y1="${CT}" x2="0" y2="${CT + CH}" style="stroke:var(--faint)" stroke-width="1"/>` +
+        `<circle id="c-curve-dot" r="6" cx="0" cy="${CT + CH}" style="fill:var(--accent-ink);stroke:var(--card)" stroke-width="2"/>`;
+      const curveAt = (x) => {
+        const dot = document.getElementById("c-curve-dot");
+        const ln = document.getElementById("c-curve-x");
+        dot.setAttribute("cx", (x * CW).toFixed(1));
+        dot.setAttribute("cy", yOf(x).toFixed(1));
+        ln.setAttribute("x1", (x * CW).toFixed(1));
+        ln.setAttribute("x2", (x * CW).toFixed(1));
+      };
+      // pointer: the lamp fader's knob (measured once, in card px) and the open drawer's pull (from the figure's camera)
+      const cardBox = document.getElementById("c-card").getBoundingClientRect();
+      const knob0 = (() => { const r = document.getElementById("c-lamp-knob").getBoundingClientRect(); return [r.left + r.width / 2 - cardBox.left, r.top + r.height / 2 - cardBox.top]; })();
+      const KS = 1080 / SM.DATA.W;
+      const inCard = (p) => { const v = SM.at(p); return [30 + v[0] * KS, 92 + v[1] * KS]; };
+      const DR = SM.DATA.drawer;
+      const pull = (out) => inCard([DR.x + DR.w / 2, DR.fy + 2.2 + out, DR.z + 6.2]);
+      const cursor = document.getElementById("c-cursor");
+      const lerp = (a, b, k) => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k];
+      function pointer(t, s) {
+        let at = null, o = 0, press = 0;
+        if (t >= 8.0 && t < 9.95) {
+          // shot 4: comes in, takes the knob, drags it to full as the lamp warms, lets go and leaves
+          const grab = knob0;
+          const held = [knob0[0] + 360 * s.lamp, knob0[1]];
+          if (t < 8.2) at = lerp([knob0[0] + 60, knob0[1] + 70], grab, easeOut(span(t, 8.0, 8.18)));
+          else at = held;
+          if (t > 9.5) at = lerp(held, [held[0] + 50, held[1] + 60], ease(span(t, 9.5, 9.95)));
+          o = span(t, 8.0, 8.12) * (1 - span(t, 9.7, 9.95));
+          press = t >= 8.15 && t < 9.45 ? 1 : 0;
+        } else if (t >= 9.95 && t < 11.3) {
+          // shot 5: comes in over the drawer, clicks its pull; the drawer slides out under it
+          const out = SM.DATA.drawerOut * ease(s.drawer ?? 0);
+          const start = [pull(0)[0] + 90, pull(0)[1] + 80];
+          at = t < 10.05 ? lerp(start, pull(0), easeOut(span(t, 9.95, 10.05))) : pull(out);
+          if (t > 10.85) at = lerp(pull(out), [pull(out)[0] + 60, pull(out)[1] + 70], ease(span(t, 10.85, 11.3)));
+          o = span(t, 9.95, 10.1) * (1 - span(t, 11.05, 11.3));
+          press = t >= 10.05 && t < 10.2 ? 1 : 0;
+        }
+        if (!at) { cursor.style.opacity = "0"; return; }
+        cursor.style.opacity = o.toFixed(3);
+        cursor.style.transform = `translate(${(at[0] - 4).toFixed(1)}px, ${(at[1] - 3).toFixed(1)}px) scale(${press ? 0.88 : 1})`;
+      }
+      function render(t) {
+        // typing: 0.6-3.2 s
+        const n = Math.round((CMD.length + LINE.length) * span(t, 0.6, 3.2));
+        cmdEl.textContent = CMD.slice(0, n);
+        typedEl.textContent = LINE.slice(0, Math.max(0, n - CMD.length));
+        const s = stateAt(t);
+        machine.pose(s, t);
+        pointer(t, s);
+        // readouts: every number is counted from what the figure is doing
+        const info = machine.buildInfo(s.build ?? 0);
+        setText("c-parts", info.parts);
+        setText("c-parts-at", info.current);
+        setText("c-lines", info.lines.toLocaleString("en-US"));
+        info.segments.forEach((seg, i) => (segFills[i].style.transform = `scaleX(${(seg.done / seg.total).toFixed(4)})`));
+        const kelvin = Math.round((3200 * s.lamp) / 10) * 10;
+        setText("c-lamp", kelvin.toLocaleString("en-US"));
+        setText("c-lamp-at", s.lamp >= 0.999 ? "steady" : "warming up");
+        document.getElementById("c-lamp-bar").style.transform = `scaleX(${s.lamp.toFixed(4)})`;
+        fader("c-lamp", s.lamp);
+        const shots = t < 12.95 ? 0 : Math.max(0, Math.min(8, Math.floor(s.head + 1.0001)));
+        setText("c-shots", shots);
+        setText("c-shots-at", shots === 0 ? "waiting" : s.head >= 6.999 ? "8 shots read" : `reading shot ${shots}`);
+        shotFills.forEach((el, i) => (el.style.transform = `scaleX(${i < shots ? 1 : 0})`));
+        // the dot rides power3.out through each step of the playhead
+        const stepsNow = span(t, 13.0, 13.0 + (STEP * 7) / 0.55) * 7;
+        curveAt(t < 13.0 ? 0 : s.head >= 6.999 ? 1 : span(stepsNow % 1, 0, 0.55));
+        const frames = Math.round(s.frames ?? 0);
+        setText("c-frames", frames);
+        document.getElementById("c-frames-bar").style.transform = `scaleX(${(frames / 720).toFixed(4)})`;
+        setText("c-tc", timecode(frames));
+        fader("c-play", frames / 720);
+      }
+
+      const tl = gsap.timeline({ paused: true });
+      const clock = { t: 0 };
+      tl.to(clock, { t: 25, duration: 25, ease: "none", onUpdate: () => render(clock.t) }, 0);
+
+      // entrances by role: the card fades in place; captions rise from behind their line and fade out; readouts cross
+      // on the cut and let their numbers do the moving
+      const wipe = (id, at) => {
+        tl.set(id, { opacity: 1 }, at);
+        tl.fromTo(id + " .rise-in", { yPercent: 110 }, { yPercent: 0, duration: 0.8, ease: "power4.out" }, at);
+      };
+      const cut = (id, at) => tl.fromTo(id, { opacity: 1 }, { opacity: 0, duration: 0.3, ease: "power1.in", immediateRender: false }, at - 0.3);
+      const swap = (out, inn, at) => {
+        tl.fromTo(out, { opacity: 1 }, { opacity: 0, duration: 0.3, ease: "power1.in", immediateRender: false }, at - 0.3);
+        tl.fromTo(inn, { opacity: 0 }, { opacity: 1, duration: 0.4, ease: "power2.out", immediateRender: false }, at);
+      };
+
+      // shot 2: card in, typing, send
+      // the card arrives full size from shot 1 showing the finished film; it fades to the empty prompt
+      tl.fromTo("#c-ghost", { opacity: 1 }, { opacity: 0, duration: 0.7, ease: "power1.inOut" }, 0.15);
+      tl.fromTo("#c-caret", { opacity: 1 }, { opacity: 0, duration: 0.01, repeat: 5, yoyo: true, repeatDelay: 0.24 }, 3.25);
+      tl.to("#c-send-on", { opacity: 1, duration: 0.1 }, 3.45);
+      wipe("#c-cap1", 0.5);
+      cut("#c-cap1", 3.85);
+
+      // shot 3: the input folds into the bar, the plate opens
+      tl.to("#c-input", { opacity: 0, y: -150, scale: 0.6, transformOrigin: "0% 0%", duration: 0.45, ease: "power3.in" }, 3.8);
+      tl.to(["#c-you", "#c-agent", "#c-rule"], { opacity: 0, duration: 0.2 }, 3.8);
+      tl.fromTo("#c-bar", { opacity: 0 }, { opacity: 1, duration: 0.3, ease: "power1.out" }, 4.15);
+      tl.fromTo("#c-read", { opacity: 0 }, { opacity: 1, duration: 0.3, ease: "power1.out" }, 4.3);
+      wipe("#c-cap2", 4.3);
+
+      // shot 4: lamp
+      cut("#c-cap2", 8.0);
+      swap("#c-b-parts", "#c-b-lamp", 8.0);
+      wipe("#c-cap3", 8.15);
+
+      // shot 5: timeline
+      cut("#c-cap3", 10.0);
+      swap("#c-b-lamp", "#c-b-shots", 10.0);
+      wipe("#c-cap4", 10.15);
+
+      // shot 6: projector
+      cut("#c-cap4", 16.0);
+      swap("#c-b-shots", "#c-b-frames", 16.0);
+      wipe("#c-cap5", 16.15);
+      cut("#c-cap5", 24.6);
+      // the camera stays put: a push toward any part carries the library or the bench past the card's edge
+
+      render(0);
+      window.__timelines["card"] = tl;
+    })();
+  </script>
+</template>

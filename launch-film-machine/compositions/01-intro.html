@@ -1,0 +1,105 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 400;
+      src: url("assets/fonts/DMSans-400.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 500;
+      src: url("assets/fonts/DMSans-500.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 600;
+      src: url("assets/fonts/DMSans-600.woff2") format("woff2");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+    }
+    #i-wall {
+      position: absolute;
+      inset: 0;
+    }
+    .i-line {
+      position: absolute;
+      left: 0;
+      top: 488px;
+      width: 1920px;
+      text-align: center;
+      font-family: "DM Sans", sans-serif;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      font-size: 72px;
+      line-height: 92px;
+      color: var(--ink);
+      white-space: nowrap;
+    }
+    /* the finished card: one still among the wall that becomes the whole card of shot 2 */
+    #i-card-drift { position: absolute; inset: 0; }
+    #i-card {
+      position: absolute;
+      left: 210px;
+      top: 104px;
+      width: 1500px;
+      height: 800px;
+      overflow: hidden;
+      transform-origin: 0 0;
+      box-shadow: 0 0 0 1px #0000000d, 0 30px 60px -20px #0000001f;
+    }
+    #i-card img { display: block; width: 1500px; height: 800px; }
+    /* text rises from behind its own line, then rests; it leaves by fading */
+    .rise { overflow: hidden; padding: 0.08em 0 0.16em; }
+    .rise-in { display: inline-block; will-change: transform; }
+  </style>
+  <div id="root" data-composition-id="intro" data-width="1920" data-height="1080">
+    <div id="i-wall" data-layout-allow-overlap></div>
+    <div class="i-line rise" id="i-l1" data-layout-allow-overlap><span class="rise-in">Show us a launch film you like.</span></div>
+    <div class="i-line rise" id="i-l2" data-layout-allow-overlap><span class="rise-in">We rebuild its motion for your product.</span></div>
+    <div class="i-line rise" id="i-l3" data-layout-allow-overlap><span class="rise-in">Here is one.</span></div>
+    <div id="i-card-drift"><div id="i-card"><img src="assets/images/machine-still.jpg" alt="" /></div></div>
+  </div>
+  <script>
+    (() => {
+      const thumbs = window.FireworkWall.build(document.getElementById("i-wall"), "i");
+      const tl = gsap.timeline({ paused: true });
+
+      // the films drift right, the requests drift left, the line stays still
+      const clock = { t: 0 };
+      const W = window.FireworkWall;
+      const cardDrift = document.getElementById("i-card-drift");
+      const render = (t) => {
+        W.pose(thumbs, t, { start: 0, fade: [3.05, 0.45] });
+        // the finished card travels with the middle layer, then is lifted out of the current as it grows
+        const held = W.midOffset(3.3);
+        const dx = t < 3.3 ? W.midOffset(t) : held * (1 - ease(Math.min(1, (t - 3.3) / 0.7)));
+        cardDrift.style.transform = `translate(${dx.toFixed(2)}px, 0)`;
+      };
+      const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+      tl.to(clock, { t: 4, duration: 4, ease: "none", onUpdate: () => render(clock.t) }, 0);
+      render(0);
+
+      // three sentences: each rises into place, rests, and fades before the next rises
+      const line = (id, t0, t1) => {
+        tl.fromTo("#" + id + " .rise-in", { yPercent: 105 }, { yPercent: 0, duration: 0.8, ease: "power4.out" }, t0);
+        tl.fromTo("#" + id, { opacity: 1 }, { opacity: 0, duration: 0.3, ease: "power1.in", immediateRender: false }, t1 - 0.3);
+      };
+      line("i-l1", 0.05, 1.6);
+      line("i-l2", 1.6, 3.05);
+      line("i-l3", 3.05, 3.6);
+
+      // the finished card sits in the wall's free slot (the one it returns to in shot 7) and travels with
+      // the middle layer; it stays when the others leave, then grows into the whole card of shot 2
+      const C = window.FireworkWall.CARD_SLOT;
+      const s0 = C.w / 1500;
+      const at = { x: C.x - C.w / 2 - 210, y: C.y - (800 * s0) / 2 - 104 };
+      gsap.set("#i-card", { x: at.x, y: at.y, scale: s0, borderRadius: 10 / s0 });
+      tl.to("#i-card", { x: 0, y: 0, scale: 1, borderRadius: 18, duration: 0.7, ease: "power3.inOut" }, 3.3);
+
+      window.__timelines["intro"] = tl;
+    })();
+  </script>
+</template>

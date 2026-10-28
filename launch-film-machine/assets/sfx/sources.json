@@ -1,0 +1,44 @@
+{
+  "tick": {
+    "title": "Click Tick 2.wav",
+    "creator": "malle99",
+    "license": "CC0 1.0",
+    "page": "https://freesound.org/people/malle99/sounds/496760",
+    "duration_s": 0.466
+  },
+  "pop": {
+    "title": "Sci-Fi Bubble Pop",
+    "creator": "paespedro",
+    "license": "CC0 1.0",
+    "page": "https://freesound.org/people/paespedro/sounds/174695",
+    "duration_s": 0.495
+  },
+  "sweep": {
+    "title": "Gliding Beep short.aif",
+    "creator": "TiesWijnen",
+    "license": "CC0 1.0",
+    "page": "https://freesound.org/people/TiesWijnen/sounds/233573",
+    "duration_s": 0.624
+  },
+  "rush": {
+    "title": "Woosh_Low_02.wav",
+    "creator": "moogy73",
+    "license": "CC0 1.0",
+    "page": "https://freesound.org/people/moogy73/sounds/425700",
+    "duration_s": 3.75
+  },
+  "type": {
+    "title": "Keyboard Typing Tapping.wav",
+    "creator": "Psykophobia",
+    "license": "CC0 1.0",
+    "page": "https://freesound.org/people/Psykophobia/sounds/250390",
+    "duration_s": 4.141
+  },
+  "chimes": {
+    "title": "Wind Chime (G-003) +.wav",
+    "creator": "GnoteSoundz",
+    "license": "CC0 1.0",
+    "page": "https://freesound.org/people/GnoteSoundz/sounds/169855",
+    "duration_s": 3.372
+  }
+}

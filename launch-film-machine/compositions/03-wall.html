@@ -1,0 +1,96 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 400;
+      src: url("assets/fonts/DMSans-400.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 500;
+      src: url("assets/fonts/DMSans-500.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 600;
+      src: url("assets/fonts/DMSans-600.woff2") format("woff2");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+    }
+    #w-wall {
+      position: absolute;
+      inset: 0;
+    }
+    /* the finished card, which shrinks into the wall as one more film */
+    #w-card-drift { position: absolute; inset: 0; }
+    #w-card {
+      position: absolute;
+      left: 210px;
+      top: 104px;
+      width: 1500px;
+      height: 800px;
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 0 0 1px #0000000f, 0 12px 12px -6px #0000000a, 0 30px 60px -20px #0000001a;
+      transform-origin: 0 0;
+    }
+    #w-card img { width: 1500px; height: 800px; display: block; }
+    #w-line {
+      position: absolute;
+      left: 0;
+      top: 488px;
+      width: 1920px;
+      text-align: center;
+      font-family: "DM Sans", sans-serif;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      font-size: 72px;
+      line-height: 92px;
+      color: var(--ink);
+      white-space: nowrap;
+    }
+    /* text rises from behind its own line, then rests; it leaves by fading */
+    .rise { overflow: hidden; padding: 0.08em 0 0.16em; }
+    .rise-in { display: inline-block; will-change: transform; }
+  </style>
+  <div id="root" data-composition-id="wall" data-width="1920" data-height="1080">
+    <div id="w-wall" data-layout-allow-overlap></div>
+    <div id="w-card-drift"><div id="w-card"><img src="assets/images/machine-still.jpg" alt="" /></div></div>
+    <div id="w-line" class="rise"><span class="rise-in">Every film here started from one reference.</span></div>
+  </div>
+  <script>
+    (() => {
+      const thumbs = window.FireworkWall.build(document.getElementById("w-wall"), "w");
+      const tl = gsap.timeline({ paused: true });
+
+      // 1. the card shrinks into the free slot at the bottom centre of the wall
+      const C = window.FireworkWall.CARD_SLOT;
+      const s = C.w / 1500;
+      const slot = { x: C.x - C.w / 2 - 210, y: C.y - (800 * s) / 2 - 104 };
+      tl.fromTo("#w-card", { x: 0, y: 0, scale: 1, borderRadius: 18 }, { x: slot.x, y: slot.y, scale: s, borderRadius: 60, duration: 1.0, ease: "power3.inOut" }, 0.1);
+
+      // 2. the other films drift in to the right around it, the requests drift left
+      const clock = { t: 0 };
+      const W = window.FireworkWall;
+      const cardDrift = document.getElementById("w-card-drift");
+      const render = (t) => {
+        W.pose(thumbs, t, { start: 0.3, fadeIn: 0.6 });
+        // once it has landed in its slot, the card joins the middle layer's current
+        cardDrift.style.transform = `translate(${(t > 1.1 ? W.LAYERS.mid.speed * (t - 1.1) : 0).toFixed(2)}px, 0)`;
+      };
+      tl.to(clock, { t: 4, duration: 4, ease: "none", onUpdate: () => render(clock.t) }, 0);
+      render(0);
+
+      // 3. the line
+      tl.fromTo("#w-line .rise-in", { yPercent: 105 }, { yPercent: 0, duration: 0.8, ease: "power4.out" }, 1.3);
+
+      // 4. everything leaves before the end card
+      tl.to(["#w-line", "#w-card-drift", "#w-wall"], { opacity: 0, duration: 0.35, ease: "power1.in" }, 3.6);
+
+      window.__timelines["wall"] = tl;
+    })();
+  </script>
+</template>
