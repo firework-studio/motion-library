@@ -10,6 +10,7 @@ Each entry is a self-contained [HyperFrames](https://github.com/heygen-com/hyper
 | --- | --- | --- |
 | [creative-canvas-promo](creative-canvas-promo) | 2026-10-26 | Launch teaser with a rolling counter, kinetic type, a typed prompt and whip transitions |
 | [ai-platform-promo](ai-platform-promo) | 2026-10-26 | Brand film from overload to order: branching lines, a fly-through ring, a card vortex, self-repairing code and a growing paper tree |
+| [spark-agent-promo](spark-agent-promo) | 2026-10-27 | Product film for a concept motion design agent: drifting linked cards, word-by-word swaps, an in-place logo reveal, chat bubbles, orange keyword cards and a voice-driven waveform |
 | [launch-film-machine](launch-film-machine) | 2026-10-28 | Launch film as an isometric machine: counter-drifting stills, a part-by-part build, a WebGL projector lamp, a timeline read shot by shot and a Renaissance hand at the end |
 
 ## Run an entry

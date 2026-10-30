@@ -1,0 +1,364 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 400;
+      src: url("assets/fonts/DMSans-400.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 500;
+      src: url("assets/fonts/DMSans-500.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 600;
+      src: url("assets/fonts/DMSans-600.woff2") format("woff2");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      font-family: "DM Sans", sans-serif;
+      color: #1b1d22;
+      background: linear-gradient(180deg, #f3f3f6 0%, #e6e7eb 100%);
+    }
+    #x-zoom {
+      position: absolute;
+      inset: 0;
+      transform-origin: 1510px 923px;
+    }
+    #x-title {
+      position: absolute;
+      left: 0;
+      top: 66px;
+      width: 1920px;
+      text-align: center;
+      font-size: 52px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    #x-win {
+      position: absolute;
+      left: 230px;
+      top: 160px;
+      width: 1460px;
+      height: 830px;
+      display: flex;
+      border-radius: 30px;
+      background: #fdfdfe;
+      box-shadow:
+        0 50px 70px -40px rgba(242, 130, 40, 0.55),
+        0 30px 60px rgba(40, 50, 80, 0.12),
+        0 0 0 1px rgba(30, 40, 60, 0.05);
+      font-size: 18px;
+    }
+    .x-side {
+      width: 300px;
+      flex: none;
+      padding: 30px 24px;
+      border-right: 1.5px solid #eef0f3;
+    }
+    .x-side b {
+      display: block;
+      margin-bottom: 18px;
+      font-size: 22px;
+    }
+    .x-v {
+      padding: 14px 16px;
+      border-radius: 12px;
+      margin-bottom: 8px;
+      color: #3b3f48;
+    }
+    .x-v small {
+      display: block;
+      margin-top: 2px;
+      font-size: 15px;
+      color: #8b8f99;
+    }
+    .x-v.on {
+      background: #fff4ec;
+      box-shadow: inset 0 0 0 1.5px #f8cfb2;
+    }
+    .x-main {
+      flex: 1;
+      position: relative;
+      padding: 30px 40px;
+    }
+    .x-h {
+      font-size: 26px;
+      font-weight: 600;
+    }
+    .x-steps {
+      display: flex;
+      gap: 12px;
+      margin: 18px 0 8px;
+    }
+    .x-steps i {
+      flex: 1;
+      height: 7px;
+      border-radius: 4px;
+      background: #f6c8a6;
+    }
+    .x-steps i:last-child {
+      background: #ef6a1c;
+    }
+    .x-sl {
+      display: flex;
+      justify-content: space-between;
+      font-size: 15px;
+      color: #8b8f99;
+    }
+    .x-sub {
+      margin: 30px 0 14px;
+      font-size: 22px;
+      font-weight: 600;
+    }
+    .x-row {
+      position: relative;
+      display: grid;
+      grid-template-columns: 130px 220px 1fr 120px 130px;
+      align-items: center;
+      height: 96px;
+      padding: 0 28px;
+      border-radius: 16px;
+      font-size: 23px;
+      background: #fff;
+      box-shadow: 0 0 0 1.5px #f0f1f4;
+      color: #3b3f48;
+      font-variant-numeric: tabular-nums;
+    }
+    .x-row + .x-row {
+      margin-top: 12px;
+    }
+    .x-row.x-head {
+      position: relative;
+      z-index: 2; /* the header always stays on top of the moving rows */
+      height: 50px;
+      font-size: 16px !important;
+      background: #f6f7f9;
+      box-shadow: none;
+      font-size: 15px;
+      color: #8b8f99;
+    }
+    .x-row b {
+      font-size: 28px;
+      color: #1b1d22;
+    }
+    .x-ok {
+      justify-self: start;
+      padding: 6px 16px;
+      border-radius: 16px;
+      font-size: 18px;
+      font-weight: 600;
+      color: #1f7a4a;
+      background: #e3f4ea;
+    }
+    #x-btn {
+      position: absolute;
+      right: 40px;
+      bottom: 34px;
+      padding: 18px 40px;
+      border-radius: 18px;
+      color: #fff;
+      font-size: 22px;
+      font-weight: 600;
+      background: linear-gradient(180deg, #f6862e 0%, #ef6a1c 100%);
+      box-shadow: 0 14px 26px -10px rgba(239, 106, 28, 0.7);
+    }
+    #x-btn span {
+      display: block;
+    }
+    #x-b2 {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 18px;
+      text-align: center;
+      opacity: 0;
+    }
+    /* the match cut: the previous shot's orange page, which folds down into the export button */
+    #x-morph {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+      background:
+        radial-gradient(ellipse 55% 60% at 50% 50%, #f8c98a 0%, rgba(248, 201, 138, 0) 70%),
+        radial-gradient(ellipse 80% 90% at 0% 0%, #ee6a1c 0%, rgba(238, 106, 28, 0) 60%),
+        linear-gradient(135deg, #f07a22 0%, #f3a23c 55%, #f2a12e 100%);
+    }
+    #x-morph i {
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: linear-gradient(180deg, #f6862e 0%, #ef6a1c 100%);
+      opacity: 0;
+    }
+    #x-cursor {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 80px;
+      height: 80px;
+      filter: drop-shadow(0 8px 10px rgba(200, 90, 20, 0.35));
+    }
+    /* firework sparks: thin glowing streaks laid along their direction of travel */
+    #x-fx {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+    #x-fx i {
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 6px;
+      border-radius: 3px;
+      opacity: 0;
+    }
+  </style>
+  <div id="root" data-composition-id="export" data-width="1920" data-height="1080">
+    <div id="x-zoom" data-layout-allow-overflow data-layout-allow-overlap>
+      <div id="x-title">Every Format, One Click</div>
+      <div id="x-win">
+        <div class="x-side">
+          <b>Exports</b>
+          <div class="x-v on">v4 · Launch Video<small>Today · Approved</small></div>
+          <div class="x-v">v3 · Launch Video<small>Jun 5</small></div>
+          <div class="x-v">v2 · Launch Video<small>Jun 3</small></div>
+          <div class="x-v">v1 · Launch Video<small>Jun 1</small></div>
+        </div>
+        <div class="x-main">
+          <div class="x-h">Export Launch Video</div>
+          <div class="x-steps"><i></i><i></i><i></i><i></i><i></i></div>
+          <div class="x-sl"><span>Brief</span><span>References</span><span>Edit</span><span>Review</span><span>Export</span></div>
+          <div class="x-sub">Formats for v4 · 0:45</div>
+          <div class="x-row x-head"><span>Format</span><span>Size</span><span>Made for</span><span>Length</span><span>Status</span></div>
+          <div class="x-row"><b>16:9</b><span>1920 × 1080</span><span>X, YouTube</span><span>0:45</span><span class="x-ok">Ready</span></div>
+          <div class="x-row"><b>9:16</b><span>1080 × 1920</span><span>Reels, TikTok</span><span>0:45</span><span class="x-ok">Ready</span></div>
+          <div class="x-row"><b>1:1</b><span>1080 × 1080</span><span>LinkedIn</span><span>0:45</span><span class="x-ok">Ready</span></div>
+          <div class="x-row"><b>4:5</b><span>1080 × 1350</span><span>Instagram</span><span>0:45</span><span class="x-ok">Ready</span></div>
+          <div id="x-btn"><span id="x-b1">Export All Formats</span><span id="x-b2">Exporting 4 formats…</span></div>
+        </div>
+      </div>
+      <svg id="x-cursor" viewBox="0 0 56 56">
+        <defs>
+          <linearGradient id="x-cur-g" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#ffe7a8" />
+            <stop offset="0.45" stop-color="#ffb23e" />
+            <stop offset="1" stop-color="#f26a1b" />
+          </linearGradient>
+        </defs>
+        <path d="M8 6 C6 5 5 7 6 9 L20 48 C21 51 24 51 25 48 L30 33 L45 28 C48 27 48 24 45 22 Z" fill="url(#x-cur-g)" stroke="#fff6e0" stroke-width="1.5" stroke-linejoin="round" />
+      </svg>
+    </div>
+    <div id="x-fx"></div>
+    <div id="x-morph"><i></i></div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    const D = 3.75;
+
+    // shot 20: the export panel settles; the format rows lift off the table one after another and
+    // drop back; the camera closes in on the button as the pointer arrives, and the click sets off
+    // a burst of firework sparks
+    // match cut: the orange page folds down into the export button, uncovering the panel around it,
+    // its colour settling to the button's own as it lands; then the real button takes over
+    const BTN = { x: 1375, y: 891, w: 276, h: 66, r: 18 };
+    tl.fromTo(
+      "#x-morph",
+      { clipPath: "inset(0px 0px 0px 0px round 0px)" },
+      {
+        clipPath: `inset(${BTN.y}px ${1920 - BTN.x - BTN.w}px ${1080 - BTN.y - BTN.h}px ${BTN.x}px round ${BTN.r}px)`,
+        duration: 0.6,
+        ease: "power3.inOut",
+      },
+      0,
+    );
+    tl.to("#x-morph i", { opacity: 1, duration: 0.25, ease: "none" }, 0.35);
+    tl.to("#x-morph", { opacity: 0, duration: 0.12, ease: "none" }, 0.62);
+    tl.fromTo("#x-win", { opacity: 0.6 }, { opacity: 1, duration: 0.4, ease: "power1.out" }, 0.1);
+
+    // the format rows come up from below the frame and each hovers just above its own slot, lifted
+    // with a soft shadow, all in line; then they are pressed into place one at a time, top to bottom
+    const LIFT = 0; // float in place over the slot, never up into the header
+    gsap.utils.toArray(".x-row:not(.x-head)").forEach((row, i) => {
+      const up = 0.76 + i * 0.05;
+      const place = 1.4 + i * 0.1;
+      tl.fromTo(row, { opacity: 0 }, { opacity: 1, duration: 0.01 }, up); // hidden until it comes up
+      tl.fromTo(
+        row,
+        { y: 760, scale: 1.035, boxShadow: "0 0 0 1.5px #f0f1f4, 0 22px 30px -14px rgba(40, 50, 80, 0.22)" },
+        { y: LIFT, duration: 0.5, ease: "power3.out" },
+        up,
+      );
+      tl.to(row, { scale: 1.045, duration: place - up - 0.5, ease: "sine.inOut" }, up + 0.5); // the hover
+      tl.to(row, { y: 0, scale: 1, boxShadow: "0 0 0 1.5px #f0f1f4, 0 0 0 0 rgba(40, 50, 80, 0)", duration: 0.28, ease: "power2.inOut" }, place);
+    });
+
+    tl.set("#x-cursor", { x: 1100, y: 700, opacity: 0 }, 0);
+    tl.to("#x-cursor", { opacity: 1, duration: 0.2 }, 1.6);
+    tl.to("#x-cursor", { x: 1520, y: 920, duration: 0.75, ease: "power2.inOut" }, 1.65);
+    tl.to("#x-zoom", { scale: 2.2, x: -150, y: -300, duration: 0.7, ease: "power2.inOut" }, 2.0);
+    tl.to("#x-title", { opacity: 0, duration: 0.3 }, 2.0);
+    tl.to("#x-cursor", { scale: 0.82, duration: 0.07, ease: "power2.in" }, 2.75);
+    tl.to("#x-cursor", { scale: 1, duration: 0.16, ease: "back.out(3)" }, 2.82);
+    tl.to("#x-btn", { scale: 0.96, duration: 0.07 }, 2.75);
+    tl.to("#x-btn", { scale: 1, duration: 0.16, ease: "back.out(3)" }, 2.82);
+    tl.to("#x-b1", { opacity: 0, duration: 0.12 }, 2.85);
+    tl.to("#x-b2", { opacity: 1, duration: 0.15 }, 2.9);
+
+    // sparks: a seeded generator keeps every render identical
+    let seed = 7;
+    const rnd = () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
+    const COLORS = ["#ffd56a", "#ffb23e", "#f7862e", "#ef6a1c", "#fff3d1", "#ff8a5c"];
+    const fx = document.getElementById("x-fx");
+    const ORIGIN = { x: 1360, y: 615 }; // the button, on screen after the push-in
+    const sparks = Array.from({ length: 90 }, () => {
+      const el = document.createElement("i");
+      fx.append(el);
+      const ang = rnd() * Math.PI * 2;
+      const speed = 500 + rnd() * 1300;
+      const len = 18 + rnd() * 34;
+      el.style.width = `${len}px`;
+      el.style.background = `linear-gradient(90deg, rgba(255,255,255,0), ${COLORS[Math.floor(rnd() * COLORS.length)]})`;
+      el.style.boxShadow = "0 0 10px rgba(255, 170, 60, 0.6)";
+      return { el, vx: Math.cos(ang) * speed, vy: Math.sin(ang) * speed - 250, len, delay: rnd() * 0.12, life: 0.9 + rnd() * 0.5 };
+    });
+    const BURST = 2.85;
+    const clock = { t: 0 };
+    tl.fromTo(
+      clock,
+      { t: 0 },
+      {
+        t: D,
+        duration: D,
+        ease: "none",
+        onUpdate: () => {
+          sparks.forEach((p) => {
+            const a = clock.t - BURST - p.delay;
+            if (a <= 0) {
+              p.el.style.opacity = 0;
+              return;
+            }
+            const drag = 1 - Math.exp(-2.2 * a); // air slows the spark
+            const x = ORIGIN.x + (p.vx / 2.2) * drag;
+            const y = ORIGIN.y + (p.vy / 2.2) * drag + 420 * a * a; // gravity
+            const vx = p.vx * Math.exp(-2.2 * a);
+            const vy = p.vy * Math.exp(-2.2 * a) + 840 * a;
+            const rot = (Math.atan2(vy, vx) * 180) / Math.PI;
+            const fade = Math.max(0, 1 - a / p.life);
+            p.el.style.opacity = fade;
+            p.el.style.transform = `translate(${x - p.len}px, ${y}px) rotate(${rot}deg)`;
+            p.el.style.transformOrigin = "100% 50%";
+          });
+        },
+      },
+      0,
+    );
+
+    window.__timelines["export"] = tl;
+  </script>
+</template>

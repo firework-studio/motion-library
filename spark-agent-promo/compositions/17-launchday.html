@@ -1,0 +1,64 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 700;
+      src: url("assets/fonts/DMSans-700.woff2") format("woff2");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      font-family: "DM Sans", sans-serif;
+      background:
+        radial-gradient(ellipse 55% 60% at 50% 50%, #f8c98a 0%, rgba(248, 201, 138, 0) 70%),
+        radial-gradient(ellipse 80% 90% at 0% 0%, #ee6a1c 0%, rgba(238, 106, 28, 0) 60%),
+        linear-gradient(135deg, #f07a22 0%, #f3a23c 55%, #f2a12e 100%);
+    }
+    #l-line {
+      position: absolute;
+      left: 0;
+      top: 455px;
+      width: 1920px;
+      text-align: center;
+      font-size: 150px;
+      font-weight: 700;
+      line-height: 170px;
+      letter-spacing: -0.01em;
+      color: #fff;
+      white-space: pre;
+      text-shadow: 0 6px 30px rgba(180, 70, 0, 0.16);
+    }
+    #l-line span {
+      display: inline-block;
+      opacity: 0;
+    }
+  </style>
+  <div id="root" data-composition-id="launchday" data-width="1920" data-height="1080">
+    <div id="l-line" data-text="Launch Day?"></div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+
+    // shot 19: the page warms to orange, then the line writes itself letter by letter out of a soft
+    // blur; the second word stays a little translucent, and the line drifts slowly
+    tl.fromTo("#root", { opacity: 0 }, { opacity: 1, duration: 0.18, ease: "power1.inOut" }, 0);
+    const line = document.getElementById("l-line");
+    const letters = [...line.dataset.text].map((c) => {
+      const s = document.createElement("span");
+      s.textContent = c;
+      line.append(s);
+      return s;
+    });
+    const SECOND = "Launch ".length;
+    letters.forEach((s, i) => {
+      const end = i >= SECOND ? 0.72 : 1;
+      tl.fromTo(s, { opacity: 0, filter: "blur(10px)" }, { opacity: end, filter: "blur(0px)", duration: 0.3, ease: "power2.out" }, 0.2 + i * 0.05);
+    });
+    tl.fromTo("#l-line", { x: 30, scale: 0.98 }, { x: -20, scale: 1.02, duration: 1.25, ease: "none" }, 0);
+    // the words clear away before the orange page folds down into the next shot's button
+    tl.to("#l-line", { opacity: 0, filter: "blur(10px)", duration: 0.22, ease: "power1.in" }, 1.0);
+
+    window.__timelines["launchday"] = tl;
+  </script>
+</template>

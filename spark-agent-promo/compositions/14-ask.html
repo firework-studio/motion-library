@@ -1,0 +1,193 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 400;
+      src: url("assets/fonts/DMSans-400.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 500;
+      src: url("assets/fonts/DMSans-500.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 600;
+      src: url("assets/fonts/DMSans-600.woff2") format("woff2");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      font-family: "DM Sans", sans-serif;
+      color: #1b1d22;
+      background: linear-gradient(180deg, #f3f3f6 0%, #e4e5ea 100%);
+    }
+    #a-title {
+      position: absolute;
+      left: 0;
+      top: 70px;
+      width: 1920px;
+      text-align: center;
+      font-size: 58px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    #a-title span {
+      display: inline-block;
+      opacity: 0;
+    }
+    #a-title .o {
+      background: linear-gradient(90deg, #ef6a1c 0%, #f7a23a 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    #a-cam {
+      position: absolute;
+      inset: 0;
+      perspective: 1800px;
+      perspective-origin: 960px 300px;
+    }
+    #a-win {
+      position: absolute;
+      left: 110px;
+      top: 190px;
+      width: 1700px;
+      height: 1000px;
+      display: flex;
+      border-radius: 34px;
+      background: #fdfdfe;
+      box-shadow:
+        0 50px 70px -40px rgba(242, 130, 40, 0.55),
+        0 30px 60px rgba(40, 50, 80, 0.12),
+        0 0 0 1px rgba(30, 40, 60, 0.05);
+      transform-origin: 850px 760px;
+      overflow: hidden;
+    }
+    .a-side {
+      width: 280px;
+      flex: none;
+      padding: 32px 24px;
+      border-right: 1.5px solid #eef0f3;
+      background: #fafafb;
+      font-size: 20px;
+    }
+    .a-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 26px;
+      font-size: 24px;
+      font-weight: 600;
+    }
+    .a-brand img {
+      width: 34px;
+      height: 34px;
+    }
+    .a-item {
+      padding: 11px 14px;
+      border-radius: 10px;
+      color: #3b3f48;
+    }
+    .a-item.on {
+      background: #fff1e6;
+      color: #c4501a;
+      font-weight: 600;
+    }
+    .a-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 300px;
+    }
+    .a-hello {
+      font-size: 46px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    .a-hint {
+      margin-top: 10px;
+      font-size: 22px;
+      color: #8b8f99;
+    }
+    #a-input {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 900px;
+      margin-top: 44px;
+      padding: 24px 30px;
+      border-radius: 22px;
+      background: #fff;
+      box-shadow: 0 0 0 1.5px #e6e8ec, 0 10px 24px rgba(40, 50, 80, 0.06);
+      font-size: 22px;
+      color: #9a9ea8;
+    }
+    #a-input b {
+      font-weight: 400;
+      color: #6b6f78;
+      letter-spacing: 0.4em;
+    }
+    #a-cursor {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 80px;
+      height: 80px;
+      opacity: 0;
+      filter: drop-shadow(0 8px 10px rgba(200, 90, 20, 0.35));
+    }
+  </style>
+  <div id="root" data-composition-id="ask" data-width="1920" data-height="1080">
+    <div id="a-title"><span class="o">Not Sure</span> <span>What Works?</span></div>
+    <div id="a-cam" data-layout-allow-overflow data-layout-allow-overlap>
+      <div id="a-win">
+        <div class="a-side">
+          <div class="a-brand"><img src="assets/images/studio-mark.png" alt="" />Spark</div>
+          <div class="a-item on">Ask Spark</div>
+          <div class="a-item">History</div>
+          <div class="a-item">Launch Video</div>
+        </div>
+        <div class="a-main">
+          <div class="a-hello">What should we make better?</div>
+          <div class="a-hint">Ask about pacing, easing, color, or anything in your video.</div>
+          <div id="a-input">Ask anything…<b>＋ ➤</b></div>
+        </div>
+      </div>
+    </div>
+    <svg id="a-cursor" viewBox="0 0 56 56">
+      <defs>
+        <linearGradient id="a-cur-g" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#ffe7a8" />
+          <stop offset="0.45" stop-color="#ffb23e" />
+          <stop offset="1" stop-color="#f26a1b" />
+        </linearGradient>
+      </defs>
+      <path d="M8 6 C6 5 5 7 6 9 L20 48 C21 51 24 51 25 48 L30 33 L45 28 C48 27 48 24 45 22 Z" fill="url(#a-cur-g)" stroke="#fff6e0" stroke-width="1.5" stroke-linejoin="round" />
+    </svg>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+
+    // shot 16, in order: the window drops in from above, flat; then it falls back, its top tipping
+    // away from the viewer, and the headline lands while it leans; then it stands back up, eases
+    // to a comfortable size, and the pointer settles on the input
+    tl.fromTo("#root", { opacity: 0 }, { opacity: 1, duration: 0.15, ease: "none" }, 0);
+    tl.fromTo("#a-win", { y: -900, rotationX: 0, scale: 1 }, { y: 20, duration: 0.5, ease: "power3.out" }, 0);
+    tl.to("#a-win", { rotationX: 24, duration: 0.5, ease: "power2.inOut" }, 0.45);
+    gsap.utils.toArray("#a-title span").forEach((el, i) => {
+      tl.fromTo(el, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.4, ease: "power3.out" }, 0.6 + i * 0.16);
+    });
+
+    tl.to("#a-title", { opacity: 0, y: -24, duration: 0.25, ease: "power1.in" }, 1.25);
+    tl.to("#a-win", { rotationX: 0, y: -40, scale: 0.78, duration: 0.5, ease: "power2.inOut" }, 1.2);
+
+    tl.set("#a-cursor", { x: 1180, y: 860 }, 0);
+    tl.to("#a-cursor", { opacity: 1, duration: 0.15 }, 1.4);
+    tl.to("#a-cursor", { x: 790, y: 668, duration: 0.5, ease: "power3.out" }, 1.4);
+
+    window.__timelines["ask"] = tl;
+  </script>
+</template>

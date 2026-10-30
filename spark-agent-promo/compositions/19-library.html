@@ -1,0 +1,150 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 400;
+      src: url("assets/fonts/DMSans-400.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 600;
+      src: url("assets/fonts/DMSans-600.woff2") format("woff2");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      font-family: "DM Sans", sans-serif;
+      color: #1b1d22;
+      background:
+        repeating-linear-gradient(0deg, rgba(160, 170, 190, 0.07) 0 1px, transparent 1px 90px),
+        repeating-linear-gradient(90deg, rgba(160, 170, 190, 0.07) 0 1px, transparent 1px 90px),
+        linear-gradient(180deg, #f1f1f4 0%, #dfe0e5 100%);
+    }
+    #y-cam {
+      position: absolute;
+      inset: 0;
+      perspective: 1400px;
+      perspective-origin: 960px 540px;
+    }
+    #y-stage {
+      position: absolute;
+      inset: 0;
+      transform-style: preserve-3d;
+    }
+    /* library entries as frosted cards, the same skin as the chat bubbles */
+    .y-card {
+      position: absolute;
+      width: 640px;
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      padding: 26px;
+      margin: -94px 0 0 -320px;
+      border-radius: 34px;
+      background: linear-gradient(180deg, #f4f5f7 0%, #e7e8ec 100%);
+      box-shadow:
+        inset 0 2px 0 rgba(255, 255, 255, 0.95),
+        0 6px 0 -1px #d2d4d9,
+        0 30px 40px -20px rgba(255, 140, 50, 0.6);
+    }
+    .y-card img {
+      flex: none;
+      width: 240px;
+      height: 135px;
+      border-radius: 18px;
+      object-fit: cover;
+    }
+    .y-card b {
+      display: block;
+      font-size: 38px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    .y-card span {
+      display: block;
+      margin-top: 6px;
+      font-size: 22px;
+      color: #6b6f78;
+    }
+    .y-card em {
+      display: inline-block;
+      margin-top: 14px;
+      padding: 5px 14px;
+      border-radius: 12px;
+      font-style: normal;
+      font-size: 18px;
+      font-weight: 600;
+      color: #b8461a;
+      background: #fff1e6;
+    }
+  </style>
+  <div id="root" data-composition-id="library" data-width="1920" data-height="1080">
+    <div id="y-cam" data-layout-allow-overflow data-layout-allow-overlap>
+      <div id="y-stage"></div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+
+    // shot 21: real entries from the open motion library float at different depths; the camera
+    // pulls back through them, near cards soft and far cards small
+    // three depths: a sharp middle layer the eye reads, smaller sharp cards far behind it, and a few
+    // big soft cards close to the lens, half out of frame, so the wall has real depth
+    // [image, motion, entry, length, x, y, z, blur]
+    const MID = [
+      ["ref-03.jpg", "Card vortex", "ai-platform-promo", "1.2 s", 960, 540, 80, 0],
+      ["ref-09.jpg", "Rolling counter", "creative-canvas-promo", "1.6 s", 470, 225, -60, 0],
+      ["ref-01.jpg", "Branching lines", "ai-platform-promo", "2.4 s", 1450, 225, -60, 0],
+      ["ref-05.jpg", "Paper tree", "ai-platform-promo", "3.0 s", 470, 860, -60, 0],
+      ["ref-10.jpg", "Kinetic type", "creative-canvas-promo", "2.0 s", 1450, 860, -60, 0],
+      ["ref-02.jpg", "Ring fly-through", "ai-platform-promo", "0.8 s", 60, 545, -420, 0],
+      ["ref-11.jpg", "Typed prompt", "creative-canvas-promo", "2.2 s", 1860, 545, -420, 0],
+    ];
+    // positions are chosen so that, after perspective, the far cards land in the gaps of the middle
+    // layer and the near cards sit half out of frame along the bottom
+    const FAR = [
+      ["ref-04.jpg", "Code repair", "ai-platform-promo", "2.3 s", 960, -54, -1100, 0],
+      ["ref-07.jpg", "Studio sign", "ai-platform-promo", "1.4 s", 960, 1134, -1100, 0],
+      ["ref-06.jpg", "Sky tagline", "creative-canvas-promo", "3.5 s", -484, -210, -1100, 0],
+      ["ref-08.jpg", "Glitch title", "creative-canvas-promo", "1.1 s", 2404, -210, -1100, 0],
+    ];
+    const NEAR = [
+      ["ref-06.jpg", "Sky tagline", "creative-canvas-promo", "3.5 s", 470, 830, 520, 14],
+      ["ref-04.jpg", "Code repair", "ai-platform-promo", "2.3 s", 1420, 845, 520, 16],
+    ];
+    const stage = document.getElementById("y-stage");
+    const make = ([img, name, entry, len, x, y, z, blur]) => {
+      const c = document.createElement("div");
+      c.className = "y-card";
+      c.innerHTML = `<img src="assets/images/${img}" alt="" /><div><b>${name}</b><span>${entry} · ${len}</span><em>Open source</em></div>`;
+      stage.append(c);
+      gsap.set(c, { left: x, top: y, z, filter: blur ? `blur(${blur}px)` : "none" });
+      return { c, x, y, blur };
+    };
+    const far = FAR.map(make);
+    const mid = MID.map(make);
+    const near = NEAR.map(make);
+
+    // shot 21: the middle card settles in on its own; the cards around it drift in from a little
+    // further out and gather; the far layer fades up behind them, and the soft near cards slide
+    // across the lens last; the camera eases back the whole time, so each depth moves at its own pace
+    tl.fromTo("#root", { opacity: 0 }, { opacity: 1, duration: 0.15, ease: "none" }, 0);
+    tl.fromTo("#y-stage", { z: 140, rotationY: -3 }, { z: -60, rotationY: 3, duration: 1.6, ease: "power2.out" }, 0);
+    tl.fromTo(mid[0].c, { opacity: 0, scale: 1.06, filter: "blur(8px)" }, { opacity: 1, scale: 1, filter: "blur(0px)", duration: 0.5, ease: "power3.out" }, 0.05);
+    const gather = ({ c, x, y, blur }, t, dist) => {
+      const len = Math.hypot(x - 960, y - 540) || 1;
+      tl.fromTo(
+        c,
+        { opacity: 0, x: ((x - 960) / len) * dist, y: ((y - 540) / len) * dist, filter: `blur(${blur + 8}px)` },
+        { opacity: 1, x: 0, y: 0, filter: blur ? `blur(${blur}px)` : "blur(0px)", duration: 0.8, ease: "power3.out" },
+        t,
+      );
+    };
+    mid.slice(1).forEach((card, i) => gather(card, 0.35 + i * 0.08, 220));
+    far.forEach((card, i) => gather(card, 0.5 + i * 0.06, 120));
+    near.forEach((card, i) => gather(card, 0.6 + i * 0.1, 420));
+
+    window.__timelines["library"] = tl;
+  </script>
+</template>

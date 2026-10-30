@@ -1,0 +1,157 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 400;
+      src: url("assets/fonts/DMSans-400.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 500;
+      src: url("assets/fonts/DMSans-500.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 600;
+      src: url("assets/fonts/DMSans-600.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 700;
+      src: url("assets/fonts/DMSans-700.woff2") format("woff2");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      font-family: "DM Sans", sans-serif;
+      background:
+        repeating-linear-gradient(0deg, rgba(160, 170, 190, 0.08) 0 1px, transparent 1px 90px),
+        repeating-linear-gradient(90deg, rgba(160, 170, 190, 0.08) 0 1px, transparent 1px 90px),
+        radial-gradient(ellipse 70% 60% at 50% 45%, #f4f5f7 0%, #e8eaee 100%);
+    }
+    .w-line {
+      position: absolute;
+      left: 0;
+      white-space: pre;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: #1b1d22;
+      opacity: 0;
+    }
+    /* the big lines fade to grey toward the bottom of the letters */
+    .w-big {
+      top: 400px;
+      font-size: 230px;
+      line-height: 280px;
+    }
+    /* letters (not the arrow) fade to grey toward their feet */
+    .w-big .w-ch {
+      -webkit-mask-image: linear-gradient(180deg, #000 45%, rgba(0, 0, 0, 0.45) 85%);
+      mask-image: linear-gradient(180deg, #000 45%, rgba(0, 0, 0, 0.45) 85%);
+    }
+    .w-mid {
+      top: 495px;
+      font-size: 64px;
+      line-height: 90px;
+    }
+    .w-ch {
+      display: inline-block;
+      opacity: 0;
+    }
+    /* the arrow is drawn, not typed, so it can carry a real orange-to-gold gradient */
+    /* the arrow is centred on the letters' x-height and turns about its own middle */
+    .w-arrow {
+      display: inline-block;
+      vertical-align: middle;
+      overflow: visible;
+      transform-origin: 50% 50%;
+    }
+    .w-big .w-arrow {
+      position: relative;
+      top: -0.06em;
+    }
+  </style>
+  <div data-hf-id="hf-f01q" id="root" data-composition-id="whatif" data-width="1920" data-height="1080">
+    <div data-hf-id="hf-vecb" id="w-a" class="w-line w-big" data-layout-allow-overflow data-text="What if you"></div>
+    <div data-hf-id="hf-nfkn" id="w-b" class="w-line w-mid" data-layout-allow-overflow data-text="What if you could just point"><svg data-hf-id="hf-lk9j" id="w-b-arrow" class="w-arrow" viewBox="0 0 26 24" style="width: 0.8em; height: 0.8em; margin-left: 0.16em"><defs data-hf-id="hf-mh0t"><linearGradient data-hf-id="hf-dz3u" id="w-b-arrow-g" x1="0" y1="0" x2="1" y2="0"><stop data-hf-id="hf-mg1q" offset="0" stop-color="#ea5a1a" /><stop data-hf-id="hf-jk79" offset="0.6" stop-color="#f7961f" /><stop data-hf-id="hf-32rv" offset="1" stop-color="#ffc93a" /></linearGradient></defs><path data-hf-id="hf-m1ry" d="M2.5 12 H22 M14.5 4.5 L22 12 L14.5 19.5" fill="none" stroke="url(#w-b-arrow-g)" stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round" /></svg></div>
+    <div data-hf-id="hf-ikf1" id="w-c" class="w-line w-big" data-layout-allow-overflow data-text="at what you like?"><svg data-hf-id="hf-09qb" id="w-c-arrow" class="w-arrow" viewBox="0 0 26 24" style="width: 0.9em; height: 0.9em; margin-right: 0.14em"><defs data-hf-id="hf-vl9d"><linearGradient data-hf-id="hf-fuvf" id="w-c-arrow-g" x1="0" y1="0" x2="1" y2="0"><stop data-hf-id="hf-06g2" offset="0" stop-color="#ea5a1a" /><stop data-hf-id="hf-0e3d" offset="0.6" stop-color="#f7961f" /><stop data-hf-id="hf-bw2z" offset="1" stop-color="#ffc93a" /></linearGradient></defs><path data-hf-id="hf-0yu1" d="M2.5 12 H22 M14.5 4.5 L22 12 L14.5 19.5" fill="none" stroke="url(#w-c-arrow-g)" stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round" /></svg></div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    const ORANGE = "#f26a1b";
+    const INK = "#1b1d22";
+
+    // split each line into letters (the arrow stays where the markup puts it)
+    const letters = (id, arrowFirst) => {
+      const line = document.getElementById(id);
+      const spans = [...line.dataset.text].map((c) => {
+        const sp = document.createElement("span");
+        sp.className = "w-ch";
+        sp.textContent = c;
+        return sp;
+      });
+      const arrow = line.querySelector(".w-arrow");
+      if (arrowFirst) line.append(...spans);
+      else line.prepend(...spans);
+      return { line, spans, arrow };
+    };
+    const A = letters("w-a", false);
+    const B = letters("w-b", false);
+    const C = letters("w-c", true);
+
+    // type a line letter by letter over [t0, t1]: each new letter fades up from grey
+    // untyped letters take no room, so anything after them (the arrow) rides right behind the last letter
+    const typeOn = (L, t0, t1, fresh) => {
+      const n = L.spans.length;
+      L.spans.forEach((sp, i) => {
+        const t = t0 + ((t1 - t0) * i) / n;
+        tl.set(sp, { display: "none" }, 0);
+        tl.set(sp, { display: "inline-block" }, t);
+        tl.fromTo(sp, { opacity: 0, color: fresh }, { opacity: 1, duration: 0.06 }, t);
+        tl.to(sp, { color: INK, duration: 0.14 }, t + 0.08);
+      });
+    };
+
+    // A — "What if you", big, typed left to right while the line drifts left, then pushed out left
+    tl.set("#w-a", { opacity: 1 }, 0);
+    typeOn(A, 0.05, 0.45, "#9aa0aa");
+    tl.fromTo("#w-a", { x: 560 }, { x: 220, duration: 0.62, ease: "none" }, 0);
+    tl.to("#w-a", { x: -1500, filter: "blur(10px)", duration: 0.14, ease: "power3.in" }, 0.6);
+    tl.set("#w-a", { opacity: 0 }, 0.74);
+
+    // B — "What if you" is already there in ink; the rest types on behind the arrow, each new letter
+    // orange and snapping to ink the moment the next one lands; the arrow spins as it rides the end
+    // and comes to rest pointing up-right
+    tl.set("#w-b", { opacity: 1 }, 0.72);
+    const PRE = "What if you".length;
+    const rest = B.spans.slice(PRE);
+    B.spans.slice(0, PRE).forEach((sp) => tl.set(sp, { opacity: 1, color: INK }, 0));
+    rest.forEach((sp, i) => {
+      const t = 0.8 + (0.66 * i) / rest.length;
+      tl.set(sp, { display: "none", opacity: 1, color: ORANGE }, 0);
+      tl.set(sp, { display: "inline-block" }, t);
+      tl.set(sp, { color: INK }, t + 0.66 / rest.length);
+    });
+    tl.fromTo("#w-b", { x: 900 }, { x: 600, duration: 0.95, ease: "none" }, 0.72);
+    tl.fromTo("#w-b-arrow", { rotation: -405 }, { rotation: -45, duration: 0.8, ease: "power2.out" }, 0.72); // one clockwise turn
+    tl.to("#w-b", { x: -1300, filter: "blur(8px)", duration: 0.14, ease: "power3.in" }, 1.6);
+    tl.set("#w-b", { opacity: 0 }, 1.74);
+
+    // C — the arrow lands with "at what"; the line then pans left so the arrow and first words leave
+    // the frame while "you like?" types on at the right; it holds a beat, then whips out to the left
+    tl.set("#w-c", { opacity: 1 }, 1.72);
+    const FIRST = "at what".length;
+    const head = { spans: C.spans.slice(0, FIRST) };
+    const tail = { spans: C.spans.slice(FIRST) };
+    typeOn(head, 1.74, 1.98, "#9aa0aa");
+    typeOn(tail, 2.3, 3.0, "#9aa0aa");
+    tl.fromTo("#w-c-arrow", { rotation: -45 }, { rotation: 0, duration: 0.55, ease: "sine.inOut" }, 1.75);
+    tl.fromTo("#w-c", { x: 140 }, { x: -920, duration: 1.38, ease: "power1.inOut" }, 1.72);
+    tl.to("#w-c", { x: -960, duration: 0.1, ease: "none" }, 3.1);
+    // the whip has to finish before the logo scene covers the frame at 3.45
+    tl.to("#w-c", { x: -3000, filter: "blur(16px)", duration: 0.25, ease: "power3.in" }, 3.2);
+
+    window.__timelines["whatif"] = tl;
+  </script>
+</template>

@@ -1,0 +1,414 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 400;
+      src: url("assets/fonts/DMSans-400.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 500;
+      src: url("assets/fonts/DMSans-500.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 600;
+      src: url("assets/fonts/DMSans-600.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 700;
+      src: url("assets/fonts/DMSans-700.woff2") format("woff2");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      font-family: "DM Sans", sans-serif;
+      color: #1b1d22;
+      background:
+        repeating-linear-gradient(0deg, rgba(160, 170, 190, 0.07) 0 1px, transparent 1px 90px),
+        repeating-linear-gradient(90deg, rgba(160, 170, 190, 0.07) 0 1px, transparent 1px 90px),
+        radial-gradient(ellipse 80% 70% at 50% 40%, #f3f4f7 0%, #e9ecf2 100%);
+    }
+
+    /* ---- brand lockup ---- */
+    #b-lock {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+    }
+    #b-logo {
+      position: absolute;
+      left: 645px;
+      top: 440px;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      transform-origin: 0 50%;
+    }
+    #b-mark-wrap {
+      position: relative;
+      z-index: 1;
+      width: 200px;
+      height: 200px;
+    }
+    #b-glow {
+      position: absolute;
+      inset: -40px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 140, 80, 0.55) 0%, rgba(255, 110, 50, 0.22) 40%, rgba(255, 90, 31, 0) 68%);
+    }
+    #b-mark {
+      position: absolute;
+      inset: 0;
+      width: 200px;
+      height: 200px;
+    }
+    #b-word {
+      position: relative;
+      z-index: 0;
+      font-size: 150px;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      white-space: pre;
+    }
+    #b-word span {
+      display: inline-block;
+      opacity: 0;
+    }
+    #b-tag {
+      position: absolute;
+      left: 105px;
+      top: 470px;
+      font-size: 74px;
+      font-weight: 600;
+      line-height: 1.12;
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+    }
+    #b-tag .o {
+      color: #f26a1b;
+    }
+    #b-tag .f-ln {
+      display: block;
+      opacity: 0;
+    }
+    #b-by {
+      display: block;
+      margin-top: 22px;
+      font-size: 28px;
+      font-weight: 500;
+      color: #6b6f78;
+      opacity: 0;
+    }
+
+    /* ---- the Spark app: one tall page with a soft warm shadow, plus a wide panel above it ---- */
+    #b-scene {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+    }
+    #b-app-wrap {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+      perspective: 3000px;
+      perspective-origin: 960px 540px;
+    }
+    #b-app {
+      position: absolute;
+      left: 800px;
+      top: 230px;
+      width: 1240px;
+      height: 1060px;
+      border-radius: 20px;
+      background: #ffffff;
+      box-shadow:
+        0 60px 70px -40px rgba(242, 130, 40, 0.55),
+        0 30px 60px rgba(40, 50, 80, 0.1),
+        0 0 0 1px rgba(30, 40, 60, 0.05);
+      display: flex;
+      overflow: hidden;
+      font-size: 17px;
+      transform-origin: 0 50%;
+    }
+    .a-side {
+      width: 250px;
+      flex: none;
+      border-right: 1px solid #eceef2;
+      padding: 24px 20px;
+      background: #fbfbfc;
+    }
+    .a-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 26px;
+    }
+    .a-brand img {
+      width: 30px;
+      height: 30px;
+    }
+    .a-brand small {
+      display: block;
+      font-size: 12px;
+      font-weight: 400;
+      color: #8b8f99;
+    }
+    .a-sec {
+      margin: 18px 0 6px;
+      font-size: 12px;
+      color: #9a9ea8;
+    }
+    .a-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 10px;
+      border-radius: 9px;
+      color: #3b3f48;
+    }
+    .a-item i {
+      width: 15px;
+      height: 15px;
+      border-radius: 4px;
+      border: 2px solid #9a9ea8;
+    }
+    .a-item.on {
+      background: #f1f2f5;
+      font-weight: 600;
+    }
+    .a-item.on i {
+      border-color: #f26a1b;
+    }
+    .a-main {
+      flex: 1;
+      padding: 32px 38px;
+    }
+    .a-h {
+      font-size: 26px;
+      font-weight: 600;
+    }
+    .a-sub {
+      margin-top: 6px;
+      color: #6b6f78;
+    }
+    .a-search {
+      margin: 20px 0 22px;
+      width: 380px;
+      padding: 11px 16px;
+      border-radius: 10px;
+      border: 1px solid #e3e5ea;
+      color: #9a9ea8;
+    }
+    .a-head {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 14px;
+      border-radius: 8px;
+      background: #f6f7f9;
+      font-size: 14px;
+      color: #8b8f99;
+    }
+    .a-row {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      padding: 16px 14px;
+      border-bottom: 1px solid #f0f1f4;
+    }
+    .a-row img {
+      width: 96px;
+      height: 54px;
+      border-radius: 8px;
+      object-fit: cover;
+    }
+    .a-row .t {
+      flex: 1;
+      font-weight: 600;
+    }
+    .a-row .t span {
+      display: block;
+      margin-top: 4px;
+      font-weight: 400;
+      font-size: 14px;
+      color: #8b8f99;
+    }
+    .a-row .m {
+      width: 200px;
+      font-size: 14px;
+      text-align: right;
+      color: #3b3f48;
+    }
+    .a-bar {
+      height: 6px;
+      margin-top: 8px;
+      border-radius: 3px;
+      background: #eceef2;
+      overflow: hidden;
+    }
+    .a-bar b {
+      display: block;
+      height: 100%;
+      border-radius: 3px;
+    }
+    #b-float {
+      position: absolute;
+      left: 1040px;
+      top: -30px;
+      width: 1020px;
+      display: flex;
+      border-radius: 20px;
+      background: #ffffff;
+      box-shadow: 0 26px 50px rgba(40, 50, 80, 0.12);
+      transform-origin: 0 50%;
+    }
+    .b-col {
+      flex: 1;
+      padding: 26px 30px;
+      font-size: 17px;
+    }
+    .b-col + .b-col {
+      border-left: 1px solid #f0f1f4;
+    }
+    .b-col b {
+      display: block;
+      margin-bottom: 12px;
+      font-size: 21px;
+    }
+    .b-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-top: 1px solid #f0f1f4;
+      color: #3b3f48;
+    }
+    .b-pill {
+      padding: 3px 12px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .b-steps {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .b-steps i {
+      flex: 1;
+      height: 7px;
+      border-radius: 4px;
+      background: #eceef2;
+    }
+  </style>
+  <div data-hf-id="hf-ln9k" id="root" data-composition-id="brand" data-width="1920" data-height="1080">
+    <div id="b-scene" data-layout-allow-overflow data-layout-allow-overlap>
+    <div id="b-app-wrap" data-layout-allow-overflow data-layout-allow-overlap>
+      <div id="b-app">
+        <div class="a-side">
+          <div class="a-brand"><img src="assets/images/studio-mark.png" alt="" /><div>Spark<small>Firework Studio</small></div></div>
+          <div class="a-sec">Create</div>
+          <div class="a-item on"><i></i>Reference Library</div>
+          <div class="a-item"><i></i>Projects</div>
+          <div class="a-item"><i></i>Brand Kit</div>
+          <div class="a-sec">Review</div>
+          <div class="a-item"><i></i>Timeline</div>
+          <div class="a-item"><i></i>Comments</div>
+          <div class="a-item"><i></i>Versions</div>
+          <div class="a-sec">Deliver</div>
+          <div class="a-item"><i></i>Exports</div>
+          <div class="a-item"><i></i>Formats</div>
+          <div class="a-item"><i></i>Settings</div>
+        </div>
+        <div class="a-main">
+          <div class="a-h">Reference Library</div>
+          <div class="a-sub">Point at the motion you like. Spark brings it into your video.</div>
+          <div class="a-search">Search transitions, titles, pacing…</div>
+          <div class="a-head"><span>Reference</span><span>Usage</span></div>
+            <div class="a-row"><img src="assets/images/ref-01.jpg" alt="" /><div class="t">Branching lines<span>Line draw · 2.4 s</span></div><div class="m">Used in 3 projects<div class="a-bar"><b style="width: 82%; background: #f26a1b"></b></div></div></div>
+            <div class="a-row"><img src="assets/images/ref-02.jpg" alt="" /><div class="t">Ring fly-through<span>Zoom through · 0.8 s</span></div><div class="m">Used in 2 projects<div class="a-bar"><b style="width: 64%; background: #f6c33a"></b></div></div></div>
+            <div class="a-row"><img src="assets/images/ref-03.jpg" alt="" /><div class="t">Card vortex<span>Spin out · 1.2 s</span></div><div class="m">Used in 5 projects<div class="a-bar"><b style="width: 91%; background: #22c55e"></b></div></div></div>
+            <div class="a-row"><img src="assets/images/ref-04.jpg" alt="" /><div class="t">Code repair<span>Glitch fix · 2.3 s</span></div><div class="m">Used in 2 projects<div class="a-bar"><b style="width: 73%; background: #22c55e"></b></div></div></div>
+            <div class="a-row"><img src="assets/images/ref-05.jpg" alt="" /><div class="t">Paper tree<span>Grow · 3.0 s</span></div><div class="m">Used in 1 project<div class="a-bar"><b style="width: 58%; background: #f26a1b"></b></div></div></div>
+            <div class="a-row"><img src="assets/images/ref-06.jpg" alt="" /><div class="t">Sky tagline<span>Word swap · 3.5 s</span></div><div class="m">Used in 4 projects<div class="a-bar"><b style="width: 47%; background: #f6c33a"></b></div></div></div>
+            <div class="a-row"><img src="assets/images/ref-09.jpg" alt="" /><div class="t">Rolling counter<span>Kinetic type · 1.6 s</span></div><div class="m">Used in 3 projects<div class="a-bar"><b style="width: 69%; background: #f26a1b"></b></div></div></div>
+        </div>
+      </div>
+      <div id="b-float">
+        <div class="b-col">
+          <b>Exports</b>
+          <div class="b-row">launch_16x9.mp4<span class="b-pill" style="background: #fff1e6; color: #b8461a">Rendering</span></div>
+          <div class="b-row">launch_1x1.mp4<span class="b-pill" style="background: #e8f8ee; color: #1f8a4c">Ready</span></div>
+        </div>
+        <div class="b-col">
+          <b>New Launch Video</b>
+          <div class="b-steps"><i style="background: #f6b17a"></i><i style="background: #f6b17a"></i><i style="background: #f26a1b"></i><i></i></div>
+          <div class="b-row" style="border: 0; color: #6b6f78; font-size: 15px">Brief · References · Edit · Export</div>
+          <div class="b-row">Review with client<span class="b-pill" style="background: #f1f2f5; color: #3b3f48">Jun 6</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div data-hf-id="hf-4x8a" id="b-lock" data-layout-allow-overflow>
+      <div data-hf-id="hf-je8z" id="b-logo">
+        <div data-hf-id="hf-679i" id="b-mark-wrap"><i data-hf-id="hf-sk51" id="b-glow"></i><img data-hf-id="hf-0sx2" id="b-mark" src="assets/images/studio-mark.png" alt="" /></div>
+        <div data-hf-id="hf-zime" id="b-word"><span data-hf-id="hf-fmnq">S</span><span data-hf-id="hf-sqrn">p</span><span data-hf-id="hf-zhz4">a</span><span data-hf-id="hf-ry5l">r</span><span data-hf-id="hf-viwu">k</span></div>
+      </div>
+      <div data-hf-id="hf-ylkq" id="b-tag">
+        <span data-hf-id="hf-quqi" class="f-ln o">Your Motion</span>
+        <span data-hf-id="hf-xlaf" class="f-ln">Design Agent.</span>
+        <span data-hf-id="hf-3376" id="b-by">by Firework Studio</span>
+      </div>
+    </div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+
+    // shot 5: the lockup holds still in the centre. The mark turns in where it sits, out of a soft
+    // blur and a small warm glow; then the letters slide out from behind it in reading order and
+    // land straight in place; the whole lockup eases back very slightly while it holds
+    tl.fromTo("#b-mark-wrap", { scale: 0.7, rotation: -40 }, { scale: 1, rotation: 0, duration: 0.8, ease: "power3.out" }, 0.0);
+    tl.fromTo("#b-mark", { opacity: 0, filter: "blur(14px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.6, ease: "power2.out" }, 0.0);
+    tl.fromTo("#b-glow", { opacity: 0.8, scale: 0.9 }, { opacity: 0, scale: 1.15, duration: 0.9, ease: "power1.out" }, 0.05);
+    const letters = gsap.utils.toArray("#b-word span");
+    letters.forEach((el, i) => {
+      tl.fromTo(
+        el,
+        { opacity: 0, x: -26, filter: "blur(6px)" },
+        { opacity: 1, x: 0, filter: "blur(0px)", duration: 0.55, ease: "power3.out" },
+        0.35 + i * 0.06,
+      );
+    });
+    tl.fromTo("#b-logo", { scale: 1 }, { scale: 0.97, duration: 1.25, ease: "sine.inOut" }, 0.35); // ends as the move takes over
+
+    // shot 6: the lockup settles on the left and stays put; the tagline flips up below it; the page
+    // and the wide panel above it slide in from the right and then drift up together
+    // the lockup clears to the left first, so the page never slides in underneath it
+    // long enough that no frame jumps too far: about 60 px per frame at the fastest
+    tl.to("#b-logo", { x: -540, y: -115, scale: 0.5, duration: 0.85, ease: "power2.inOut" }, 1.6);
+    gsap.utils.toArray("#b-tag .f-ln").forEach((el, i) => {
+      tl.fromTo(el, { opacity: 0, y: 46, rotationX: -80 }, { opacity: 1, y: 0, rotationX: 0, duration: 0.7, ease: "expo.out" }, 2.25 + i * 0.16);
+    });
+    tl.fromTo("#b-by", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }, 2.6);
+    tl.fromTo("#b-app", { x: 900, rotationY: -22, opacity: 0 }, { x: 0, rotationY: -10, opacity: 1, duration: 1.0, ease: "power3.out" }, 2.2);
+    tl.fromTo("#b-float", { x: 700, rotationY: -22, opacity: 0 }, { x: 0, rotationY: -10, opacity: 1, duration: 1.0, ease: "power3.out" }, 2.3);
+    // the drift lives on the wrapper so it never fights the slide-in tweens on the same properties
+    tl.to("#b-app-wrap", { y: -160, duration: 1.0, ease: "sine.inOut" }, 2.6);
+    // exit: the whole frame (lockup and page) sweeps up and out before the chat scene takes over
+    tl.to("#b-scene", { y: -1250, duration: 0.45, ease: "power3.in" }, 3.15);
+    tl.to("#b-scene", { filter: "blur(8px)", duration: 0.2, ease: "power1.in" }, 3.4);
+
+    window.__timelines["brand"] = tl;
+  </script>
+</template>

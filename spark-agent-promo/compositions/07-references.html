@@ -1,0 +1,462 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 400;
+      src: url("assets/fonts/DMSans-400.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 500;
+      src: url("assets/fonts/DMSans-500.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 600;
+      src: url("assets/fonts/DMSans-600.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 700;
+      src: url("assets/fonts/DMSans-700.woff2") format("woff2");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      font-family: "DM Sans", sans-serif;
+      color: #1b1d22;
+      background:
+        repeating-linear-gradient(0deg, rgba(160, 170, 190, 0.07) 0 1px, transparent 1px 90px),
+        repeating-linear-gradient(90deg, rgba(160, 170, 190, 0.07) 0 1px, transparent 1px 90px),
+        radial-gradient(ellipse 80% 80% at 40% 40%, #f6f7fa 0%, #e8ecf3 100%);
+    }
+    #r-scene {
+      position: absolute;
+      inset: 0;
+    }
+
+    /* ---- the phone: its top runs off the frame, so only the lower part of the screen shows ---- */
+    #r-phone {
+      position: absolute;
+      left: 160px;
+      top: -440px;
+      width: 744px;
+      height: 1472px;
+      border-radius: 118px;
+      background: #1b1d22;
+      padding: 20px;
+      box-shadow:
+        0 60px 80px -40px rgba(242, 130, 40, 0.45),
+        0 30px 60px rgba(40, 50, 80, 0.14);
+    }
+    #r-screen {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: 100px;
+      overflow: hidden;
+      background: #fbfbfc;
+    }
+    #r-content {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+    }
+    #r-hero {
+      display: block;
+      width: 100%;
+      height: 470px;
+      object-fit: cover;
+    }
+    .r-pad {
+      padding: 0 36px;
+    }
+    .r-hi {
+      margin-top: 28px;
+      font-size: 25px;
+      color: #6b6f78;
+    }
+    .r-name {
+      font-size: 40px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    /* the two screens share the space under the greeting */
+    #r-s1,
+    #r-s2 {
+      position: absolute;
+      left: 0;
+      top: 590px;
+      width: 100%;
+    }
+    #r-s2 {
+      opacity: 0;
+    }
+    .r-card {
+      margin-top: 8px;
+      border-radius: 18px;
+      overflow: hidden;
+      color: #fff;
+      text-align: center;
+      background: linear-gradient(180deg, #f6862e 0%, #ef6a1c 100%);
+      box-shadow: 0 14px 30px -14px rgba(239, 106, 28, 0.7);
+    }
+    .r-chip {
+      display: inline-block;
+      margin-top: 22px;
+      padding: 4px 14px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.22);
+      font-size: 21px;
+    }
+    .r-big {
+      margin-top: 16px;
+      font-size: 40px;
+      font-weight: 700;
+    }
+    .r-meta {
+      margin: 6px 0 22px;
+      font-size: 21px;
+      opacity: 0.9;
+    }
+    #r-apply {
+      padding: 16px 0;
+      font-size: 23px;
+      font-weight: 500;
+      background: rgba(255, 255, 255, 0.16);
+    }
+    .r-h {
+      margin-top: 36px;
+      font-size: 29px;
+      font-weight: 600;
+    }
+    .r-proj {
+      display: flex;
+      gap: 22px;
+      margin-top: 18px;
+    }
+    .r-date {
+      flex: none;
+      width: 62px;
+      height: 70px;
+      border-radius: 12px;
+      overflow: hidden;
+      text-align: center;
+      font-weight: 600;
+      box-shadow: 0 0 0 1.5px #eceef2;
+    }
+    .r-date i {
+      display: block;
+      padding: 3px 0;
+      font-style: normal;
+      font-size: 15px;
+      color: #fff;
+      background: #ef6a1c;
+    }
+    .r-date b {
+      display: block;
+      padding-top: 6px;
+      font-size: 26px;
+    }
+    .r-pbox {
+      flex: 1;
+      padding: 20px 24px;
+      border-radius: 14px;
+      background: #fff;
+      box-shadow: 0 0 0 1.5px #f0f1f4;
+      font-size: 20px;
+      color: #6b6f78;
+      line-height: 1.5;
+    }
+    .r-pbox b {
+      display: block;
+      font-size: 25px;
+      color: #1b1d22;
+    }
+    .r-going {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 14px;
+      padding: 14px 24px;
+      border-radius: 14px;
+      background: #f6f7f9;
+      font-size: 20px;
+      color: #6b6f78;
+    }
+    .r-going span {
+      margin-left: 10px;
+      padding: 4px 14px;
+      border-radius: 14px;
+      background: #fff;
+      box-shadow: 0 0 0 1.5px #e6e8ec;
+      color: #3b3f48;
+    }
+    /* screen 2: Spark applying the picked reference */
+    .r-title {
+      font-size: 32px;
+      font-weight: 600;
+    }
+    .r-sub {
+      margin-top: 4px;
+      font-size: 21px;
+      color: #6b6f78;
+    }
+    .r-sub b {
+      color: #1b1d22;
+    }
+    #r-tc {
+      margin-top: 22px;
+      font-size: 34px;
+      font-weight: 500;
+      color: #ef6a1c;
+      font-variant-numeric: tabular-nums;
+    }
+    .r-field {
+      margin-top: 20px;
+      padding: 18px 22px;
+      border-radius: 14px;
+      background: #fff;
+      box-shadow: 0 0 0 1.5px #eceef2;
+      font-size: 22px;
+      font-weight: 600;
+    }
+    .r-note {
+      height: 150px;
+      margin-top: 14px;
+      padding: 22px;
+      border-radius: 14px;
+      background: #fff;
+      box-shadow: 0 0 0 1.5px #eceef2;
+      font-size: 21px;
+      color: #3b3f48;
+    }
+    .r-add {
+      display: inline-block;
+      margin-top: 18px;
+      padding: 10px 20px;
+      border-radius: 22px;
+      box-shadow: 0 0 0 1.5px #e6e8ec;
+      font-size: 20px;
+      font-weight: 500;
+    }
+    .r-btns {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-top: 20px;
+      font-size: 22px;
+      font-weight: 500;
+    }
+    .r-btns span {
+      flex: 1;
+      padding: 16px 0;
+      border-radius: 30px;
+      text-align: center;
+      background: #f1f2f5;
+    }
+    .r-btns .on {
+      color: #fff;
+      background: #f6a77a;
+    }
+    .r-btns i {
+      font-style: normal;
+      font-size: 26px;
+      color: #6b6f78;
+    }
+    #r-tabs {
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 100%;
+      height: 150px;
+      display: flex;
+      justify-content: space-around;
+      padding-top: 22px;
+      background: #fff;
+      border-top: 1.5px solid #f0f1f4;
+      font-size: 17px;
+      color: #8b8f99;
+      text-align: center;
+    }
+    #r-tabs div i {
+      display: block;
+      width: 30px;
+      height: 30px;
+      margin: 0 auto 6px;
+      border-radius: 8px;
+      border: 2.5px solid #9a9ea8;
+    }
+    #r-tabs .on {
+      color: #ef6a1c;
+    }
+    #r-tabs .on i {
+      border-color: #ef6a1c;
+    }
+    #r-bar {
+      position: absolute;
+      left: 50%;
+      bottom: 22px;
+      width: 230px;
+      height: 8px;
+      margin-left: -115px;
+      border-radius: 4px;
+      background: #1b1d22;
+    }
+
+    /* ---- headline ---- */
+    #r-head {
+      position: absolute;
+      left: 985px;
+      top: 340px;
+      font-size: 74px;
+      font-weight: 600;
+      line-height: 1.15;
+      letter-spacing: -0.015em;
+      white-space: nowrap;
+      perspective: 900px;
+    }
+    #r-head span {
+      display: block;
+      opacity: 0;
+      transform-origin: 50% 100%;
+    }
+    #r-head .o {
+      font-size: 104px;
+      font-weight: 700;
+      line-height: 1.1;
+      background: linear-gradient(90deg, #ef6a1c 0%, #f5932a 55%, #f7b733 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    /* ---- a glossy orange pointer ---- */
+    #r-cursor {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 92px;
+      height: 92px;
+      opacity: 0;
+      filter: drop-shadow(0 8px 10px rgba(200, 90, 20, 0.35));
+    }
+  </style>
+  <div id="root" data-composition-id="references" data-width="1920" data-height="1080">
+    <div id="r-scene" data-layout-allow-overflow data-layout-allow-overlap>
+      <div id="r-phone" data-layout-allow-overflow>
+        <div id="r-screen">
+          <div id="r-content">
+            <img id="r-hero" src="assets/images/ref-06.jpg" alt="" />
+            <div class="r-pad">
+              <div class="r-hi">Good afternoon,</div>
+              <div class="r-name">Mia Chen</div>
+            </div>
+            <div id="r-s1" class="r-pad">
+              <div class="r-card">
+                <span class="r-chip">Reference · Sky tagline</span>
+                <div class="r-big">Use this motion</div>
+                <div class="r-meta">Word swap · 3.5 s</div>
+                <div id="r-apply">▶ Apply to Launch Video</div>
+              </div>
+              <div class="r-h">Today's Project</div>
+              <div class="r-proj">
+                <div class="r-date"><i>Jun</i><b>9</b></div>
+                <div>
+                  <div class="r-pbox"><b>Launch Video</b>16:9 · 0:45 · 8 shots<br />spark.video</div>
+                  <div class="r-going">Ready for review?<span>○ Yes ○ No</span></div>
+                </div>
+              </div>
+            </div>
+            <div id="r-s2" class="r-pad">
+              <div class="r-title">Applying Motion</div>
+              <div class="r-sub">Matching <b>Sky tagline</b> to Shot 3</div>
+              <div id="r-tc">00:00:12:04</div>
+              <div class="r-field">Shot 3 · Product reveal</div>
+              <div class="r-note">Keep the word swap, use our brand colors :)</div>
+              <div class="r-add">＋ Add Reference</div>
+              <div class="r-btns"><span class="on">Preview</span><span>Compare</span><i>✕</i></div>
+            </div>
+          </div>
+          <div id="r-tabs">
+            <div class="on"><i></i>Home</div>
+            <div><i></i>Chat</div>
+            <div><i></i>Library</div>
+            <div><i></i>Timeline</div>
+            <div><i></i>Profile</div>
+          </div>
+          <i id="r-bar"></i>
+        </div>
+      </div>
+
+      <div id="r-head" data-layout-allow-overflow>
+        <span>Spark Turns References</span>
+        <span class="o">Into Motion</span>
+      </div>
+
+      <svg id="r-cursor" viewBox="0 0 56 56">
+        <defs>
+          <linearGradient id="r-cur-g" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#ffe7a8" />
+            <stop offset="0.45" stop-color="#ffb23e" />
+            <stop offset="1" stop-color="#f26a1b" />
+          </linearGradient>
+        </defs>
+        <path d="M8 6 C6 5 5 7 6 9 L20 48 C21 51 24 51 25 48 L30 33 L45 28 C48 27 48 24 45 22 Z" fill="url(#r-cur-g)" stroke="#fff6e0" stroke-width="1.5" stroke-linejoin="round" />
+      </svg>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+
+    // shot 9: the phone rises in fast and settles, the headline flips up line by line; the pointer
+    // taps "Apply", the screen switches to Spark applying the reference with its timecode running,
+    // then the whole frame whips out to the left
+    tl.fromTo("#root", { opacity: 0 }, { opacity: 1, duration: 0.2, ease: "none" }, 0);
+    // the orange page clears to light first; only then does the phone rise
+    tl.fromTo("#r-phone", { y: 1560 }, { y: 0, duration: 0.8, ease: "power3.out" }, 0.17);
+    tl.fromTo("#r-content", { y: 40 }, { y: -20, duration: 1.0, ease: "power2.out" }, 0.25);
+
+    gsap.utils.toArray("#r-head span").forEach((el, i) => {
+      tl.fromTo(el, { opacity: 0, y: 50, rotationX: -70 }, { opacity: 1, y: 0, rotationX: 0, duration: 0.6, ease: "expo.out" }, 0.25 + i * 0.16);
+    });
+
+    // the pointer glides in from the lower right and taps the button
+    tl.set("#r-cursor", { x: 1010, y: 860 }, 0);
+    tl.to("#r-cursor", { opacity: 1, duration: 0.15 }, 0.3);
+    tl.to("#r-cursor", { x: 505, y: 368, duration: 0.6, ease: "power3.inOut" }, 0.3);
+    tl.to("#r-cursor", { scale: 0.82, duration: 0.08, ease: "power2.in" }, 0.86);
+    tl.to("#r-cursor", { scale: 1, duration: 0.18, ease: "back.out(3)" }, 0.94);
+    tl.to("#r-apply", { backgroundColor: "rgba(255,255,255,0.32)", duration: 0.08 }, 0.86);
+
+    // screen 2 takes over, and the pointer drifts down onto the note
+    tl.to("#r-s1", { opacity: 0, y: -16, duration: 0.18, ease: "power1.in" }, 1.0);
+    tl.fromTo("#r-s2", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.25, ease: "power2.out" }, 1.08);
+    tl.to("#r-cursor", { x: 560, y: 560, duration: 0.6, ease: "power2.inOut" }, 1.15);
+
+    // timecode runs at 24 fps from 00:00:12:04
+    const tc = { f: 12 * 24 + 4 };
+    const pad = (n) => String(n).padStart(2, "0");
+    tl.fromTo(
+      tc,
+      { f: 12 * 24 + 4 },
+      {
+        f: 12 * 24 + 4 + 40,
+        duration: 1.0,
+        ease: "none",
+        onUpdate: () => {
+          const f = Math.round(tc.f);
+          document.querySelector("#r-tc").textContent = `00:00:${pad(Math.floor(f / 24))}:${pad(f % 24)}`;
+        },
+      },
+      1.1,
+    );
+
+    // exit: a whip to the left
+    tl.to("#r-scene", { x: -1900, filter: "blur(14px)", duration: 0.26, ease: "power3.in" }, 1.96);
+
+    window.__timelines["references"] = tl;
+  </script>
+</template>

@@ -1,0 +1,733 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 400;
+      src: url("assets/fonts/DMSans-400.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 500;
+      src: url("assets/fonts/DMSans-500.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 600;
+      src: url("assets/fonts/DMSans-600.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 700;
+      src: url("assets/fonts/DMSans-700.woff2") format("woff2");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      font-family: "DM Sans", sans-serif;
+      background: radial-gradient(ellipse 70% 60% at 50% 45%, #f6f6f8 0%, #eceef2 70%, #e6e9ef 100%);
+    }
+    #x-world {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+      transform-origin: 960px 520px;
+    }
+    #x-links,
+    #x-orbit {
+      position: absolute;
+      left: 0;
+      top: 0;
+      overflow: visible;
+    }
+    #x-orbit path {
+      fill: none;
+      stroke: #f2b25a;
+      stroke-width: 2.4;
+      stroke-dasharray: 10 12;
+      opacity: 0.7;
+    }
+    .x-link {
+      fill: none;
+      stroke-width: 1.6;
+      stroke-linecap: round;
+      stroke-dasharray: 1 1;
+      stroke-dashoffset: 1;
+    }
+    /* connection dots live on the card edges, so they move and turn with their card */
+    .x-dot {
+      position: absolute;
+      width: 22px;
+      height: 22px;
+      margin: -11px 0 0 -11px;
+      border-radius: 50%;
+      background: #f26a1b;
+      border: 4px solid #ffffff;
+      box-shadow: 0 2px 6px rgba(242, 106, 27, 0.35);
+      z-index: 2;
+    }
+    .x-pulse {
+      fill: #ffd27a;
+      opacity: 0;
+    }
+    .x-float {
+      position: absolute;
+      perspective: 1400px;
+    }
+    .x-card {
+      position: relative;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 22px;
+      box-shadow:
+        0 30px 40px -20px rgba(242, 106, 27, 0.35),
+        0 10px 30px rgba(40, 50, 80, 0.08);
+      padding: 22px 26px;
+      color: #1b1d22;
+      font-size: 17px;
+    }
+    .x-h {
+      font-size: 19px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+    .x-muted {
+      color: #5f636d;
+      font-size: 13px;
+      font-weight: 400;
+    }
+    /* script */
+    .x-ln {
+      height: 12px;
+      border-radius: 6px;
+      background: #e7e9ee;
+      margin: 11px 0;
+    }
+    .x-ln i {
+      display: block;
+      height: 100%;
+      width: 0;
+      border-radius: 6px;
+      background: #f6b17a;
+    }
+    /* storyboard */
+    .x-grid {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(3, 92px);
+      gap: 8px;
+    }
+    .x-frame {
+      width: 92px;
+      height: 52px;
+      border-radius: 8px;
+      background: #e7e9ee;
+      overflow: hidden;
+    }
+    .x-frame img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0;
+    }
+    #x-sel {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 92px;
+      height: 52px;
+      border: 3px solid #f26a1b;
+      border-radius: 9px;
+      opacity: 0;
+    }
+    /* timeline */
+    .x-track {
+      position: relative;
+      height: 22px;
+      margin: 9px 0;
+      background: #f1f2f5;
+      border-radius: 5px;
+    }
+    .x-clip {
+      position: absolute;
+      top: 3px;
+      height: 16px;
+      border-radius: 4px;
+    }
+    #x-play {
+      position: absolute;
+      top: 56px;
+      bottom: 16px;
+      left: 26px;
+      width: 2px;
+      background: #e0453a;
+    }
+    /* exports */
+    .x-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      height: 40px;
+      opacity: 0;
+    }
+    .x-file {
+      width: 26px;
+      height: 30px;
+      border-radius: 5px;
+      background: linear-gradient(160deg, #ffd6bf, #f6894a);
+    }
+    .x-tri {
+      margin-left: auto;
+      font-size: 13px;
+    }
+    /* shot list */
+    .x-shot {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      height: 36px;
+      font-size: 15px;
+    }
+    .x-box {
+      position: relative;
+      width: 20px;
+      height: 20px;
+      border-radius: 6px;
+      border: 2px solid #c9ccd4;
+    }
+    .x-box b {
+      position: absolute;
+      inset: -2px;
+      border-radius: 6px;
+      background: #f6b23a;
+      opacity: 0;
+    }
+    /* calendar */
+    .x-cal {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(7, 46px);
+      row-gap: 14px;
+      font-size: 19px;
+      text-align: center;
+    }
+    #x-day {
+      position: absolute;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: #f26a1b;
+      left: 50px;
+      top: 40px;
+      opacity: 0;
+    }
+    .x-cal span {
+      position: relative;
+      line-height: 30px;
+    }
+    /* mail */
+    .x-mailbar {
+      margin: -22px -26px 14px;
+      padding: 10px 18px;
+      border-radius: 14px 14px 0 0;
+      background: #2a2c33;
+      color: #fff;
+      font-size: 14px;
+    }
+    #x-mailtext {
+      font-size: 15px;
+      margin-top: 8px;
+      min-height: 60px;
+    }
+    /* comments */
+    .x-cm {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      margin: 10px 0 14px;
+      opacity: 0;
+    }
+    .x-av {
+      flex: none;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    .x-cm b {
+      display: block;
+      font-size: 17px;
+    }
+    .x-cm span {
+      color: #5f636d;
+      font-size: 15px;
+    }
+    /* charts */
+    .x-draw {
+      fill: none;
+      stroke-width: 4;
+      stroke-linecap: round;
+      stroke-dasharray: 1 1;
+      stroke-dashoffset: 1;
+    }
+    /* soft-edged reveals for the two charts */
+    #x-feedsvg {
+      --p: -20%;
+      -webkit-mask-image: linear-gradient(90deg, #000 calc(var(--p) - 18%), transparent var(--p));
+      mask-image: linear-gradient(90deg, #000 calc(var(--p) - 18%), transparent var(--p));
+    }
+    #x-revsvg {
+      --p: -20%;
+      -webkit-mask-image: linear-gradient(180deg, #000 calc(var(--p) - 18%), transparent var(--p));
+      mask-image: linear-gradient(180deg, #000 calc(var(--p) - 18%), transparent var(--p));
+    }
+    #x-revnum {
+      color: #c6352b;
+      font-weight: 600;
+    }
+    /* outer ring props */
+    .x-badge,
+    .x-tool {
+      position: absolute;
+      width: 62px;
+      height: 62px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.95);
+      box-shadow: 0 8px 20px rgba(40, 50, 80, 0.1);
+      display: grid;
+      place-items: center;
+    }
+    .x-tool {
+      border-radius: 16px;
+      font-size: 26px;
+      color: #c4511a;
+    }
+    .x-warn {
+      width: 30px;
+      height: 27px;
+      background: #ffcc1f;
+      clip-path: polygon(50% 0, 100% 100%, 0 100%);
+      position: relative;
+    }
+    .x-warn::after {
+      content: "!";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 5px;
+      text-align: center;
+      font-weight: 800;
+      font-size: 17px;
+      color: #1b1d22;
+    }
+    .x-ava {
+      position: absolute;
+      width: 92px;
+      height: 92px;
+      border-radius: 50%;
+      border: 4px solid #fff;
+      box-shadow: 0 10px 24px rgba(242, 106, 27, 0.3);
+      overflow: hidden;
+    }
+    .x-ava img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    /* the line sits in a short window so each new word can rise up into it from below */
+    #x-word {
+      position: absolute;
+      left: 0;
+      top: 470px;
+      width: 1920px;
+      height: 110px;
+      overflow: hidden;
+      text-align: center;
+      font-size: 54px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      color: #1b1d22;
+      white-space: nowrap;
+    }
+    #x-word > span {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 25px;
+      line-height: 60px;
+      opacity: 0;
+    }
+    #x-caret {
+      display: inline-block;
+      width: 3px;
+      height: 56px;
+      margin-left: 4px;
+      vertical-align: -6px;
+      background: #1b1d22;
+    }
+  </style>
+  <div data-hf-id="hf-grkp" id="root" data-composition-id="chaos" data-width="1920" data-height="1080">
+    <div data-hf-id="hf-atfl" id="x-world" data-layout-allow-overflow data-layout-allow-overlap>
+<svg data-hf-id="hf-2kyv" id="x-orbit" width="1920" height="1080" viewBox="0 0 1920 1080">
+        <path data-hf-id="hf-2ui2" data-a="o-warn-tl" data-b="o-ava-tl" />
+        <path data-hf-id="hf-hzd2" data-a="o-ava-tl" data-b="c-script" />
+        <path data-hf-id="hf-1iln" data-a="o-play" data-b="c-script" />
+        <path data-hf-id="hf-4tkf" data-a="o-warn-tl" data-b="o-play" />
+        <path data-hf-id="hf-jk2v" data-a="c-script" data-b="c-board" />
+        <path data-hf-id="hf-28nf" data-a="c-board" data-b="c-rev" />
+        <path data-hf-id="hf-8l66" data-a="o-ava-tr" data-b="o-music" />
+        <path data-hf-id="hf-0ocs" data-a="c-rev" data-b="o-music" />
+        <path data-hf-id="hf-z89c" data-a="o-music" data-b="c-shots" />
+        <path data-hf-id="hf-0ofw" data-a="o-warn-r" data-b="c-rev" />
+        <path data-hf-id="hf-8rcj" data-a="c-feed" data-b="c-shots" />
+        <path data-hf-id="hf-59f4" data-a="c-shots" data-b="o-ava-br" />
+        <path data-hf-id="hf-h6td" data-a="o-ava-br" data-b="c-chat" />
+        <path data-hf-id="hf-fbff" data-a="c-chat" data-b="o-warn-br" />
+        <path data-hf-id="hf-tcdi" data-a="o-warn-br" data-b="o-half" />
+        <path data-hf-id="hf-i2cu" data-a="c-render" data-b="c-chat" />
+        <path data-hf-id="hf-a3qm" data-a="c-time" data-b="c-ver" />
+        <path data-hf-id="hf-gpjs" data-a="c-ver" data-b="o-ava-tl" />
+        <path data-hf-id="hf-i8b4" data-a="c-ver" data-b="o-warn-l" />
+        <path data-hf-id="hf-b911" data-a="o-warn-l" data-b="c-cal" />
+        <path data-hf-id="hf-qzt2" data-a="o-ava-bl" data-b="o-pen" />
+        <path data-hf-id="hf-do1j" data-a="o-pen" data-b="c-cal" />
+        <path data-hf-id="hf-7nqc" data-a="c-cal" data-b="c-review" />
+        <path data-hf-id="hf-9s6u" data-a="c-time" data-b="c-script" />
+        <path data-hf-id="hf-vr9k" data-a="c-review" data-b="c-render" />
+      </svg>
+      <!-- solid links run underneath the cards; only the stretch between two cards shows -->
+      <svg data-hf-id="hf-3gh6" id="x-links" width="1920" height="1080" viewBox="0 0 1920 1080">
+        <defs data-hf-id="hf-mh0t">
+          <linearGradient data-hf-id="hf-64bn" id="x-grad" x1="0" x2="1" y1="0" y2="0">
+            <stop data-hf-id="hf-ijaa" offset="0" stop-color="#f26a1b" />
+            <stop data-hf-id="hf-ehx9" offset="1" stop-color="#f6c33a" />
+          </linearGradient>
+        </defs>
+        <linearGradient data-hf-id="hf-mkxf" id="g-script" gradientUnits="userSpaceOnUse"><stop data-hf-id="hf-rpxi" offset="0" stop-color="#f26a1b" /><stop data-hf-id="hf-r7lw" offset="0.55" stop-color="#f7a03c" /><stop data-hf-id="hf-wtpd" offset="1" stop-color="#f8d36a" stop-opacity="0.85" /></linearGradient>
+        <linearGradient data-hf-id="hf-urta" id="g-feed" gradientUnits="userSpaceOnUse"><stop data-hf-id="hf-s48j" offset="0" stop-color="#f26a1b" /><stop data-hf-id="hf-tvgc" offset="0.55" stop-color="#f7a03c" /><stop data-hf-id="hf-hu9h" offset="1" stop-color="#f8d36a" stop-opacity="0.85" /></linearGradient>
+        <linearGradient data-hf-id="hf-1gua" id="g-cal" gradientUnits="userSpaceOnUse"><stop data-hf-id="hf-sijk" offset="0" stop-color="#f26a1b" /><stop data-hf-id="hf-soj9" offset="0.55" stop-color="#f7a03c" /><stop data-hf-id="hf-j16k" offset="1" stop-color="#f8d36a" stop-opacity="0.85" /></linearGradient>
+        <linearGradient data-hf-id="hf-5cv7" id="g-mail" gradientUnits="userSpaceOnUse"><stop data-hf-id="hf-pqed" offset="0" stop-color="#f26a1b" /><stop data-hf-id="hf-t2ua" offset="0.55" stop-color="#f7a03c" /><stop data-hf-id="hf-imvj" offset="1" stop-color="#f8d36a" stop-opacity="0.85" /></linearGradient>
+        <path data-hf-id="hf-3x1e" id="l-script" class="x-link" pathLength="1" d="" stroke="url(#g-script)" />
+        <path data-hf-id="hf-y6hq" id="l-feed" class="x-link" pathLength="1" d="" stroke="url(#g-feed)" />
+        <path data-hf-id="hf-mq7e" id="l-cal" class="x-link" pathLength="1" d="" stroke="url(#g-cal)" />
+        <path data-hf-id="hf-zyyi" id="l-mail" class="x-link" pathLength="1" d="" stroke="url(#g-mail)" />
+      </svg>
+
+      <div data-hf-id="hf-qaoo" id="c-script" class="x-float g-top" style="left: 273px; top: 93px">
+        <div data-hf-id="hf-hzk0" class="x-card" style="width: 385px; height: 205px; transform: rotateX(14deg) rotateZ(-12deg)">
+          <i data-hf-id="hf-r4e3" id="d-script" class="x-dot" style="left: 54%; top: 100%"></i>
+          <div data-hf-id="hf-mjtc" class="x-h">Script <span data-hf-id="hf-hget" class="x-muted">v6</span></div>
+          <div data-hf-id="hf-hsmn" class="x-ln"><i data-hf-id="hf-wt6k"></i></div>
+          <div data-hf-id="hf-0n24" class="x-ln" style="width: 86%"><i data-hf-id="hf-zeb8"></i></div>
+          <div data-hf-id="hf-4g4l" class="x-ln" style="width: 92%"><i data-hf-id="hf-y7e5"></i></div>
+          <div data-hf-id="hf-sw21" class="x-ln" style="width: 74%"><i data-hf-id="hf-ylp6"></i></div>
+          <div data-hf-id="hf-5m8k" class="x-ln" style="width: 60%"><i data-hf-id="hf-0l8b"></i></div>
+        </div>
+      </div>
+      <div data-hf-id="hf-5xwj" id="c-board" class="x-float g-top" style="left: 792px; top: 51px">
+        <div data-hf-id="hf-52hq" class="x-card" style="width: 334px; height: 192px; padding: 16px 18px; transform: rotateX(8deg)">
+          <div data-hf-id="hf-ybli" class="x-h" style="font-size: 15px; margin-bottom: 8px">Storyboard <span data-hf-id="hf-t8yo" class="x-muted">6 shots</span></div>
+          <div data-hf-id="hf-cxrl" class="x-grid">
+            <div data-hf-id="hf-xfks" class="x-frame"><img data-hf-id="hf-uky7" src="assets/images/ref-01.jpg" alt="" /></div>
+            <div data-hf-id="hf-ssno" class="x-frame"><img data-hf-id="hf-kkk8" src="assets/images/ref-02.jpg" alt="" /></div>
+            <div data-hf-id="hf-rlql" class="x-frame"><img data-hf-id="hf-dhm5" src="assets/images/ref-03.jpg" alt="" /></div>
+            <div data-hf-id="hf-s01m" class="x-frame"><img data-hf-id="hf-6xfa" src="assets/images/ref-04.jpg" alt="" /></div>
+            <div data-hf-id="hf-tzkr" class="x-frame"><img data-hf-id="hf-toab" src="assets/images/ref-05.jpg" alt="" /></div>
+            <div data-hf-id="hf-udvs" class="x-frame"><img data-hf-id="hf-9bbw" src="assets/images/ref-06.jpg" alt="" /></div>
+            <i data-hf-id="hf-3odw" id="x-sel"></i>
+          </div>
+        </div>
+      </div>
+      <div data-hf-id="hf-6epu" id="c-rev" class="x-float g-top" style="left: 1268px; top: 85px">
+        <div data-hf-id="hf-i9bj" class="x-card" style="width: 340px; height: 215px; transform: rotateX(14deg) rotateZ(12deg)">
+          <i data-hf-id="hf-il1e" id="d-rev" class="x-dot" style="left: 46%; top: 100%"></i>
+          <div data-hf-id="hf-4vlb" class="x-h">Revisions <span data-hf-id="hf-5q55" id="x-revnum">12</span></div>
+          <svg data-hf-id="hf-25mo" id="x-revsvg" width="288" height="150" viewBox="0 0 308 180" preserveAspectRatio="none">
+            <g data-hf-id="hf-ynmm" stroke="#eceef2" stroke-width="1"><path data-hf-id="hf-97oe" d="M0 40 H308 M0 80 H308 M0 120 H308 M0 160 H308" /></g>
+            <path data-hf-id="hf-iggk" d="M14 10 C 70 14, 110 70, 160 96 C 210 122, 250 150, 300 162" fill="none" stroke="#f26a1b" stroke-width="4.5" stroke-linecap="round" />
+            <path data-hf-id="hf-6p3g" d="M24 12 C 34 70, 80 118, 140 118 C 200 118, 250 140, 296 168" fill="none" stroke="#2fb36a" stroke-width="4.5" stroke-linecap="round" />
+          </svg>
+        </div>
+      </div>
+      <div data-hf-id="hf-k6m0" id="c-time" class="x-float g-mid" style="left: 321px; top: 412px">
+        <div data-hf-id="hf-rpvn" class="x-card" style="width: 380px; height: 215px; transform: rotateY(10deg)">
+          <i data-hf-id="hf-a751" id="d-time" class="x-dot" style="left: 100%; top: 50%"></i>
+          <div data-hf-id="hf-82cs" class="x-h">Timeline <span data-hf-id="hf-8u4o" class="x-muted">00:32</span></div>
+          <div data-hf-id="hf-r74q" class="x-track"><i data-hf-id="hf-0otc" class="x-clip" style="left: 4%; width: 30%; background: #f26a1b"></i><i data-hf-id="hf-3yyh" class="x-clip" style="left: 40%; width: 22%; background: #f6c33a"></i></div>
+          <div data-hf-id="hf-do8u" class="x-track"><i data-hf-id="hf-16tb" class="x-clip" style="left: 12%; width: 18%; background: #2fb36a"></i><i data-hf-id="hf-99ps" class="x-clip" style="left: 36%; width: 40%; background: #f6894a"></i></div>
+          <div data-hf-id="hf-e2jv" class="x-track"><i data-hf-id="hf-swqg" class="x-clip" style="left: 2%; width: 50%; background: #f6c33a"></i><i data-hf-id="hf-cjzg" class="x-clip" style="left: 60%; width: 25%; background: #e0453a"></i></div>
+          <div data-hf-id="hf-eguw" class="x-track"><i data-hf-id="hf-iydi" class="x-clip" style="left: 20%; width: 34%; background: #2fb36a"></i><i data-hf-id="hf-xp24" class="x-clip" style="left: 62%; width: 30%; background: #f26a1b"></i></div>
+          <div data-hf-id="hf-bopp" class="x-track"><i data-hf-id="hf-py6j" class="x-clip" style="left: 8%; width: 44%; background: #f6894a"></i></div>
+          <i data-hf-id="hf-g1z6" id="x-play"></i>
+        </div>
+      </div>
+      <div data-hf-id="hf-35kx" id="c-feed" class="x-float g-mid" style="left: 1221px; top: 412px">
+        <div data-hf-id="hf-00ky" class="x-card" style="width: 382px; height: 215px; transform: rotateY(-10deg)">
+          <i data-hf-id="hf-g8a7" id="d-feed" class="x-dot" style="left: 0%; top: 50%"></i>
+          <div data-hf-id="hf-3njg" class="x-h">Feedback <span data-hf-id="hf-8hcn" class="x-muted">Day · Week · Month</span></div>
+          <svg data-hf-id="hf-sjuo" id="x-feedsvg" width="330" height="135" viewBox="0 0 338 150" preserveAspectRatio="none">
+            <path data-hf-id="hf-umep" d="M0 90 C 40 60, 80 50, 120 80 S 190 120, 230 70 S 300 40, 338 60" fill="none" stroke="#2fb36a" stroke-width="4" stroke-linecap="round" />
+            <path data-hf-id="hf-k3gj" d="M0 100 C 50 120, 90 110, 130 90 S 200 60, 250 100 S 310 120, 338 100" fill="none" stroke="#f6c33a" stroke-width="4" stroke-linecap="round" />
+          </svg>
+        </div>
+      </div>
+      <div data-hf-id="hf-iee7" id="c-cal" class="x-float g-low" style="left: 170px; top: 740px">
+        <div data-hf-id="hf-zlzh" class="x-card" style="width: 373px; height: 249px; transform: rotateX(26deg) rotateZ(10deg)">
+          <i data-hf-id="hf-9nb5" id="d-cal" class="x-dot" style="left: 100%; top: 24%"></i>
+          <div data-hf-id="hf-mzqd" class="x-h" style="font-size: 26px; margin-bottom: 6px">June <span data-hf-id="hf-hluw" class="x-muted">launch day</span></div>
+          <div data-hf-id="hf-7omb" class="x-cal">
+            <i data-hf-id="hf-06ei" id="x-day"></i>
+            <span data-hf-id="hf-uqas">m</span><span data-hf-id="hf-r5jj">t</span><span data-hf-id="hf-qr8i">w</span><span data-hf-id="hf-b5yn">t</span><span data-hf-id="hf-wptx">f</span><span data-hf-id="hf-scgm">s</span><span data-hf-id="hf-kwl6">s</span>
+            <span data-hf-id="hf-p81i">01</span><span data-hf-id="hf-pmcj">02</span><span data-hf-id="hf-q0nk">03</span><span data-hf-id="hf-n8id">04</span><span data-hf-id="hf-nmte">05</span><span data-hf-id="hf-o14f">06</span><span data-hf-id="hf-offg">07</span>
+            <span data-hf-id="hf-lna9">08</span><span data-hf-id="hf-m1la">09</span><span data-hf-id="hf-2xa8">10</span><span data-hf-id="hf-2iz7">11</span><span data-hf-id="hf-24o6">12</span><span data-hf-id="hf-1qd5">13</span><span data-hf-id="hf-1c24">14</span>
+            <span data-hf-id="hf-0xr3">15</span><span data-hf-id="hf-0jg2">16</span><span data-hf-id="hf-0551">17</span><span data-hf-id="hf-zqu0">18</span><span data-hf-id="hf-zciz">19</span><span data-hf-id="hf-qd23">20</span><span data-hf-id="hf-qrd4">21</span>
+          </div>
+        </div>
+      </div>
+      <div data-hf-id="hf-ekmm" id="c-mail" class="x-float g-low" style="left: 865px; top: 778px">
+        <div data-hf-id="hf-1hui" class="x-card" style="width: 204px; height: 144px; padding: 16px 18px; transform: rotateX(12deg)">
+          <i data-hf-id="hf-0730" id="d-mail-in" class="x-dot" style="left: 0%; top: 47%"></i>
+          <i data-hf-id="hf-miqx" id="d-mail-out" class="x-dot" style="left: 100%; top: 51%"></i>
+          <div data-hf-id="hf-aw1b" class="x-mailbar" style="margin: -16px -18px 8px; padding: 8px 14px">New Message</div>
+          <div data-hf-id="hf-4mp3" class="x-muted">From: Client · To: Studio</div>
+          <div data-hf-id="hf-rloc" id="x-mailtext" style="font-size: 13px; min-height: 50px; margin-top: 6px"></div>
+        </div>
+      </div>
+      <div data-hf-id="hf-eor4" id="c-chat" class="x-float g-low" style="left: 1276px; top: 730px">
+        <div data-hf-id="hf-t06y" class="x-card" style="width: 407px; height: 249px; transform: rotateX(24deg) rotateZ(13deg)">
+          <i data-hf-id="hf-8qxq" id="d-chat" class="x-dot" style="left: 0%; top: 24%"></i>
+          <div data-hf-id="hf-lab5" class="x-cm"><img data-hf-id="hf-033w" class="x-av" src="assets/images/fb-02.png" alt="" /><div data-hf-id="hf-yeow"><b data-hf-id="hf-tl89">Zoe</b><span data-hf-id="hf-vmwz">Can you make it pop?</span></div></div>
+          <div data-hf-id="hf-oiud" class="x-cm"><img data-hf-id="hf-fnk5" class="x-av" src="assets/images/fb-03.png" alt="" /><div data-hf-id="hf-y7yw"><b data-hf-id="hf-isej">Noah</b><span data-hf-id="hf-wt51">Feels slow at 0:12…</span></div></div>
+          <div data-hf-id="hf-pprg" class="x-cm"><img data-hf-id="hf-idiw" class="x-av" src="assets/images/fb-06.png" alt="" /><div data-hf-id="hf-x11t"><b data-hf-id="hf-zzeu">Mia</b><span data-hf-id="hf-m4fu">More premium, less busy?</span></div></div>
+        </div>
+      </div>
+      <div data-hf-id="hf-6t2r" id="c-ver" class="x-float g-out" style="left: -19px; top: 467px">
+        <div data-hf-id="hf-l490" class="x-card" style="width: 230px; height: 230px; transform: rotateY(26deg) rotateZ(-6deg)">
+          <div data-hf-id="hf-203m" class="x-h">Exports</div>
+          <div data-hf-id="hf-m7dn" class="x-row"><i data-hf-id="hf-xkfr" class="x-file"></i>launch_v3.mp4</div>
+          <div data-hf-id="hf-4a0r" class="x-row"><i data-hf-id="hf-bwl3" class="x-file"></i>final_final_v2</div>
+          <div data-hf-id="hf-624j" class="x-row"><i data-hf-id="hf-bia2" class="x-file"></i>FINAL_real.mp4</div>
+        </div>
+      </div>
+      <div data-hf-id="hf-m1fd" id="c-shots" class="x-float g-out" style="left: 1710px; top: 445px">
+        <div data-hf-id="hf-101b" class="x-card" style="width: 220px; height: 240px; transform: rotateY(-24deg) rotateZ(18deg)">
+          <div data-hf-id="hf-diz5" class="x-h">Shot List</div>
+          <div data-hf-id="hf-618y" class="x-shot"><i data-hf-id="hf-6u5w" class="x-box"><b data-hf-id="hf-xujp"></b></i>Hook</div>
+          <div data-hf-id="hf-t3o3" class="x-shot"><i data-hf-id="hf-i2j0" class="x-box"><b data-hf-id="hf-ey49"></b></i>Product demo</div>
+          <div data-hf-id="hf-0ca5" class="x-shot"><i data-hf-id="hf-gvlx" class="x-box"><b data-hf-id="hf-g51c"></b></i>Feature tour</div>
+          <div data-hf-id="hf-p8is" class="x-shot"><i data-hf-id="hf-h9wy" class="x-box"><b data-hf-id="hf-fqqb"></b></i>End card</div>
+        </div>
+      </div>
+      <div data-hf-id="hf-0idl" id="c-review" class="x-float g-out" style="left: 470px; top: 985px">
+        <div data-hf-id="hf-jbq9" class="x-card" style="width: 330px; height: 160px; transform: rotateX(26deg) rotateZ(-10deg)">
+          <div data-hf-id="hf-nxx2" class="x-h">Review calls <span data-hf-id="hf-he6z" class="x-muted">this week</span></div>
+          <div data-hf-id="hf-c30q" class="x-track"><i data-hf-id="hf-9d04" class="x-clip" style="left: 10%; width: 20%; background: #f26a1b"></i><i data-hf-id="hf-bwyu" class="x-clip" style="left: 56%; width: 24%; background: #f6c33a"></i></div>
+          <div data-hf-id="hf-chbr" class="x-track"><i data-hf-id="hf-shcp" class="x-clip" style="left: 30%; width: 30%; background: #2fb36a"></i></div>
+        </div>
+      </div>
+      <div data-hf-id="hf-wnbx" id="c-render" class="x-float g-out" style="left: 1040px; top: 965px">
+        <div data-hf-id="hf-lzhw" class="x-card" style="width: 330px; height: 190px; transform: rotateX(26deg) rotateZ(20deg)">
+          <div data-hf-id="hf-xeuk" class="x-h">Render queue</div>
+          <div data-hf-id="hf-cvms" class="x-track"><i data-hf-id="hf-3aan" class="x-clip" style="left: 0; width: 70%; background: #2fb36a"></i></div>
+          <div data-hf-id="hf-gge1" class="x-track"><i data-hf-id="hf-nk9u" class="x-clip" style="left: 0; width: 40%; background: #f26a1b"></i></div>
+          <div data-hf-id="hf-gup2" class="x-track"><i data-hf-id="hf-ia4f" class="x-clip" style="left: 0; width: 85%; background: #f6c33a"></i></div>
+          <div data-hf-id="hf-3tje" class="x-track"><i data-hf-id="hf-qzcq" class="x-clip" style="left: 0; width: 55%; background: #f6894a"></i></div>
+        </div>
+      </div>
+
+
+
+      <div data-hf-id="hf-banb" id="o-warn-tl" class="x-badge g-out" style="left: 1px; top: 82px"><i data-hf-id="hf-7ugp" class="x-warn"></i></div>
+      <div data-hf-id="hf-d4tg" id="o-warn-r" class="x-badge g-mid" style="left: 1586px; top: 291px"><i data-hf-id="hf-jo3x" class="x-warn"></i></div>
+      <div data-hf-id="hf-f4td" id="o-warn-l" class="x-badge g-out" style="left: 220px; top: 654px"><i data-hf-id="hf-kv10" class="x-warn"></i></div>
+      <div data-hf-id="hf-qg5v" id="o-warn-br" class="x-badge g-out" style="left: 1631px; top: 992px"><i data-hf-id="hf-kgpz" class="x-warn"></i></div>
+      <div data-hf-id="hf-12pt" id="o-play" class="x-tool g-out" style="left: 156px; top: 16px">▶</div>
+      <div data-hf-id="hf-956m" id="o-music" class="x-tool g-out" style="left: 1696px; top: 212px">♪</div>
+      <div data-hf-id="hf-6yy4" id="o-pen" class="x-tool g-out" style="left: 33px; top: 911px">✎</div>
+      <div data-hf-id="hf-k78z" id="o-half" class="x-tool g-out" style="left: 1803px; top: 961px">◐</div>
+      <div data-hf-id="hf-ke4f" id="o-ava-tl" class="x-ava g-out" style="left: 55px; top: 250px; width: 113px; height: 113px"><img data-hf-id="hf-r3zg" src="assets/images/fb-01.png" alt="" /></div>
+      <div data-hf-id="hf-r61i" id="o-ava-tr" class="x-ava g-out" style="left: 1604px; top: 29px; width: 113px; height: 113px"><img data-hf-id="hf-rib5" src="assets/images/fb-04.png" alt="" /></div>
+      <div data-hf-id="hf-p7a2" id="o-ava-bl" class="x-ava g-out" style="left: 14px; top: 741px"><img data-hf-id="hf-j6g8" src="assets/images/fb-05.png" alt="" /></div>
+      <div data-hf-id="hf-zr6o" id="o-ava-br" class="x-ava g-out" style="left: 1738px; top: 751px; width: 130px; height: 130px"><img data-hf-id="hf-t4s7" src="assets/images/fb-02.png" alt="" /></div>
+    </div>
+
+    <div data-hf-id="hf-ze0g" id="x-word">
+      <span data-hf-id="hf-hhg2" id="x-w0"><span data-hf-id="hf-m8dd" id="x-base">Is Your Launch Video</span><span data-hf-id="hf-chkb" id="x-jug"></span><i data-hf-id="hf-1q0h" id="x-caret"></i></span>
+      <span data-hf-id="hf-y5gn">Scripts</span>
+      <span data-hf-id="hf-tc2f">Storyboards</span>
+      <span data-hf-id="hf-t8s7">References</span>
+      <span data-hf-id="hf-vdzd">Endless Revisions</span>
+      <span data-hf-id="hf-swcn" style="font-size: 42px">Too Many “Make It Pop”s?</span>
+    </div>
+  </div>
+  <script>
+    // all motion lives in `tl`; the links are redrawn after it on every frame (see the end)
+    const tl = gsap.timeline();
+
+    // the camera starts close on the centre, pulls back quickly as the first cards slide in, then keeps
+    // easing back slowly until the whole web of work is in frame
+    tl.fromTo("#x-world", { scale: 1.75 }, { scale: 1.3, duration: 2.0, ease: "power2.inOut" }, 0);
+    tl.to("#x-world", { scale: 1.0, duration: 4.3, ease: "power1.inOut" }, 2.0);
+
+    // cards slide in from the side they sit on, in groups: middle pair, lower row, top row, then the edge
+    const enter = (sel, t, gap) => {
+      gsap.utils.toArray(sel).forEach((el, i) => {
+        const r = el.getBoundingClientRect();
+        const dx = (r.left + r.width / 2 - 960) * 0.18;
+        const dy = (r.top + r.height / 2 - 540) * 0.18;
+        tl.fromTo(el, { opacity: 0, x: dx, y: dy, filter: "blur(6px)" }, { opacity: 1, x: 0, y: 0, filter: "blur(0px)", duration: 0.6, ease: "power3.out" }, t + i * gap);
+      });
+    };
+    enter(".g-mid", 0.05, 0.05);
+    enter(".g-low", 0.5, 0.08);
+    enter(".g-top", 0.95, 0.1);
+    enter(".g-out", 2.6, 0.12);
+
+    // every card, avatar and icon keeps a gentle float of its own once it has landed; it moves on
+    // percent offsets and rotation so it never fights the entry slide, and the links follow it live
+    gsap.utils.toArray("#x-world > .x-float, #x-world > .x-badge, #x-world > .x-ava, #x-world > .x-tool").forEach((el, i) => {
+      const w = el.offsetWidth || 100;
+      const h = el.offsetHeight || 100;
+      const amp = 9 + (i % 3) * 3; // px
+      const period = 2.2 + (i % 4) * 0.35;
+      const sx = i % 2 ? 1 : -1;
+      tl.fromTo(
+        el,
+        { xPercent: 0, yPercent: 0, rotation: 0 },
+        { xPercent: (sx * amp * 0.6 * 100) / w, yPercent: (-amp * 100) / h, rotation: sx * 1.2, duration: period / 2, ease: "sine.inOut", repeat: Math.ceil(6.6 / (period / 2)), yoyo: true },
+        0.4 + (i % 5) * 0.15,
+      );
+    });
+    tl.fromTo("#x-orbit path", { strokeDashoffset: 0 }, { strokeDashoffset: -160, duration: 4.0, ease: "none" }, 2.6);
+
+    // connection dots sit on the card edges and arrive with their cards; each link then grows out of
+    // its source dot and reaches the next card's dot (traced from the reference frame by frame)
+    // each link grows out of its source dot and lands exactly on the next card's dot
+    const LINKS = [
+      // [link, from dot, to dot, leave direction, arrive direction, start, duration]
+      ["#l-cal", "#d-cal", "#d-mail-in", [1, 0], [-1, 0], 0.9, 0.7], // calendar → mail
+      ["#l-script", "#d-script", "#d-time", [0.35, 1], [1, -0.2], 1.25, 0.8], // script → timeline
+      ["#l-mail", "#d-mail-out", "#d-chat", [1, 0], [-1, 0], 1.6, 0.7], // mail → team chat
+      ["#l-feed", "#d-rev", "#d-feed", [-0.35, 1], [-1, -0.2], 1.75, 0.8], // revisions → feedback
+    ].map(([id, a, b, da, db, t, d]) => {
+      const g = { v: 0 };
+      tl.fromTo(g, { v: 0 }, { v: 1, duration: d, ease: "power1.inOut" }, t);
+      return { el: document.querySelector(id), grad: document.querySelector(id.replace("#l-", "#g-")), a: document.querySelector(a), b: document.querySelector(b), da, db, g };
+    });
+
+    // the right chart's curves fade in left to right behind a soft edge: a third first, the rest later
+    tl.fromTo("#x-feedsvg", { "--p": "-20%" }, { "--p": "125%", duration: 3.6, ease: "sine.inOut" }, 0.2);
+    // the top-right chart fades in from the top down once its card is in
+    tl.fromTo("#x-revsvg", { "--p": "-20%" }, { "--p": "125%", duration: 3.2, ease: "sine.inOut" }, 1.5);
+    const rv = { v: 12 };
+    tl.fromTo(rv, { v: 12 }, { v: 37, duration: 2.6, ease: "power1.in", onUpdate: () => (document.querySelector("#x-revnum").textContent = Math.round(rv.v)) }, 1.4);
+
+    // the timeline plays; the script fills in and feeds it
+    tl.fromTo("#x-play", { x: 0 }, { x: 320, duration: 5.6, ease: "none" }, 0.3);
+    gsap.utils.toArray(".x-ln i").forEach((el, i) => tl.to(el, { width: "100%", duration: 0.3, ease: "power1.out" }, 1.9 + i * 0.15));
+    // storyboard frames fill in one by one while a selection hops across them
+    gsap.utils.toArray(".x-frame img").forEach((el, i) => tl.to(el, { opacity: 1, duration: 0.2 }, 1.9 + i * 0.12));
+    tl.set("#x-sel", { opacity: 1 }, 1.9);
+    [0, 1, 2, 3, 4, 5].forEach((k) => tl.set("#x-sel", { x: (k % 3) * 100, y: Math.floor(k / 3) * 60 }, 1.9 + k * 0.12));
+
+    // launch day is set, the client mails to push it, the team reacts
+    tl.fromTo("#x-day", { opacity: 0, scale: 0 }, { opacity: 1, scale: 1, duration: 0.25, ease: "back.out(3)" }, 0.9);
+    const mail = "Can we push launch a week? Logo bigger?";
+    const m = { n: 0 };
+    tl.fromTo(m, { n: 0 }, { n: mail.length, duration: 0.9, ease: "none", onUpdate: () => (document.querySelector("#x-mailtext").textContent = mail.slice(0, Math.round(m.n))) }, 1.7);
+    tl.to("#x-day", { y: 44, duration: 0.35, ease: "power2.inOut" }, 2.7); // the launch slips a week
+    gsap.utils.toArray(".x-cm").forEach((el, i) => tl.fromTo(el, { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.25, ease: "back.out(2)" }, 3.1 + i * 0.4));
+    // the edge cards keep moving too
+    gsap.utils.toArray(".x-row").forEach((el, i) => tl.fromTo(el, { opacity: 0, x: -20 }, { opacity: 1, x: 0, duration: 0.25 }, 3.2 + i * 0.35));
+    const boxes = gsap.utils.toArray(".x-box b");
+    boxes.forEach((el, i) => tl.to(el, { opacity: 1, duration: 0.15 }, 3.2 + i * 0.3));
+    tl.set(boxes[2], { background: "#e0453a" }, 4.8);
+
+    // the opening line rises in large and grey, darkens and settles to size, then "Juggling" types on
+    const words = gsap.utils.toArray("#x-word > span");
+    tl.set("#x-w0", { opacity: 1 }, 0);
+    tl.fromTo("#x-base", { y: 34, opacity: 0, color: "#9a9ea8" }, { y: 0, opacity: 1, color: "#1b1d22", duration: 0.35, ease: "power3.out" }, 0.05);
+    tl.fromTo("#x-w0", { scale: 1.3 }, { scale: 1, duration: 0.6, ease: "power2.inOut" }, 0.35);
+    const jug = " Juggling";
+    const typed = { n: 0 };
+    tl.fromTo(typed, { n: 0 }, { n: jug.length, duration: 0.45, ease: "none", onUpdate: () => (document.querySelector("#x-jug").textContent = jug.slice(0, Math.round(typed.n))) }, 1.0);
+    tl.set("#x-caret", { opacity: 0 }, 0);
+    tl.set("#x-caret", { opacity: 1 }, 0.25);
+    tl.set("#x-caret", { opacity: 0 }, 1.5);
+    // every later word rises up into the window from below
+    [1.7, 2.3, 2.9, 3.8, 5.2].forEach((t, i) => {
+      tl.set(words[i + 1], { opacity: 0, y: 70 }, 0);
+      tl.set(words[i], { opacity: 0 }, t);
+      tl.set(words[i + 1], { opacity: 1 }, t);
+      tl.to(words[i + 1], { y: 0, duration: 0.3, ease: "power3.out" }, t);
+    });
+
+    // everything blurs out into the next shot
+    // exit: the camera keeps pulling back, then the whole frame melts into a blur
+    tl.to("#x-world", { scale: 0.8, duration: 0.95, ease: "power2.in" }, 6.3);
+    tl.to("#x-word", { scale: 0.82, duration: 0.95, ease: "power2.in" }, 6.3);
+    tl.to(["#x-world", "#x-word"], { filter: "blur(22px)", duration: 0.45, ease: "power1.in" }, 6.8);
+    tl.to(["#x-world", "#x-word"], { opacity: 0.4, duration: 0.3, ease: "power1.in" }, 6.95);
+
+    // after every frame of `tl`, re-route each link between the live positions of its two dots
+    const world = document.querySelector("#x-world");
+    const center = (el) => {
+      const w = world.getBoundingClientRect();
+      const k = w.width / 1920;
+      const r = el.getBoundingClientRect();
+      return [(r.left + r.width / 2 - w.left) / k, (r.top + r.height / 2 - w.top) / k];
+    };
+    // dashed ties between neighbouring items, routed centre to centre underneath the cards so each one
+    // meets an edge; a tie shows once both of its ends have arrived
+    const ties = gsap.utils.toArray("#x-orbit path").map((el, i) => ({
+      el,
+      a: document.getElementById(el.dataset.a),
+      b: document.getElementById(el.dataset.b),
+      bow: i % 2 ? 0.18 : -0.18,
+    }));
+    const drawTies = () => {
+      ties.forEach((T) => {
+        const A = center(T.a);
+        const B = center(T.b);
+        const n = [-(B[1] - A[1]) * T.bow, (B[0] - A[0]) * T.bow];
+        const M = [(A[0] + B[0]) / 2 + n[0], (A[1] + B[1]) / 2 + n[1]];
+        T.el.setAttribute("d", `M${A[0]} ${A[1]} Q ${M[0]} ${M[1]}, ${B[0]} ${B[1]}`);
+        T.el.style.opacity = Math.min(+gsap.getProperty(T.a, "opacity"), +gsap.getProperty(T.b, "opacity")) * 0.75;
+      });
+    };
+    // the links behave like soft cords: their handles swing on slow waves of their own, a little out of
+    // step with each other, so the line ripples gently between the dots while the cards drift
+    const drawLinks = (time) => {
+      LINKS.forEach((L, k) => {
+        const A = center(L.a);
+        const B = center(L.b);
+        const len = Math.hypot(B[0] - A[0], B[1] - A[1]);
+        const reach = Math.max(90, len * 0.5);
+        const n = [-(B[1] - A[1]) / (len || 1), (B[0] - A[0]) / (len || 1)];
+        const amp = Math.min(58, len * 0.15);
+        const w1 = amp * Math.sin(0.85 * time + k * 1.7);
+        const w2 = amp * Math.sin(0.85 * time + k * 1.7 + 1.9);
+        const c1 = [A[0] + L.da[0] * reach + n[0] * w1, A[1] + L.da[1] * reach + n[1] * w1];
+        const c2 = [B[0] + L.db[0] * reach + n[0] * w2, B[1] + L.db[1] * reach + n[1] * w2];
+        L.el.setAttribute("d", `M${A[0]} ${A[1]} C ${c1[0]} ${c1[1]}, ${c2[0]} ${c2[1]}, ${B[0]} ${B[1]}`);
+        // the colour runs from deep orange at the source dot to a pale gold at the far end
+        L.grad.setAttribute("x1", A[0]);
+        L.grad.setAttribute("y1", A[1]);
+        L.grad.setAttribute("x2", B[0]);
+        L.grad.setAttribute("y2", B[1]);
+        L.el.style.strokeDashoffset = 1 - L.g.v;
+      });
+    };
+
+    const main = gsap.timeline({ paused: true });
+    main.add(tl, 0);
+    const clock = { t: 0 };
+    main.fromTo(clock, { t: 0 }, { t: 1, duration: tl.duration(), ease: "none", onUpdate: () => (drawLinks(clock.t * tl.duration()), drawTies()) }, 0);
+
+    window.__timelines["chaos"] = main;
+  </script>
+</template>

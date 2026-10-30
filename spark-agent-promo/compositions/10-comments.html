@@ -1,0 +1,304 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 400;
+      src: url("assets/fonts/DMSans-400.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 500;
+      src: url("assets/fonts/DMSans-500.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 600;
+      src: url("assets/fonts/DMSans-600.woff2") format("woff2");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      font-family: "DM Sans", sans-serif;
+      color: #1b1d22;
+      background:
+        repeating-linear-gradient(0deg, rgba(160, 170, 190, 0.07) 0 1px, transparent 1px 90px),
+        repeating-linear-gradient(90deg, rgba(160, 170, 190, 0.07) 0 1px, transparent 1px 90px),
+        radial-gradient(ellipse 80% 80% at 50% 45%, #f4f3f6 0%, #e7e6ea 100%);
+    }
+    #k-title {
+      position: absolute;
+      left: 0;
+      top: 62px;
+      width: 1920px;
+      height: 70px;
+      text-align: center;
+      font-size: 50px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    #k-title span {
+      position: absolute;
+      left: 0;
+      width: 100%;
+      opacity: 0;
+    }
+    #k-t2 i {
+      font-style: normal;
+    }
+
+    /* ---- the timeline card ---- */
+    #k-card {
+      position: absolute;
+      left: 225px;
+      top: 160px;
+      width: 1470px;
+      height: 840px;
+      border-radius: 30px;
+      overflow: hidden;
+      background: #fbfbfc;
+      box-shadow:
+        0 50px 70px -40px rgba(242, 130, 40, 0.55),
+        0 30px 60px rgba(40, 50, 80, 0.12),
+        0 0 0 1px rgba(30, 40, 60, 0.05);
+      transform-origin: 640px 375px;
+      opacity: 0;
+    }
+    .k-ruler {
+      position: absolute;
+      left: 0;
+      top: 30px;
+      width: 100%;
+      height: 40px;
+      font-size: 17px;
+      color: #9a9ea8;
+      font-variant-numeric: tabular-nums;
+    }
+    .k-ruler span {
+      position: absolute;
+      top: 0;
+    }
+    .k-ruler span::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 26px;
+      width: 1.5px;
+      height: 10px;
+      background: #c9ccd3;
+    }
+    .k-track {
+      position: absolute;
+      left: 30px;
+      right: 30px;
+      height: 150px;
+      border-radius: 16px;
+      background: #f2f3f6;
+    }
+    .k-clip {
+      position: absolute;
+      top: 14px;
+      height: 122px;
+      display: flex;
+      gap: 14px;
+      padding: 12px;
+      border-radius: 12px;
+      background: #fff;
+      box-shadow: 0 0 0 1.5px #e6e8ec, 0 6px 14px rgba(40, 50, 80, 0.06);
+      font-size: 18px;
+      font-weight: 600;
+      color: #3b3f48;
+      overflow: hidden;
+    }
+    .k-clip img {
+      flex: none;
+      height: 98px;
+      aspect-ratio: 16 / 9;
+      border-radius: 8px;
+      object-fit: cover;
+    }
+    .k-clip small {
+      display: block;
+      margin-top: 4px;
+      font-size: 15px;
+      font-weight: 400;
+      color: #8b8f99;
+    }
+    #k-head {
+      position: absolute;
+      left: 638px;
+      top: 64px;
+      width: 4px;
+      height: 760px;
+      border-radius: 2px;
+      background: #ef6a1c;
+    }
+    /* the focus ring around the comment Spark is working on */
+    #k-ring {
+      position: absolute;
+      left: 545px;
+      top: 280px;
+      width: 190px;
+      height: 190px;
+      border-radius: 50%;
+      background: rgba(242, 120, 60, 0.35);
+      box-shadow: 0 0 0 3px rgba(239, 106, 28, 0.85);
+    }
+    #k-marker {
+      position: absolute;
+      left: 618px;
+      top: 228px;
+      width: 46px;
+      height: 56px;
+    }
+    #k-fixed {
+      position: absolute;
+      left: 760px;
+      top: 330px;
+      padding: 14px 22px;
+      border-radius: 16px;
+      background: #fff;
+      box-shadow: 0 10px 26px rgba(40, 50, 80, 0.14);
+      font-size: 22px;
+      font-weight: 600;
+      white-space: nowrap;
+      opacity: 0;
+    }
+    #k-fixed b {
+      display: inline-grid;
+      place-items: center;
+      width: 26px;
+      height: 26px;
+      margin-right: 10px;
+      border-radius: 7px;
+      background: #22c55e;
+      color: #fff;
+      font-size: 16px;
+    }
+    #k-fixed small {
+      display: block;
+      margin-top: 2px;
+      padding-left: 36px;
+      font-size: 17px;
+      font-weight: 400;
+      color: #6b6f78;
+    }
+    /* comment pins: an avatar on a short stem, with the path it travelled */
+    .k-trail {
+      position: absolute;
+      height: 0;
+      border-top: 3px dashed rgba(239, 106, 28, 0.55);
+    }
+    .k-pin {
+      position: absolute;
+      width: 72px;
+      height: 72px;
+      margin: -36px 0 0 -36px;
+    }
+    .k-pin img {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 4px solid #fff;
+      box-shadow: 0 0 0 3px #ef6a1c, 0 8px 16px rgba(40, 50, 80, 0.2);
+    }
+  </style>
+  <div id="root" data-composition-id="comments" data-width="1920" data-height="1080">
+    <div id="k-title">
+      <span id="k-t1">Drop Comments on the Timeline</span>
+      <span id="k-t2"></span>
+    </div>
+
+    <div id="k-card" data-layout-allow-overflow data-layout-allow-overlap>
+      <div class="k-ruler">
+        <span style="left: 40px">0:00</span><span style="left: 240px">0:05</span><span style="left: 440px">0:10</span><span style="left: 640px">0:15</span><span style="left: 840px">0:20</span><span style="left: 1040px">0:25</span><span style="left: 1240px">0:30</span>
+      </div>
+
+      <div class="k-track" style="top: 100px">
+        <div class="k-clip" style="left: 14px; width: 520px"><img src="assets/images/ref-06.jpg" alt="" /><div>Sky tagline<small>Word swap · 3.5 s</small></div></div>
+        <div class="k-clip" style="left: 548px; width: 840px"><img src="assets/images/ref-01.jpg" alt="" /><div>Branching lines<small>Line draw · 2.4 s</small></div></div>
+      </div>
+      <div class="k-track" style="top: 290px">
+        <div class="k-clip" style="left: 14px; width: 420px"><img src="assets/images/ref-09.jpg" alt="" /><div>Rolling counter<small>Kinetic type · 1.6 s</small></div></div>
+        <div class="k-clip" style="left: 448px; width: 640px"><img src="assets/images/ref-03.jpg" alt="" /><div>Card vortex<small>Spin out · 1.2 s</small></div></div>
+        <div class="k-clip" style="left: 1102px; width: 290px"><img src="assets/images/ref-02.jpg" alt="" /><div>Ring<small>0.8 s</small></div></div>
+      </div>
+      <div class="k-track" style="top: 480px">
+        <div class="k-clip" style="left: 14px; width: 700px"><img src="assets/images/ref-05.jpg" alt="" /><div>Paper tree<small>Grow · 3.0 s</small></div></div>
+        <div class="k-clip" style="left: 728px; width: 660px"><img src="assets/images/ref-04.jpg" alt="" /><div>Code repair<small>Glitch fix · 2.3 s</small></div></div>
+      </div>
+      <div class="k-track" style="top: 670px">
+        <div class="k-clip" style="left: 14px; width: 1374px; background: #fff7f0"><img src="assets/images/ref-10.jpg" alt="" /><div>Music · Launch theme<small>0:00 – 0:45</small></div></div>
+      </div>
+
+      <i id="k-head"></i>
+      <i id="k-ring"></i>
+      <svg id="k-marker" viewBox="0 0 46 56"><path d="M23 54 C23 54 4 34 4 21 A19 19 0 0 1 42 21 C42 34 23 54 23 54 Z" fill="#ef4f3a" stroke="#fff" stroke-width="3" /><circle cx="23" cy="21" r="6.5" fill="#fff" /></svg>
+
+      <i class="k-trail" id="k-tr1" style="left: 640px; top: 374px"></i>
+      <i class="k-trail" id="k-tr2" style="left: 980px; top: 184px"></i>
+      <i class="k-trail" id="k-tr3" style="left: 200px; top: 564px"></i>
+      <i class="k-trail" id="k-tr4" style="left: 1120px; top: 754px"></i>
+      <div class="k-pin" id="k-p1" style="left: 640px; top: 375px"><img src="assets/images/fb-02.png" alt="" /></div>
+      <div class="k-pin" id="k-p2" style="left: 980px; top: 185px"><img src="assets/images/fb-04.png" alt="" /></div>
+      <div class="k-pin" id="k-p3" style="left: 420px; top: 565px"><img src="assets/images/fb-01.png" alt="" /></div>
+      <div class="k-pin" id="k-p4" style="left: 1120px; top: 755px"><img src="assets/images/fb-05.png" alt="" /></div>
+
+      <div id="k-fixed"><b>✓</b>Fixed: ease softened<small>Card vortex · 0:15</small></div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+
+    // shot 12, one thing at a time: the backdrop clears, the timeline card settles in under its
+    // title; comment pins travel along their tracks to where they land; the title changes and
+    // a soft orange wave runs through its letters; the first comment reaches the playhead, the
+    // ring turns green and the fix is noted, while the camera pushes into that spot
+    tl.fromTo("#root", { opacity: 0 }, { opacity: 1, duration: 0.2, ease: "none" }, 0);
+    tl.fromTo("#k-card", { opacity: 0, y: 30, scale: 0.97 }, { opacity: 1, y: 0, scale: 1, duration: 0.5, ease: "power2.out" }, 0.15);
+    tl.fromTo("#k-t1", { opacity: 0, color: "#9a9ea8" }, { opacity: 1, color: "#1b1d22", duration: 0.4, ease: "power1.out" }, 0.2);
+
+    // pins: [id, trail id, start x (card px), end x, start time, duration]
+    const pins = [
+      ["#k-p1", "#k-tr1", 1150, 640, 0.3, 1.9],
+      ["#k-p2", "#k-tr2", 1330, 980, 0.35, 1.6],
+      ["#k-p3", "#k-tr3", 200, 420, 0.4, 1.5],
+      ["#k-p4", "#k-tr4", 1360, 1120, 0.45, 1.4],
+    ];
+    pins.forEach(([pin, trail, from, to, t, d]) => {
+      const dx = from - to;
+      tl.fromTo(pin, { x: dx, opacity: 0 }, { x: 0, opacity: 1, duration: d, ease: "power1.inOut" }, t);
+      // the trail always runs from the start point to the pin
+      const left = Math.min(from, to);
+      tl.set(trail, { left, width: 0 }, 0);
+      if (from > to) tl.fromTo(trail, { x: dx, width: 0 }, { x: 0, width: dx, duration: d, ease: "power1.inOut" }, t);
+      else tl.fromTo(trail, { width: 0 }, { width: -dx, duration: d, ease: "power1.inOut" }, t);
+    });
+
+    // title change with an orange wave through the letters
+    const t2 = document.getElementById("k-t2");
+    const letters = [..."Spark Fixes Them One by One"].map((c) => {
+      const s = document.createElement("i");
+      s.textContent = c;
+      t2.append(s);
+      return s;
+    });
+    tl.to("#k-t1", { opacity: 0, y: -14, duration: 0.25, ease: "power1.in" }, 1.1);
+    tl.fromTo("#k-t2", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.3, ease: "power2.out" }, 1.25);
+    letters.forEach((s, i) => {
+      tl.fromTo(s, { color: "#1b1d22" }, { keyframes: [{ color: "#f26a1b", duration: 0.12 }, { color: "#1b1d22", duration: 0.3 }], ease: "none" }, 1.4 + i * 0.025);
+    });
+
+    // the first comment arrives: the ring turns green and the fix is noted
+    tl.to("#k-ring", { backgroundColor: "rgba(60, 200, 110, 0.35)", boxShadow: "0 0 0 3px rgba(34, 170, 90, 0.9)", duration: 0.25, ease: "power1.inOut" }, 2.2);
+    tl.fromTo("#k-ring", { scale: 1 }, { keyframes: [{ scale: 1.08, duration: 0.15 }, { scale: 1, duration: 0.3 }], ease: "sine.inOut" }, 2.2);
+    tl.fromTo("#k-fixed", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.3, ease: "power2.out" }, 2.35);
+
+    // camera pushes into the ring; the title steps aside
+    tl.to("#k-title", { opacity: 0, duration: 0.3, ease: "power1.in" }, 2.0);
+    tl.to("#k-card", { scale: 1.75, y: 120, duration: 1.3, ease: "power2.inOut" }, 2.0);
+
+    window.__timelines["comments"] = tl;
+  </script>
+</template>

@@ -1,0 +1,158 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 400;
+      src: url("assets/fonts/DMSans-400.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 600;
+      src: url("assets/fonts/DMSans-600.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 700;
+      src: url("assets/fonts/DMSans-700.woff2") format("woff2");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      font-family: "DM Sans", sans-serif;
+      background:
+        radial-gradient(ellipse 55% 60% at 50% 55%, #f8c98a 0%, rgba(248, 201, 138, 0) 70%),
+        radial-gradient(ellipse 80% 90% at 0% 0%, #ee6a1c 0%, rgba(238, 106, 28, 0) 60%),
+        linear-gradient(135deg, #f07a22 0%, #f3a23c 55%, #f2a12e 100%);
+    }
+    #c-group {
+      position: absolute;
+      left: 210px;
+      top: 300px;
+      color: #fff;
+      white-space: nowrap;
+      transform-origin: 750px 230px;
+    }
+    #c-row {
+      display: flex;
+      align-items: center;
+      gap: 36px;
+    }
+    #c-word {
+      font-size: 130px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      text-shadow: 0 6px 30px rgba(180, 70, 0, 0.16);
+    }
+    /* the client's note, as a frosted card sitting in the line of type */
+    #c-card {
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      width: 880px;
+      padding: 30px 38px;
+      border-radius: 36px;
+      color: #1b1d22;
+      /* a brushed, warm-silver face with a bright top bevel */
+      background: linear-gradient(170deg, rgba(255, 250, 244, 0.92) 0%, rgba(246, 232, 220, 0.86) 55%, rgba(255, 244, 234, 0.9) 100%);
+      box-shadow:
+        inset 0 2px 0 rgba(255, 255, 255, 1),
+        inset 0 -2px 0 rgba(200, 150, 110, 0.25),
+        0 18px 40px rgba(170, 70, 0, 0.18);
+    }
+    /* the glint: a narrow band of light that sweeps across the card like light on metal */
+    #c-glint {
+      position: absolute;
+      top: -40%;
+      left: 0;
+      width: 420px;
+      height: 180%;
+      background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.35) 45%, rgba(255, 255, 255, 0.5) 50%, rgba(255, 255, 255, 0.35) 55%, rgba(255, 255, 255, 0) 100%);
+      transform: rotate(14deg);
+      pointer-events: none;
+    }
+    /* the card's content sits above the glint, so the light runs over the surface, not the text */
+    #c-card > div {
+      position: relative;
+      z-index: 1;
+    }
+    /* the app icon: Spark's mark on a white rounded square */
+    #c-icon {
+      flex: none;
+      display: grid;
+      place-items: center;
+      width: 92px;
+      height: 92px;
+      border-radius: 24px;
+      background: #fff;
+      box-shadow: 0 6px 16px rgba(170, 80, 20, 0.16);
+    }
+    #c-icon img {
+      width: 68px;
+      height: 68px;
+    }
+    .c-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-size: 35px;
+      font-weight: 600;
+    }
+    .c-top small {
+      font-size: 21px;
+      font-weight: 400;
+      color: #8b7f74;
+    }
+    .c-body {
+      margin-top: 6px;
+      font-size: 25px;
+      line-height: 1.35;
+      color: #5b524a;
+    }
+    #c-big {
+      margin-top: 4px;
+      font-size: 196px;
+      font-weight: 700;
+      line-height: 1.02;
+      letter-spacing: -0.02em;
+      text-shadow: 0 8px 40px rgba(180, 70, 0, 0.16);
+    }
+    #c-big span {
+      opacity: 0.55;
+    }
+  </style>
+  <div id="root" data-composition-id="client" data-width="1920" data-height="1080">
+    <div id="c-group" data-layout-allow-overflow>
+      <div id="c-row">
+        <div id="c-word">Client</div>
+        <div id="c-card">
+          <i id="c-glint"></i>
+          <div id="c-icon"><img src="assets/images/studio-mark.png" alt="" /></div>
+          <div style="flex: 1">
+            <div class="c-top">New client comment <small>10:42 AM</small></div>
+            <div class="c-body">“Can the logo land a beat earlier, and feel a little warmer?”</div>
+          </div>
+        </div>
+      </div>
+      <div id="c-big">Wants <span>Changes?</span></div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+
+    // shot 13: the page warms to orange while the whole line of type closes in from outside the
+    // frame, fast at first and then settling, and keeps easing inward while it holds; a glint of
+    // light runs across the client's card like light catching metal
+    tl.fromTo("#root", { opacity: 0 }, { opacity: 1, duration: 0.18, ease: "power1.inOut" }, 0);
+    // one continuous, always-slowing move from outside the frame inward, so it never stops and
+    // restarts; a touch of blur at the start reads as speed
+    tl.fromTo("#c-group", { scale: 1.28, filter: "blur(5px)" }, { scale: 0.96, duration: 1.3, ease: "power2.out" }, 0);
+    tl.to("#c-group", { filter: "blur(0px)", duration: 0.3, ease: "power1.out" }, 0);
+
+    tl.fromTo("#c-glint", { x: -480 }, { x: 1000, duration: 1.0, ease: "sine.inOut" }, 0.25);
+
+    window.__timelines["client"] = tl;
+  </script>
+</template>

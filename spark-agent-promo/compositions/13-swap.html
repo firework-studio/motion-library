@@ -1,0 +1,273 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 400;
+      src: url("assets/fonts/DMSans-400.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 500;
+      src: url("assets/fonts/DMSans-500.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 600;
+      src: url("assets/fonts/DMSans-600.woff2") format("woff2");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      font-family: "DM Sans", sans-serif;
+      color: #1b1d22;
+      background: linear-gradient(180deg, #f3f3f6 0%, #e7e8ec 100%);
+    }
+    #w-scene {
+      position: absolute;
+      inset: 0;
+    }
+    #w-title {
+      position: absolute;
+      left: 300px;
+      top: 64px;
+      font-size: 62px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    #w-cam {
+      position: absolute;
+      inset: 0;
+      perspective: 2400px;
+      perspective-origin: 900px 540px;
+    }
+    #w-board {
+      position: absolute;
+      left: 110px;
+      top: 180px;
+      width: 2100px;
+      height: 1060px;
+      border-radius: 26px;
+      background: #fcfcfd;
+      box-shadow:
+        0 30px 60px rgba(40, 50, 80, 0.12),
+        0 0 0 1px rgba(30, 40, 60, 0.05);
+      transform-origin: 700px 400px;
+      transform-style: preserve-3d;
+      overflow: hidden;
+    }
+    .w-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      height: 74px;
+      padding: 0 30px;
+      font-size: 24px;
+      font-weight: 500;
+      color: #8b8f99;
+    }
+    .w-bar i {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+    }
+    .w-bar span {
+      margin-left: 18px;
+    }
+    .w-grid {
+      position: relative;
+    }
+    .w-row {
+      position: relative;
+      display: flex;
+      height: 86px;
+      border-top: 1.5px solid #eef0f3;
+    }
+    .w-row.w-head {
+      height: 64px;
+      font-size: 22px;
+      font-weight: 500;
+      color: #6b6f78;
+    }
+    .w-name {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      width: 270px;
+      flex: none;
+      padding-left: 30px;
+      border-right: 1.5px solid #eef0f3;
+      font-size: 21px;
+      font-weight: 500;
+      color: #3b3f48;
+    }
+    .w-name img {
+      width: 40px;
+      height: 24px;
+      border-radius: 5px;
+      object-fit: cover;
+    }
+    .w-col {
+      width: 250px;
+      flex: none;
+      display: flex;
+      align-items: center;
+      padding-left: 22px;
+      border-right: 1.5px solid #f2f3f5;
+    }
+    /* blocks are placed by inline left/top on the grid */
+    .w-blk {
+      position: absolute;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      padding-left: 20px;
+      border-radius: 6px;
+      font-size: 20px;
+      font-weight: 500;
+    }
+    .w-o {
+      color: #8a3a12;
+      background: #f9c9aa;
+      border-left: 5px solid #ef6a1c;
+    }
+    .w-p {
+      color: #8a5a32;
+      background: #fdeedd;
+      border-left: 5px solid #f39a4a;
+    }
+    .w-g {
+      color: #1f6a3e;
+      background: #dcf5e4;
+      border-left: 5px solid #34c46a;
+    }
+    .w-b {
+      color: #2a4f86;
+      background: #dde9fb;
+      border-left: 5px solid #3f7fe0;
+    }
+    .w-r {
+      color: #6b6f78;
+      background: #eceef2;
+      border-left: 5px solid #b9bdc6;
+    }
+    /* the drag trail: one shape joining the block's old slot to where the block is now */
+    #w-trail {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 2100px;
+      height: 760px;
+      z-index: 1;
+      overflow: visible;
+      pointer-events: none;
+      filter: blur(1.5px);
+    }
+    #w-move {
+      z-index: 2;
+      transform-origin: 50% 50%;
+    }
+  </style>
+  <div id="root" data-composition-id="swap" data-width="1920" data-height="1080">
+    <div id="w-scene" data-layout-allow-overflow data-layout-allow-overlap>
+      <div id="w-title">Swap a Transition</div>
+      <div id="w-cam" data-layout-allow-overflow data-layout-allow-overlap>
+        <div id="w-board">
+          <div class="w-bar"><i style="background: #f05b52"></i><i style="background: #f5bd2f"></i><i style="background: #5bc94a"></i><span>Timeline Board</span></div>
+          <div class="w-grid">
+            <div class="w-row w-head">
+              <div class="w-name">Shot</div>
+              <div class="w-col">0:00</div><div class="w-col">0:05</div><div class="w-col">0:10</div><div class="w-col">0:15</div><div class="w-col">0:20</div><div class="w-col">0:25</div><div class="w-col">0:30</div>
+            </div>
+            <div class="w-row"><div class="w-name"><img src="assets/images/ref-07.jpg" alt="" />Logo</div></div>
+            <div class="w-row"><div class="w-name"><img src="assets/images/ref-11.jpg" alt="" />Chat</div></div>
+            <div class="w-row"><div class="w-name"><img src="assets/images/ref-06.jpg" alt="" />Product</div></div>
+            <div class="w-row"><div class="w-name"><img src="assets/images/ref-09.jpg" alt="" />Pacing</div></div>
+            <div class="w-row"><div class="w-name"><img src="assets/images/ref-05.jpg" alt="" />Reveal</div></div>
+            <div class="w-row"><div class="w-name"><img src="assets/images/ref-08.jpg" alt="" />Fix</div></div>
+            <div class="w-row"><div class="w-name"><img src="assets/images/ref-01.jpg" alt="" />Close</div></div>
+
+            <!-- row tops: header 64, then 86 per row; blocks sit 13px into a row -->
+            <div class="w-blk w-p" style="left: 774px; top: 163px; width: 760px">Branching lines</div>
+            <div class="w-blk w-g" style="left: 524px; top: 335px; width: 330px">Fade through</div>
+            <div class="w-blk w-r" id="w-old" style="left: 774px; top: 249px; width: 300px">Hard cut</div>
+            <div class="w-blk w-b" style="left: 280px; top: 421px; width: 210px">Push</div>
+            <div class="w-blk w-p" style="left: 1024px; top: 507px; width: 620px">Paper tree grow</div>
+            <div class="w-blk w-b" style="left: 774px; top: 593px; width: 520px">Rolling counter</div>
+            <svg id="w-trail" viewBox="0 0 2100 760">
+              <defs>
+                <linearGradient id="w-trail-g" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0" stop-color="#f7b27a" stop-opacity="0" />
+                  <stop offset="0.55" stop-color="#f5a066" stop-opacity="0.22" />
+                  <stop offset="1" stop-color="#f28a48" stop-opacity="0.55" />
+                </linearGradient>
+              </defs>
+              <polygon id="w-trail-p" points="" fill="url(#w-trail-g)" style="opacity: 0" />
+            </svg>
+            <div class="w-blk w-o" id="w-move" style="left: 530px; top: 77px; width: 400px">Card vortex</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+
+    // shot 15: the board pushes in from the right as the close-up leaves; the "Card vortex" block
+    // lifts off its row, glides down onto the Product row and replaces the hard cut there; then the
+    // board turns into perspective and the camera leans in
+    tl.fromTo("#w-scene", { x: 1100 }, { x: 0, duration: 0.6, ease: "power3.out" }, 0);
+
+    // lift, carry, drop: the lifted block casts a long warm shadow
+    tl.to("#w-move", { x: 34, y: -64, scale: 1.04, boxShadow: "0 22px 30px -8px rgba(239, 106, 28, 0.45)", duration: 0.2, ease: "power2.out" }, 0.3);
+    tl.to("#w-move", { x: 244, y: 172, duration: 0.4, ease: "power2.inOut" }, 0.7);
+    tl.to("#w-old", { opacity: 0, duration: 0.15, ease: "power1.in" }, 0.78); // gone before the new block arrives
+    tl.to("#w-move", { scale: 1, boxShadow: "0 0 0 rgba(239, 106, 28, 0)", duration: 0.2, ease: "power2.in" }, 1.05);
+
+    // drag trail: the block is pulled up out of its slot, and a soft shape joins the block to the
+    // slot it came from, strongest at the block and fading out toward the slot; it stretches as the
+    // block is carried away and fades once the block lands
+    const move = document.getElementById("w-move");
+    const poly = document.getElementById("w-trail-p");
+    const grad = document.getElementById("w-trail-g");
+    const SLOT = { x: 530, y: 77, w: 400, h: 60 };
+    const hull = (pts) => {
+      pts.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+      const cross = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+      const half = (list) => {
+        const out = [];
+        for (const p of list) {
+          while (out.length >= 2 && cross(out[out.length - 2], out[out.length - 1], p) <= 0) out.pop();
+          out.push(p);
+        }
+        return out.slice(0, -1);
+      };
+      return half(pts).concat(half(pts.slice().reverse()));
+    };
+    const corners = (r) => [[r.x, r.y], [r.x + r.w, r.y], [r.x + r.w, r.y + r.h], [r.x, r.y + r.h]];
+    const clamp01 = (v) => Math.min(1, Math.max(0, v));
+    // runs after every tween on this timeline has updated, so it is right on any frame
+    tl.eventCallback("onUpdate", () => {
+      const t = tl.time();
+      const a = clamp01((t - 0.3) / 0.12) * (1 - clamp01((t - 1.0) / 0.2));
+      poly.style.opacity = a;
+      if (a <= 0) return;
+      const x = gsap.getProperty(move, "x");
+      const y = gsap.getProperty(move, "y");
+      const sc = gsap.getProperty(move, "scale");
+      const cur = { x: SLOT.x + x - (SLOT.w * (sc - 1)) / 2, y: SLOT.y + y - (SLOT.h * (sc - 1)) / 2, w: SLOT.w * sc, h: SLOT.h * sc };
+      poly.setAttribute("points", hull(corners(SLOT).concat(corners(cur))).map((p) => p.join(",")).join(" "));
+      // shade from the slot's lower-left corner (clear) to the block's far corner (strongest)
+      grad.setAttribute("x1", SLOT.x);
+      grad.setAttribute("y1", SLOT.y + SLOT.h);
+      grad.setAttribute("x2", cur.x + cur.w * 0.75 + 0.01);
+      grad.setAttribute("y2", cur.y + 0.01);
+    });
+
+    // the board turns into perspective as the camera leans in; the title steps aside
+    tl.to("#w-board", { rotationY: 18, rotationX: 10, rotationZ: -3, scale: 1.25, duration: 0.85, ease: "power2.inOut" }, 1.0);
+    tl.to("#w-title", { opacity: 0, y: -20, duration: 0.3, ease: "power1.in" }, 1.05);
+
+    window.__timelines["swap"] = tl;
+  </script>
+</template>

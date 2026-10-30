@@ -1,0 +1,223 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 600;
+      src: url("assets/fonts/DMSans-600.woff2") format("woff2");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      font-family: "DM Sans", sans-serif;
+      color: #1b1d22;
+      background:
+        repeating-linear-gradient(0deg, rgba(150, 156, 170, 0.06) 0 1px, transparent 1px 90px),
+        repeating-linear-gradient(90deg, rgba(150, 156, 170, 0.06) 0 1px, transparent 1px 90px),
+        linear-gradient(180deg, #ebecef 0%, #dcdde2 55%, #cdcfd4 100%);
+    }
+    #v-cam {
+      position: absolute;
+      inset: 0;
+      perspective: 1500px;
+      perspective-origin: 700px 540px;
+    }
+    #v-in {
+      position: absolute;
+      inset: 0;
+      transform-origin: 700px 540px;
+      transform-style: preserve-3d;
+    }
+    #v-stage {
+      position: absolute;
+      left: 60px;
+      top: 300px;
+      transform-origin: 0% 50%;
+    }
+    /* the capsule: a soft slab, warm light spilling along its top and bottom edges */
+    #v-pill {
+      position: relative;
+      width: 4000px;
+      height: 470px;
+      display: flex;
+      align-items: center;
+      padding-left: 70px;
+      border-radius: 235px;
+      overflow: hidden;
+      background: linear-gradient(180deg, #f5f5f7 0%, #e7e8ec 100%);
+      box-shadow:
+        inset 0 3px 0 #fff,
+        0 10px 0 -2px #d3d5da,
+        0 -26px 60px -20px rgba(255, 140, 60, 0.55),
+        0 50px 70px -30px rgba(255, 150, 50, 0.75),
+        0 30px 60px rgba(40, 50, 80, 0.12);
+    }
+    /* Spark's sphere, with light moving inside it */
+    /* light the sphere throws onto the capsule; it swells with the voice */
+    #v-halo {
+      position: absolute;
+      left: 65px;
+      top: 95px;
+      width: 280px;
+      height: 280px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 205, 130, 0.7) 0%, rgba(255, 170, 90, 0.3) 40%, rgba(255, 160, 80, 0) 70%);
+      opacity: 0;
+    }
+    #v-ball {
+      position: relative;
+      z-index: 1;
+      flex: none;
+      width: 270px;
+      height: 270px;
+      border-radius: 50%;
+      overflow: hidden;
+      background: radial-gradient(circle at 50% 55%, #ffb347 0%, #f47a26 70%, #e65a1c 100%);
+      box-shadow: 0 16px 40px rgba(242, 106, 27, 0.45);
+    }
+    #v-swirl {
+      position: absolute;
+      inset: -30%;
+      background: conic-gradient(from 0deg, #ffe08a, #ff9a3c, #ff5e7a, #ffb24a, #fff1c4, #ff8a2a, #ffe08a);
+      filter: blur(30px);
+      opacity: 0.85;
+    }
+    #v-core {
+      position: absolute;
+      left: 80px;
+      top: 80px;
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 252, 235, 0.95) 0%, rgba(255, 230, 160, 0) 70%);
+    }
+    #v-glass {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 34% 26%, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0) 26%),
+        radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0) 58%, rgba(170, 50, 0, 0.28) 100%);
+    }
+    #v-name {
+      margin-left: 70px;
+      font-size: 128px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+    #v-dot {
+      flex: none;
+      width: 24px;
+      height: 24px;
+      margin: 0 44px 0 50px;
+      border-radius: 50%;
+      background: #f26a1b;
+    }
+    #v-wave {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      height: 300px;
+    }
+    #v-wave i {
+      display: block;
+      width: 24px;
+      height: 100px;
+      border-radius: 12px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0) 35%),
+        linear-gradient(90deg, #ffbf6a 0%, #f78a32 38%, #ef6a1c 70%, #d4520f 100%);
+      box-shadow:
+        inset 1.5px 0 0 rgba(255, 255, 255, 0.55),
+        0 10px 16px -6px rgba(232, 96, 20, 0.45);
+    }
+  </style>
+  <div id="root" data-composition-id="voice" data-width="1920" data-height="1080">
+    <div id="v-cam" data-layout-allow-overflow data-layout-allow-overlap>
+      <div id="v-in" data-layout-allow-overflow data-layout-allow-overlap>
+      <div id="v-stage" data-layout-allow-overflow>
+        <div id="v-pill">
+          <i id="v-halo"></i><div id="v-ball"><b id="v-swirl"></b><b id="v-core"></b><b id="v-glass"></b></div>
+          <div id="v-name">Spark</div>
+          <i id="v-dot"></i>
+          <div id="v-wave"></div>
+        </div>
+      </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    const D = 5.15;
+
+    // shot 11: the capsule rises into frame already turned in perspective (near on the left,
+    // receding to the right); over the shot it slowly squares up and pulls back while Spark
+    // speaks; the sphere's light and the waveform follow the voice, then settle to idle
+    tl.fromTo("#root", { opacity: 0 }, { opacity: 1, duration: 0.2, ease: "none" }, 0);
+    // the backdrop swaps first; then the capsule rises tipped back and a little small, and
+    // tips forward and grows into place as it arrives; the sphere follows with a soft pop
+    tl.fromTo("#v-in", { y: 1000, rotationX: 38, scale: 0.86 }, { y: 0, rotationX: 0, scale: 1, duration: 1.15, ease: "power3.out" }, 0.15);
+    tl.fromTo("#v-ball", { scale: 0.6 }, { scale: 1, duration: 0.7, ease: "back.out(1.6)" }, 0.45);
+    tl.fromTo(
+      "#v-stage",
+      { rotationY: 24, rotationX: 8, rotationZ: -5, scale: 1.16, x: 0 },
+      { rotationY: 5, rotationX: 2, rotationZ: -0.5, scale: 0.72, x: 60, duration: D, ease: "sine.inOut" },
+      0,
+    );
+
+    // ---- voice level ----
+    // One loudness curve (0..1) drives the sphere and the waveform together, so the light follows
+    // the voice: the per-frame loudness of Spark's line (assets/voice/vo-09.mp3, 30 fps), which
+    // starts VOICE_AT seconds into this shot
+    const VOICE_ENV = [0.0, 0.0, 0.23, 0.66, 0.91, 1.0, 0.85, 0.42, 0.0, 0.62, 0.84, 0.64, 0.0, 0.0, 0.0, 0.03, 0.06, 0.52, 0.7, 0.77, 0.56, 0.39, 0.09, 0.1, 0.74, 0.64, 0.01, 0.0, 0.22, 0.67, 0.55, 0.46, 0.32, 0.09, 0.04, 0.33, 0.33, 0.33, 0.27, 0.28, 0.51, 0.41, 0.5, 0.36, 0.0, 0.0, 0.0, 0.0, 0.0, 0.52, 0.63, 0.38, 0.58, 0.79, 0.68, 0.32, 0.0, 0.0, 0.21, 0.57, 0.48, 0.44, 0.3, 0.0, 0.0, 0.0];
+    const VOICE_AT = 1.25;
+    const level = (t) => {
+      const i = Math.round((t - VOICE_AT) * 30);
+      return i >= 0 && i < VOICE_ENV.length ? VOICE_ENV[i] : 0;
+    };
+
+    const wave = document.getElementById("v-wave");
+    const bars = Array.from({ length: 26 }, () => {
+      const b = document.createElement("i");
+      wave.append(b);
+      return b;
+    });
+    const ball = document.getElementById("v-ball");
+    const clock = { t: 0 };
+    let smooth = 0;
+    tl.fromTo(
+      clock,
+      { t: 0 },
+      {
+        t: D,
+        duration: D,
+        ease: "none",
+        onUpdate: () => {
+          const t = clock.t;
+          const a = level(t);
+          // a short release so the light glows down instead of snapping off between syllables
+          smooth = Math.max(a, level(t - 1 / 30) * 0.85, level(t - 2 / 30) * 0.7, level(t - 4 / 30) * 0.5);
+          const after = gsap.utils.clamp(0, 1, (t - 3.5) / 0.4); // idle row once the line is over
+
+          bars.forEach((b, i) => {
+            const taper = 1 - Math.max(0, i - 19) * 0.11; // the far end trails off
+            const texture = 0.55 + 0.45 * Math.abs(Math.sin(t * 9.1 + i * 1.7) * Math.cos(t * 3.7 + i * 0.9));
+            const talking = 0.2 + 0.8 * smooth * texture;
+            const idle = 0.42 + 0.06 * Math.sin(t * 4 + i * 0.6);
+            b.style.height = `${Math.max(24, ((1 - after) * talking + after * idle) * 280 * taper)}px`;
+          });
+
+          // the sphere: the swirl keeps turning, the hot core brightens and swells, the halo blooms
+          gsap.set("#v-swirl", { rotation: t * 80 });
+          gsap.set("#v-core", { x: 30 * Math.sin(t * 1.7), y: 20 * Math.cos(t * 1.3), scale: 0.85 + 0.6 * smooth, opacity: 0.55 + 0.45 * smooth });
+          gsap.set("#v-halo", { opacity: 0.15 + 0.85 * smooth, scale: 0.92 + 0.12 * smooth });
+          if (t > 1.2) gsap.set(ball, { scale: 1 + 0.035 * smooth }); // after the entrance pop
+          ball.style.boxShadow = `0 16px ${40 + 40 * smooth}px rgba(242, 106, 27, ${0.4 + 0.4 * smooth})`;
+        },
+      },
+      0,
+    );
+
+    window.__timelines["voice"] = tl;
+  </script>
+</template>

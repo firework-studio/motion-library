@@ -1,0 +1,317 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 400;
+      src: url("assets/fonts/DMSans-400.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 500;
+      src: url("assets/fonts/DMSans-500.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 600;
+      src: url("assets/fonts/DMSans-600.woff2") format("woff2");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      font-family: "DM Sans", sans-serif;
+      color: #1b1d22;
+      background: linear-gradient(180deg, #f3f3f6 0%, #e7e8ec 100%);
+    }
+    #s-cam {
+      position: absolute;
+      inset: 0;
+      perspective: 2000px;
+      perspective-origin: 960px 540px;
+    }
+    #s-zoom {
+      position: absolute;
+      inset: 0;
+      transform-origin: 1203px 288px;
+      transform-style: preserve-3d;
+    }
+    #s-page {
+      position: absolute;
+      inset: -260px -420px -320px -260px;
+      padding: 260px 420px 320px 260px;
+      display: flex;
+      background: #fcfcfd;
+      transform-origin: 1220px 800px;
+      transform-style: preserve-3d;
+      font-size: 20px;
+    }
+    .s-side {
+      width: 300px;
+      flex: none;
+      margin-top: -260px;
+      margin-bottom: -320px;
+      padding: 294px 26px 34px;
+      border-right: 1.5px solid #eceef2;
+      background: #fafafb;
+    }
+    .s-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 30px;
+      font-size: 24px;
+      font-weight: 600;
+    }
+    .s-brand img {
+      width: 36px;
+      height: 36px;
+    }
+    .s-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 11px 12px;
+      border-radius: 10px;
+      color: #3b3f48;
+    }
+    .s-item i {
+      width: 18px;
+      height: 18px;
+      border-radius: 5px;
+      border: 2.5px solid #9a9ea8;
+    }
+    .s-item.on {
+      background: #f1f2f5;
+      font-weight: 600;
+    }
+    .s-item.on i {
+      border-color: #f26a1b;
+    }
+    .s-main {
+      flex: 1;
+      padding: 44px 56px;
+      transform-style: preserve-3d;
+    }
+    .s-h {
+      font-size: 34px;
+      font-weight: 600;
+    }
+    .s-sub {
+      margin-top: 6px;
+      color: #6b6f78;
+    }
+    .s-tabs {
+      display: flex;
+      gap: 34px;
+      margin: 30px 0 22px;
+      color: #8b8f99;
+    }
+    .s-tabs .on {
+      color: #1b1d22;
+      font-weight: 600;
+      padding-bottom: 8px;
+      border-bottom: 3px solid #f26a1b;
+    }
+    .s-wrap {
+      display: flex;
+      gap: 40px;
+      transform-style: preserve-3d;
+    }
+    .s-list {
+      flex: 1;
+      transform-style: preserve-3d;
+    }
+    .s-row {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      padding: 28px 30px;
+      border-radius: 22px;
+      background: #fff;
+      box-shadow: 0 0 0 1.5px #eff0f3;
+    }
+    .s-row + .s-row {
+      margin-top: 18px;
+    }
+    .s-row img {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    .s-t {
+      flex: 1;
+      font-size: 24px;
+      font-weight: 600;
+    }
+    .s-t small {
+      display: block;
+      margin-top: 4px;
+      font-size: 18px;
+      font-weight: 400;
+      color: #8b8f99;
+    }
+    .s-t em {
+      display: block;
+      margin-top: 8px;
+      font-style: normal;
+      font-size: 18px;
+      font-weight: 500;
+      color: #3b3f48;
+    }
+    .s-pill {
+      position: relative;
+      display: inline-block;
+      min-width: 150px;
+      padding: 8px 22px;
+      border-radius: 22px;
+      text-align: center;
+      font-size: 20px;
+      font-weight: 600;
+    }
+    .s-ok {
+      color: #1f7a4a;
+      background: #e3f4ea;
+      box-shadow: inset 0 0 0 2px #7cc59c;
+    }
+    .s-edit {
+      width: 26px;
+      height: 26px;
+      margin-left: 18px;
+      border-radius: 6px;
+      border: 2.5px solid #6b6f78;
+    }
+    /* the status that changes: three stacked labels */
+    #s-state {
+      position: relative;
+      width: 170px;
+      height: 44px;
+    }
+    #s-state .s-pill {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 170px;
+    }
+    .s-wait {
+      color: #8b5a12;
+      background: #fdf1dc;
+      box-shadow: inset 0 0 0 2px #f2c46e;
+    }
+    .s-rev {
+      color: #b8461a;
+      background: #fff1e6;
+      box-shadow: inset 0 0 0 2px #f6a77a;
+    }
+    #s-hero {
+      transform-style: preserve-3d;
+    }
+    .s-panel {
+      width: 440px;
+      flex: none;
+      padding: 26px;
+      border-radius: 22px;
+      background: #f6f7f9;
+    }
+    .s-panel b {
+      display: block;
+      margin-bottom: 16px;
+      font-size: 22px;
+    }
+    .s-ver {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 18px;
+      margin-top: 12px;
+      border-radius: 14px;
+      background: #fff;
+      box-shadow: 0 0 0 1.5px #eceef2;
+      font-size: 18px;
+      color: #3b3f48;
+    }
+    .s-ver span {
+      font-size: 16px;
+      color: #8b8f99;
+    }
+  </style>
+  <div id="root" data-composition-id="revisions" data-width="1920" data-height="1080">
+    <div id="s-cam" data-layout-allow-overflow data-layout-allow-overlap>
+      <div id="s-zoom">
+        <div id="s-page">
+          <div class="s-side">
+            <div class="s-brand"><img src="assets/images/studio-mark.png" alt="" />Spark</div>
+            <div class="s-item"><i></i>Projects</div>
+            <div class="s-item"><i></i>Reference Library</div>
+            <div class="s-item"><i></i>Timeline</div>
+            <div class="s-item on"><i></i>Revisions</div>
+            <div class="s-item"><i></i>Comments</div>
+            <div class="s-item"><i></i>Brand Kit</div>
+            <div class="s-item"><i></i>Exports</div>
+            <div class="s-item"><i></i>Settings</div>
+          </div>
+          <div class="s-main">
+            <div class="s-h">Revisions</div>
+            <div class="s-sub">Every client request, tracked and versioned.</div>
+            <div class="s-tabs"><span class="on">All</span><span>Pending (1)</span><span>Approved</span></div>
+            <div class="s-wrap">
+              <div class="s-list">
+                <div class="s-row" id="s-hero">
+                  <img src="assets/images/fb-03.png" alt="" />
+                  <div class="s-t">Logo lands a beat earlier<small>Client request · Shot 1</small><em>v3 → v4 · 0:00 – 0:03</em></div>
+                  <div id="s-state">
+                    <span class="s-pill s-wait" id="s-p1">Pending</span>
+                    <span class="s-pill s-rev" id="s-p2">Revised</span>
+                    <span class="s-pill s-ok" id="s-p3">Approved</span>
+                  </div>
+                  <i class="s-edit"></i>
+                </div>
+                <div class="s-row">
+                  <img src="assets/images/fb-01.png" alt="" />
+                  <div class="s-t">Warmer color grade<small>Client request · All shots</small><em>v3 → v4</em></div>
+                  <span class="s-pill s-ok">Approved</span><i class="s-edit"></i>
+                </div>
+                <div class="s-row">
+                  <img src="assets/images/fb-05.png" alt="" />
+                  <div class="s-t">Tighten shot 4 pacing<small>Flagged by Spark · Shot 4</small><em>v2 → v3</em></div>
+                  <span class="s-pill s-ok">Approved</span><i class="s-edit"></i>
+                </div>
+              </div>
+              <div class="s-panel">
+                <b>Version history</b>
+                <div class="s-ver">v4 · Launch Video<span>Today</span></div>
+                <div class="s-ver">v3 · Launch Video<span>Jun 5</span></div>
+                <div class="s-ver">v2 · Launch Video<span>Jun 3</span></div>
+                <div class="s-ver">v1 · Launch Video<span>Jun 1</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+
+    // shot 14: the page sits flat for a beat, then turns into perspective while the first row lifts
+    // off it; the row's status moves Pending → Revised, the camera pushes into the badge as it
+    // turns Approved, and the close-up drifts left before the next shot pushes in
+    tl.fromTo("#root", { opacity: 0 }, { opacity: 1, duration: 0.15, ease: "none" }, 0);
+    tl.fromTo("#s-page", { rotationY: 0, rotationX: 0, rotationZ: 0, scale: 1 }, { rotationY: 22, rotationX: 14, rotationZ: -4, scale: 1.12, duration: 0.8, ease: "power2.inOut" }, 0.25);
+    tl.fromTo("#s-hero", { z: 0, y: 0, boxShadow: "0 0 0 1.5px #eff0f3" }, { z: 55, y: 6, boxShadow: "0 0 0 1.5px #eff0f3, 0 46px 50px -24px rgba(242, 120, 40, 0.6)", duration: 0.6, ease: "power2.out" }, 0.45);
+
+    tl.set(["#s-p2", "#s-p3"], { opacity: 0 }, 0);
+    tl.to("#s-p1", { opacity: 0, duration: 0.15 }, 0.75);
+    tl.fromTo("#s-p2", { opacity: 0, scale: 0.85 }, { opacity: 1, scale: 1, duration: 0.3, ease: "back.out(2)" }, 0.75);
+
+    // push into the badge; the page squares up as it fills the frame
+    tl.to("#s-page", { rotationY: 4, rotationX: 2, rotationZ: 0, duration: 0.8, ease: "power2.inOut" }, 1.15);
+    tl.fromTo("#s-zoom", { scale: 1, y: 0 }, { scale: 2.7, y: 230, duration: 0.8, ease: "power2.inOut" }, 1.15);
+    tl.to("#s-p2", { opacity: 0, duration: 0.15 }, 1.55);
+    tl.fromTo("#s-p3", { opacity: 0, scale: 0.85 }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(2.2)" }, 1.55);
+    tl.fromTo("#s-zoom", { x: 0 }, { x: -260, duration: 0.8, ease: "none" }, 1.75);
+
+    window.__timelines["revisions"] = tl;
+  </script>
+</template>

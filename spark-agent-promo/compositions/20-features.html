@@ -1,0 +1,145 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 600;
+      src: url("assets/fonts/DMSans-600.woff2") format("woff2");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      font-family: "DM Sans", sans-serif;
+      color: #1b1d22;
+      background:
+        repeating-linear-gradient(0deg, rgba(160, 170, 190, 0.07) 0 1px, transparent 1px 90px),
+        repeating-linear-gradient(90deg, rgba(160, 170, 190, 0.07) 0 1px, transparent 1px 90px),
+        linear-gradient(180deg, #f3f3f6 0%, #e2e3e8 100%);
+    }
+    /* feature cards: soft window slabs that stack toward the viewer */
+    .f-card {
+      position: absolute;
+      left: 410px;
+      top: 250px;
+      width: 1100px;
+      height: 580px;
+      border-radius: 44px;
+      background: linear-gradient(180deg, #fdfdfe 0%, #f3f4f7 100%);
+      box-shadow:
+        inset 0 2px 0 #fff,
+        0 0 0 1.5px rgba(30, 40, 60, 0.05),
+        0 36px 44px -24px rgba(255, 140, 50, 0.65),
+        0 20px 40px rgba(40, 50, 80, 0.08);
+      transform-origin: 50% 0%;
+      opacity: 0;
+    }
+    .f-dots {
+      position: absolute;
+      left: 40px;
+      top: 36px;
+      display: flex;
+      gap: 9px;
+    }
+    .f-dots i {
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: #9a9ea8;
+    }
+    .f-menu {
+      position: absolute;
+      right: 40px;
+      top: 34px;
+      width: 32px;
+      height: 18px;
+      border-top: 2.5px solid #9a9ea8;
+      border-bottom: 2.5px solid #9a9ea8;
+    }
+    .f-menu::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 5.5px;
+      border-top: 2.5px solid #9a9ea8;
+    }
+    .f-label {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 245px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 26px;
+      font-size: 76px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    .f-label svg {
+      width: 82px;
+      height: 82px;
+    }
+  </style>
+  <div id="root" data-composition-id="features" data-width="1920" data-height="1080"></div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+
+    // simple line icons, drawn in the card's ink colour
+    const S = 'fill="none" stroke="#1b1d22" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"';
+    const ICONS = {
+      library: `<svg viewBox="0 0 24 24" ${S}><rect x="3" y="4" width="7" height="7" rx="1.5"/><rect x="14" y="4" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>`,
+      brand: `<svg viewBox="0 0 24 24" ${S}><circle cx="12" cy="12" r="9"/><circle cx="8.5" cy="10" r="1.3"/><circle cx="12" cy="7.5" r="1.3"/><circle cx="15.5" cy="10" r="1.3"/><path d="M12 21c-1.5 0-2-1.2-1.2-2.4.8-1.2.2-2.6-1.3-2.6"/></svg>`,
+      comment: `<svg viewBox="0 0 24 24" ${S}><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/></svg>`,
+      frames: `<svg viewBox="0 0 24 24" ${S}><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 5v14M16 5v14M3 9h5M3 15h5M16 9h5M16 15h5"/></svg>`,
+      open: `<svg viewBox="0 0 24 24" ${S}><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></svg>`,
+      formats: `<svg viewBox="0 0 24 24" ${S}><rect x="2" y="7" width="12" height="8" rx="1.5"/><rect x="16" y="4" width="6" height="11" rx="1.5"/><rect x="9" y="17" width="5" height="5" rx="1"/></svg>`,
+    };
+    const FEATURES = [
+      ["library", "Reference Library"],
+      ["brand", "Brand Matching"],
+      ["comment", "Timeline Comments"],
+      ["frames", "Frame-by-Frame Checks"],
+      ["open", "Open Source"],
+      ["formats", "Every Format"],
+    ];
+    // all cards live in one group, so the exit fades them as a single picture
+    const root = document.getElementById("root");
+    const stack = document.createElement("div");
+    stack.id = "f-stack";
+    stack.style.cssText = "position: absolute; inset: 0; transform-origin: 960px 540px";
+    root.append(stack);
+    const cards = FEATURES.map(([icon, label]) => {
+      const c = document.createElement("div");
+      c.className = "f-card";
+      c.innerHTML = `<div class="f-dots"><i></i><i></i><i></i></div><i class="f-menu"></i><div class="f-label">${ICONS[icon]}${label}</div>`;
+      stack.append(c);
+      return c;
+    });
+
+    // shot 22: each card rises from below the frame into the front of a stack; the cards already
+    // there step up and back as it arrives, so only their top edges show above the new one and
+    // their labels are covered; no more than two edges peek out at once
+    const STEP = 0.6;
+    const RISE = 0.5;
+    cards.forEach((c, i) => {
+      const t = 0.05 + i * STEP;
+      gsap.set(c, { transformOrigin: "50% 0%", zIndex: i });
+      tl.fromTo(c, { opacity: 0 }, { opacity: 1, duration: 0.01 }, t);
+      tl.fromTo(c, { y: 760 }, { y: 0, duration: RISE, ease: "power3.out" }, t);
+      // each later arrival pushes this card one step further up and back
+      for (let k = 1; k <= 2 && i + k < cards.length; k++) {
+        tl.to(c, { y: -44 * k, scale: 1 - 0.05 * k, duration: RISE, ease: "power3.out" }, t + k * STEP);
+      }
+      if (i + 3 < cards.length) tl.set(c, { opacity: 0 }, t + 3 * STEP + 0.15);
+    });
+    // exit: the whole stack draws in, softens and fades where it stands, leaving the centre of the
+    // page empty for the end mark to rise out of
+    tl.to(stack, { scale: 0.94, y: -16, filter: "blur(8px)", opacity: 0, duration: 0.45, ease: "power2.in" }, 3.28);
+
+    // the last card holds, drifting gently
+    tl.to(cards[cards.length - 1], { y: -12, duration: 0.7, ease: "sine.inOut" }, 0.05 + (cards.length - 1) * STEP + RISE);
+
+    window.__timelines["features"] = tl;
+  </script>
+</template>

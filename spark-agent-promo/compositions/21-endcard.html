@@ -1,0 +1,150 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 500;
+      src: url("assets/fonts/DMSans-500.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 600;
+      src: url("assets/fonts/DMSans-600.woff2") format("woff2");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      font-family: "DM Sans", sans-serif;
+      color: #1b1d22;
+      background:
+        repeating-linear-gradient(0deg, rgba(160, 170, 190, 0.07) 0 1px, transparent 1px 90px),
+        repeating-linear-gradient(90deg, rgba(160, 170, 190, 0.07) 0 1px, transparent 1px 90px),
+        radial-gradient(ellipse 80% 70% at 50% 40%, #f4f5f8 0%, #e3e4e9 100%);
+    }
+    #e-all {
+      position: absolute;
+      inset: 0;
+    }
+    #e-lock {
+      position: absolute;
+      left: 0;
+      top: 270px;
+      width: 1920px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 30px;
+    }
+    #e-markwrap {
+      position: relative;
+      width: 230px;
+      height: 230px;
+    }
+    #e-glow {
+      position: absolute;
+      inset: -50px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 120, 60, 0.7) 0%, rgba(255, 90, 31, 0.3) 40%, rgba(255, 90, 31, 0) 70%);
+    }
+    #e-mark {
+      position: absolute;
+      inset: 0;
+      width: 230px;
+      height: 230px;
+    }
+    #e-word {
+      font-size: 205px;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      white-space: pre;
+    }
+    #e-word span {
+      display: inline-block;
+      opacity: 0;
+    }
+    #e-tag {
+      position: absolute;
+      left: 0;
+      top: 575px;
+      width: 1920px;
+      height: 100px;
+      text-align: center;
+      font-size: 68px;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+    }
+    #e-tag span {
+      position: absolute;
+      left: 0;
+      width: 100%;
+      opacity: 0;
+    }
+    #e-tag .o {
+      background: linear-gradient(90deg, #ef6a1c 0%, #f7a23a 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    #e-by {
+      position: absolute;
+      left: 0;
+      top: 900px;
+      width: 1920px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      font-size: 32px;
+      font-weight: 500;
+      color: #6b6f78;
+      opacity: 0;
+    }
+    #e-by img {
+      width: 42px;
+      height: 42px;
+    }
+  </style>
+  <div id="root" data-composition-id="endcard" data-width="1920" data-height="1080">
+    <div id="e-all">
+      <div id="e-lock">
+        <div id="e-markwrap"><i id="e-glow"></i><img id="e-mark" src="assets/images/studio-mark.png" alt="" /></div>
+        <div id="e-word"><span>S</span><span>p</span><span>a</span><span>r</span><span>k</span></div>
+      </div>
+      <div id="e-tag">
+        <span>Point.</span>
+        <span>Prompt.</span>
+        <span>Launch.</span>
+        <span>Motion, <i class="o" style="font-style: normal">by Example.</i></span>
+      </div>
+      <div id="e-by"><img src="assets/images/studio-mark.png" alt="" />by Firework Studio</div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+
+    // shot 23: the mark turns in out of its glow and settles sharp; the letters arrive out of
+    // order with loose spacing and close up; the line beneath steps through Point. Prompt.
+    // Launch. and lands on Motion, by Example.; the studio credit sits quietly at the bottom
+    tl.fromTo("#root", { opacity: 0 }, { opacity: 1, duration: 0.15, ease: "none" }, 0);
+    tl.fromTo("#e-mark", { scale: 0.6, rotation: -60, filter: "blur(14px)" }, { scale: 1, rotation: 0, filter: "blur(0px)", duration: 0.9, ease: "power3.out" }, 0.1);
+    tl.fromTo("#e-glow", { opacity: 1, scale: 1.2 }, { opacity: 0, scale: 0.8, duration: 1.1, ease: "power1.in" }, 0.1);
+
+    const letters = gsap.utils.toArray("#e-word span");
+    [2, 3, 1, 4, 0].forEach((k, n) => {
+      tl.fromTo(letters[k], { opacity: 0, x: -30, scale: 0.7 }, { opacity: 1, x: k * 30, scale: 1, duration: 0.4, ease: "back.out(1.6)" }, 0.35 + n * 0.09);
+      tl.to(letters[k], { x: 0, duration: 0.6, ease: "power2.inOut" }, 0.9);
+    });
+    tl.fromTo("#e-by", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }, 0.6);
+
+    const tags = gsap.utils.toArray("#e-tag > span");
+    tags.forEach((el, i) => {
+      const t = [1.25, 2.0, 2.75, 3.65][i]; // on the words of the voiceover
+      tl.fromTo(el, { opacity: 0, y: 18, filter: "blur(6px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.35, ease: "power3.out" }, t);
+      if (i < tags.length - 1) tl.to(el, { opacity: 0, y: -14, filter: "blur(6px)", duration: 0.2, ease: "power1.in" }, t + 0.55);
+    });
+
+    tl.fromTo("#e-all", { scale: 1 }, { scale: 1.025, duration: 6.6, ease: "none" }, 0);
+
+    window.__timelines["endcard"] = tl;
+  </script>
+</template>

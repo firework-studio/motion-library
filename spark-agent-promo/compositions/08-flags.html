@@ -1,0 +1,213 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 400;
+      src: url("assets/fonts/DMSans-400.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 600;
+      src: url("assets/fonts/DMSans-600.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 700;
+      src: url("assets/fonts/DMSans-700.woff2") format("woff2");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      font-family: "DM Sans", sans-serif;
+      color: #1b1d22;
+      background:
+        repeating-linear-gradient(0deg, rgba(160, 170, 190, 0.07) 0 1px, transparent 1px 90px),
+        repeating-linear-gradient(90deg, rgba(160, 170, 190, 0.07) 0 1px, transparent 1px 90px),
+        radial-gradient(ellipse 80% 80% at 40% 40%, #f6f7fa 0%, #e8ecf3 100%);
+    }
+    #g-scene {
+      position: absolute;
+      inset: 0;
+    }
+    /* a big faint bell drawn in outline behind the notification */
+    #g-bell {
+      position: absolute;
+      left: 110px;
+      top: 30px;
+      width: 880px;
+      height: 1000px;
+      transform-origin: 50% 8%;
+    }
+    #g-waves {
+      position: absolute;
+      left: 110px;
+      top: 30px;
+      width: 880px;
+      height: 1000px;
+    }
+    /* the alert wears the same skin as Spark's chat bubbles: a soft grey slab with a lip and a
+       warm glow underneath, Spark's living sphere in place of an app icon */
+    #g-note {
+      position: absolute;
+      left: 180px;
+      top: 440px;
+      width: 740px;
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      padding: 34px 40px;
+      border-radius: 40px;
+      background: linear-gradient(180deg, #eff0f3 0%, #e3e4e8 100%);
+      box-shadow:
+        inset 0 2px 0 rgba(255, 255, 255, 0.95),
+        0 6px 0 -1px #d2d4d9,
+        0 16px 30px rgba(40, 50, 80, 0.08);
+    }
+    #g-note::after {
+      content: "";
+      position: absolute;
+      left: 7%;
+      right: 7%;
+      bottom: -44px;
+      height: 62px;
+      z-index: -1;
+      border-radius: 50%;
+      background: linear-gradient(90deg, #ffd34f 0%, #ffa23a 45%, #ff6e3a 100%);
+      filter: blur(24px);
+      opacity: 0.7;
+    }
+    .g-ball {
+      position: relative;
+      flex: none;
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      overflow: hidden;
+      background: radial-gradient(circle at 50% 55%, #ffb347 0%, #f47a26 70%, #e65a1c 100%);
+      box-shadow: 0 6px 18px rgba(242, 106, 27, 0.4);
+    }
+    .g-ball b {
+      position: absolute;
+    }
+    #g-swirl {
+      inset: -30%;
+      background: conic-gradient(from 0deg, #ffe08a, #ff9a3c, #ff5e7a, #ffb24a, #fff1c4, #ff8a2a, #ffe08a);
+      filter: blur(8px);
+      opacity: 0.85;
+    }
+    #g-core {
+      left: 20px;
+      top: 20px;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 252, 235, 0.95) 0%, rgba(255, 230, 160, 0) 70%);
+    }
+    .g-glass {
+      inset: 0;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 34% 26%, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0) 26%),
+        radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0) 58%, rgba(170, 50, 0, 0.28) 100%);
+    }
+    .g-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-size: 34px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    .g-top small {
+      font-size: 20px;
+      font-weight: 400;
+      color: #8b8f99;
+    }
+    .g-body {
+      margin-top: 6px;
+      font-size: 24px;
+      line-height: 1.35;
+      color: #5b5f68;
+    }
+    .g-act {
+      margin-top: 10px;
+      font-size: 22px;
+      font-weight: 600;
+      color: #ef6a1c;
+    }
+    #g-head {
+      position: absolute;
+      left: 1056px;
+      top: 270px;
+      font-size: 112px;
+      font-weight: 700;
+      line-height: 1.18;
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+      perspective: 900px;
+    }
+    #g-head span {
+      display: block;
+      transform-origin: 50% 100%;
+    }
+    #g-head .o {
+      opacity: 0;
+      background: linear-gradient(90deg, #ef6a1c 0%, #f5932a 55%, #f7b733 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+  </style>
+  <div id="root" data-composition-id="flags" data-width="1920" data-height="1080">
+    <div id="g-scene" data-layout-allow-overflow data-layout-allow-overlap>
+      <svg id="g-waves" viewBox="0 0 880 1000" fill="none" stroke="#e2e6ed" stroke-width="14" stroke-linecap="round">
+        <path d="M150 130 Q80 220 80 330" />
+        <path d="M730 130 Q800 220 800 330" />
+      </svg>
+      <svg id="g-bell" viewBox="0 0 880 1000" fill="none" stroke="#e2e6ed" stroke-width="16" stroke-linejoin="round" stroke-linecap="round">
+        <circle cx="440" cy="62" r="34" />
+        <path d="M440 96 C290 96 200 210 200 380 L200 640 C200 700 160 740 110 780 L770 780 C720 740 680 700 680 640 L680 380 C680 210 590 96 440 96 Z" />
+        <path d="M360 840 C370 900 400 930 440 930 C480 930 510 900 520 840" />
+      </svg>
+
+      <div id="g-note">
+        <div class="g-ball"><b id="g-swirl"></b><b id="g-core"></b><b class="g-glass"></b></div>
+        <div style="flex: 1">
+          <div class="g-top">Pacing off at 0:12 <small>Spark · now</small></div>
+          <div class="g-body">Shot 4 holds 0.6 s longer than its reference.</div>
+          <div class="g-act">Tighten to match →</div>
+        </div>
+      </div>
+
+      <div id="g-head" data-layout-allow-overflow>
+        <span>Flags What</span>
+        <span>Feels Off</span>
+        <span class="o">Before Your</span>
+        <span class="o">Client Does</span>
+      </div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+
+    // shot 10: the frame arrives on the whip from the previous shot and decelerates into place;
+    // the bell behind the notification gives a small ring; the orange half of the headline flips
+    // up a beat later; everything drifts up slowly
+    tl.fromTo("#g-scene", { x: 820, filter: "blur(12px)" }, { x: 0, filter: "blur(0px)", duration: 0.55, ease: "power3.out" }, 0);
+    tl.fromTo("#g-scene", { y: 10 }, { y: -36, duration: 2.25, ease: "none" }, 0);
+
+    tl.fromTo("#g-bell", { rotation: 0 }, { keyframes: [{ rotation: 5, duration: 0.14 }, { rotation: -4, duration: 0.18 }, { rotation: 2.5, duration: 0.18 }, { rotation: 0, duration: 0.24 }], ease: "sine.inOut" }, 0.45);
+    tl.fromTo("#g-waves", { opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, duration: 0.35, ease: "power2.out" }, 0.45);
+    tl.to("#g-waves", { opacity: 0, duration: 0.4, ease: "power1.in" }, 1.0);
+
+    tl.fromTo("#g-swirl", { rotation: 0 }, { rotation: 200, duration: 2.25, ease: "none" }, 0);
+    tl.fromTo("#g-core", { x: -6, y: 6 }, { x: 8, y: -5, duration: 0.75, ease: "sine.inOut", yoyo: true, repeat: 2 }, 0);
+
+    gsap.utils.toArray("#g-head .o").forEach((el, i) => {
+      tl.fromTo(el, { opacity: 0, y: 50, rotationX: -70 }, { opacity: 1, y: 0, rotationX: 0, duration: 0.6, ease: "expo.out" }, 0.7 + i * 0.15);
+    });
+
+    window.__timelines["flags"] = tl;
+  </script>
+</template>

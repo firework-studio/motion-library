@@ -1,0 +1,154 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "DM Sans";
+      font-weight: 400;
+      src: url("assets/fonts/DMSans-400.woff2") format("woff2");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      font-family: "DM Sans", sans-serif;
+      color: #1b1d22;
+      background: linear-gradient(180deg, #f6f6f8 0%, #e6e7eb 100%);
+    }
+    #t-pan {
+      position: absolute;
+      left: 0;
+      top: 0;
+    }
+    /* the input bar in close-up: it runs wider than the frame, so the camera pans with the text */
+    #t-bar {
+      position: absolute;
+      left: 60px;
+      top: 470px;
+      width: 2160px;
+      height: 140px;
+      display: flex;
+      align-items: center;
+      padding: 0 50px;
+      border-radius: 36px;
+      background: #fff;
+      box-shadow:
+        0 0 0 2px #e3e5ea,
+        0 40px 50px -30px rgba(242, 130, 40, 0.55);
+    }
+    #t-text {
+      font-size: 62px;
+      white-space: pre;
+      letter-spacing: -0.01em;
+    }
+    #t-text span {
+      display: none;
+    }
+    #t-caret {
+      display: inline-block;
+      width: 4px;
+      height: 70px;
+      margin-left: 4px;
+      background: #1b1d22;
+      vertical-align: middle;
+    }
+    #t-tools {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 54px;
+      font-size: 62px;
+      font-weight: 400;
+      color: #3b3f48;
+    }
+    #t-sendwrap {
+      position: relative;
+      width: 64px;
+      height: 64px;
+    }
+    #t-send {
+      position: relative;
+      width: 64px;
+      height: 64px;
+    }
+    /* the click ripple behind the send icon */
+    #t-ripple {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 120px;
+      height: 120px;
+      margin: -60px 0 0 -60px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(242, 106, 27, 0.22) 0%, rgba(242, 106, 27, 0.12) 50%, rgba(242, 106, 27, 0) 70%);
+      opacity: 0;
+    }
+    #t-cursor {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 110px;
+      height: 110px;
+      transform-origin: 15px 12px; /* the pointer's tip */
+      filter: drop-shadow(0 10px 14px rgba(200, 90, 20, 0.35));
+    }
+  </style>
+  <div id="root" data-composition-id="type" data-width="1920" data-height="1080">
+    <div id="t-pan" data-layout-allow-overflow data-layout-allow-overlap>
+      <div id="t-bar">
+        <span id="t-text" data-text="Hey Spark, why does this transition feel cheap?"></span><i id="t-caret"></i>
+        <div id="t-tools">
+          <span>+</span>
+          <div id="t-sendwrap"><i id="t-ripple"></i><svg id="t-send" viewBox="0 0 24 24" fill="none" stroke="#3b3f48" stroke-width="1.6" stroke-linejoin="round"><path d="M3 11 L21 3 L13 21 L11 13 Z" /><path d="M11 13 L21 3" /></svg></div>
+        </div>
+      </div>
+      <svg id="t-cursor" viewBox="0 0 56 56">
+        <defs>
+          <linearGradient id="t-cur-g" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#ffe7a8" />
+            <stop offset="0.45" stop-color="#ffb23e" />
+            <stop offset="1" stop-color="#f26a1b" />
+          </linearGradient>
+        </defs>
+        <path d="M8 6 C6 5 5 7 6 9 L20 48 C21 51 24 51 25 48 L30 33 L45 28 C48 27 48 24 45 22 Z" fill="url(#t-cur-g)" stroke="#fff6e0" stroke-width="1.5" stroke-linejoin="round" />
+      </svg>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+
+    // shot 17: in close-up the question types itself; each new letter lands orange and settles to
+    // ink a moment later, while the camera pans to keep up; the pointer slides to send and taps it
+    const text = document.getElementById("t-text");
+    const chars = [...text.dataset.text].map((c) => {
+      const s = document.createElement("span");
+      s.textContent = c;
+      text.append(s);
+      return s;
+    });
+    const T0 = 0.05;
+    const T1 = 0.85;
+    chars.forEach((s, i) => {
+      const t = T0 + ((T1 - T0) * i) / chars.length;
+      tl.set(s, { display: "inline", color: "#f26a1b" }, t);
+      tl.to(s, { color: "#1b1d22", duration: 0.18, ease: "none" }, t + 0.1);
+    });
+
+    // pan: start on the opening words, end with the send button in view
+    tl.fromTo("#t-pan", { x: 120 }, { x: -380, duration: 1.05, ease: "power1.inOut" }, 0);
+    tl.fromTo("#t-cursor", { x: 520, y: 560 }, { x: 1700, y: 545, duration: 0.85, ease: "power1.inOut" }, 0.05);
+    // the send icon's centre in the bar's space: bar right edge 2220, padding 50, icon 64 wide,
+    // bar centre line 540; the pointer's tip sits 15 px right and 12 px below its box corner
+    const SEND = { x: 2220 - 50 - 32, y: 540 };
+    tl.to("#t-cursor", { x: SEND.x - 15, y: SEND.y - 12, duration: 0.2, ease: "power2.inOut" }, 0.88);
+    // click: pointer and icon press in together, then spring back; a faint ripple spreads
+    tl.to("#t-cursor", { scale: 0.84, duration: 0.07, ease: "power2.in" }, 1.08);
+    tl.to("#t-cursor", { scale: 1, duration: 0.22, ease: "back.out(3)" }, 1.15);
+    tl.to("#t-send", { scale: 0.78, duration: 0.07, ease: "power2.in" }, 1.08);
+    tl.to("#t-send", { scale: 1, duration: 0.24, ease: "back.out(3.5)" }, 1.15);
+    tl.fromTo("#t-ripple", { opacity: 1, scale: 0.3 }, { opacity: 0, scale: 1.4, duration: 0.3, ease: "power2.out", immediateRender: false }, 1.1); // hidden until the click
+    tl.to("#t-caret", { opacity: 0, duration: 0.05 }, 1.12);
+    tl.to("#t-bar", { opacity: 0, x: -80, duration: 0.12, ease: "power1.in" }, 1.18);
+    tl.to("#t-cursor", { opacity: 0, duration: 0.12, ease: "power1.in" }, 1.18);
+
+    window.__timelines["type"] = tl;
+  </script>
+</template>
