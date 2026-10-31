@@ -1,6 +1,6 @@
 # Tidal Launch Promo
 
-A 72-second product film for Tidal, a concept platform that tracks company signals across Asia-Pacific. City photos fly in and fold into a sphere of 3,000 photos rendered in WebGL, which scatters into particles and collapses into a dot that becomes the logo. A search query types itself, results connect to a data table, funding and hiring alerts pop onto company cards, a dot map and rolling numbers show the scale, signal pins rise from a dotted terrain built in Three.js, and a drifting word cloud gives way to the closing line. Voiceover, score and sound effects are timed to the cuts.
+A 72-second product film for Tidal, a concept platform that spots the moment a company is ready to grow. Sunlit city photos sweep in and gather into a glowing sphere of 3,000 photos in WebGL, then burst into particles and come together as the logo. A search finds the right companies in seconds, results click into a clean data table, good news pops onto company cards (a new funding round, a new office), the map lights up city by city as the numbers climb, and bright signal pins rise from a soft dotted terrain built in Three.js. A warm voiceover, an uplifting score and crisp sound effects carry every cut.
 
 ## Preview
 

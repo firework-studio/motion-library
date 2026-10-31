@@ -12,7 +12,7 @@ Each entry is a self-contained [HyperFrames](https://github.com/heygen-com/hyper
 | [ai-platform-promo](ai-platform-promo) | 2026-10-26 | Brand film from overload to order: branching lines, a fly-through ring, a card vortex, self-repairing code and a growing paper tree |
 | [spark-agent-promo](spark-agent-promo) | 2026-10-27 | Product film for a concept motion design agent: drifting linked cards, word-by-word swaps, an in-place logo reveal, chat bubbles, orange keyword cards and a voice-driven waveform |
 | [launch-film-machine](launch-film-machine) | 2026-10-28 | Launch film as an isometric machine: counter-drifting stills, a part-by-part build, a WebGL projector lamp, a timeline read shot by shot and a Renaissance hand at the end |
-| [tidal-launch-promo](tidal-launch-promo) | 2026-10-28 | Product film with voiceover: a WebGL sphere of 3,000 photos, a dot-to-logo reveal, a typed search, signal alerts, rolling numbers and signal pins on a Three.js dot terrain |
+| [tidal-launch-promo](tidal-launch-promo) | 2026-10-28 | Upbeat product film with voiceover: a glowing WebGL sphere of 3,000 photos, a dot-to-logo reveal, instant search, good-news alerts, climbing numbers and bright signal pins on a Three.js terrain |
 
 ## Run an entry
 
