@@ -1,0 +1,813 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Plus Jakarta Sans";
+      font-weight: 500;
+      src: url("assets/fonts/PlusJakartaSans-500.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "Plus Jakarta Sans";
+      font-weight: 600;
+      src: url("assets/fonts/PlusJakartaSans-600.woff2") format("woff2");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: #ffffff;
+      font-family: "Plus Jakarta Sans", sans-serif;
+      color: #1f2124;
+    }
+    .abs {
+      position: absolute;
+    }
+    #o-orbits {
+      left: 0;
+      top: 0;
+      z-index: 1;
+    }
+    #o-orbits-front {
+      left: 0;
+      top: 0;
+      z-index: 4;
+    }
+    #o-gl {
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+      z-index: 3;
+    }
+    /* depth, back to front: pale panes and small photos (#o-field), the ball (#o-gl), big photos,
+       then words; each layer is its own positioned box, so scaling one never reorders them */
+    #o-heroes {
+      position: absolute;
+      inset: 0;
+      z-index: 5;
+    }
+    #o-field {
+      inset: 0;
+      z-index: 2;
+      isolation: isolate;
+    }
+    .o-tile {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100px;
+      height: 70px;
+      margin: -35px 0 0 -50px;
+      background: #eceef1;
+      opacity: 0;
+    }
+    .o-tile i {
+      position: absolute;
+      inset: 0;
+      background-size: cover;
+      background-position: center;
+    }
+    .o-hero {
+      left: 560px;
+      top: 0;
+      width: 800px;
+      height: 540px;
+      margin-top: -270px;
+      z-index: 5;
+      background-size: cover;
+      background-position: center;
+      opacity: 0;
+    }
+    .o-hero::after {
+      /* the photo's foot washes out to white */
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 34%;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.85) 100%);
+    }
+    #o-headline {
+      left: 0;
+      width: 1920px;
+      top: 490px;
+      z-index: 20;
+      text-align: center;
+      font-size: 80px;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      white-space: pre;
+      text-shadow: 0 0 18px #fff, 0 0 36px #fff; /* a soft white halo keeps it clear of the photos */
+    }
+    #o-headline span {
+      display: inline-block;
+      opacity: 0;
+    }
+    #o-cap {
+      left: 0;
+      width: 1920px;
+      top: 846px;
+      height: 80px;
+      z-index: 20;
+      text-shadow: 0 0 16px #fff, 0 0 32px #fff;
+      font-size: 62px;
+      font-weight: 500;
+      line-height: 80px;
+      white-space: pre;
+      letter-spacing: -0.015em;
+    }
+    /* "They" stays put and the verb beside it changes, so the gap between them sits just left of centre */
+    #o-cap span {
+      position: absolute;
+      top: 0;
+      opacity: 0;
+    }
+    #o-cap .o-they {
+      right: 1000px;
+    }
+    #o-cap .o-verb {
+      left: 937px;
+    }
+    .o-side {
+      top: 512px;
+      z-index: 6;
+      font-size: 46px;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+      white-space: pre;
+    }
+    #o-l {
+      right: 1390px;
+      text-align: right;
+    }
+    #o-r {
+      left: 1380px;
+    }
+    /* the lockup: "Introducing" types in from a fixed left edge while the point leads it to the right
+       (to 1250); the mark takes the point's place and TIDAL follows; then the group slides left so the
+       lockup sits centred */
+    #o-lock {
+      inset: 0;
+      z-index: 7;
+    }
+    #o-dot {
+      left: 960px;
+      top: 540px;
+      z-index: 7;
+      width: 120px;
+      height: 120px;
+      margin: -60px 0 0 -60px;
+      border-radius: 50%;
+      background: #111214;
+    }
+    #o-mark {
+      left: 1198px;
+      top: 488px;
+      z-index: 7;
+      width: 104px;
+      height: 104px;
+      overflow: visible;
+      opacity: 0;
+    }
+    #o-intro {
+      left: 725px;
+      top: 490px;
+      z-index: 7;
+      font-size: 84px;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      white-space: pre;
+    }
+    #o-intro span {
+      opacity: 0;
+    }
+    #o-word {
+      left: 1338px;
+      top: 500px;
+      z-index: 7;
+      font-size: 64px;
+      font-weight: 600;
+      letter-spacing: 0.28em;
+      white-space: pre;
+    }
+    #o-word span {
+      display: inline-block;
+      opacity: 0;
+    }
+  </style>
+  <div data-hf-id="hf-wbpn" id="root" data-composition-id="open" data-width="1920" data-height="1080">
+    <svg data-hf-id="hf-n6fb" id="o-orbits" class="abs" viewBox="0 0 1920 1080" width="1920" height="1080" style="opacity: 0">
+      <g data-hf-id="hf-4ci4" id="o-rings" fill="none" stroke="#d5d7db" stroke-width="1.3"></g>
+      <g data-hf-id="hf-5dm9" id="o-sats" fill="#b4b7bc"></g>
+    </svg>
+    <svg data-hf-id="hf-orbf" id="o-orbits-front" class="abs" viewBox="0 0 1920 1080" width="1920" height="1080" style="opacity: 0">
+      <g data-hf-id="hf-orbr" id="o-rings-front" fill="none" stroke="#b9bcc1" stroke-width="2"></g>
+      <g data-hf-id="hf-orbs" id="o-sats-front" fill="#878a90"></g>
+    </svg>
+    <canvas data-hf-id="hf-gl01" id="o-gl" class="abs" width="1920" height="1080"></canvas>
+    <img data-hf-id="hf-gl02" id="o-atlas" src="assets/photos/atlas.jpg" alt="" style="display: none" />
+    <div data-hf-id="hf-gcbi" id="o-field" class="abs"></div>
+    <div data-hf-id="hf-gg7d" id="o-heroes"></div>
+    <div data-hf-id="hf-d4hg" id="o-headline" class="abs" data-text="Companies don’t stand still."></div>
+    <div data-hf-id="hf-qi2h" id="o-cap" class="abs"><span class="o-they">They</span><span class="o-verb">grow.</span><span class="o-verb">hire.</span><span class="o-verb">expand.</span><span class="o-verb">change.</span></div>
+    <div data-hf-id="hf-mvmp" id="o-l" class="abs o-side"></div>
+    <div data-hf-id="hf-5ngf" id="o-r" class="abs o-side"></div>
+    <div data-hf-id="hf-lock" id="o-lock" class="abs">
+      <div data-hf-id="hf-dihr" id="o-dot" class="abs"></div>
+      <svg data-hf-id="hf-ytqn" id="o-mark" class="abs" viewBox="-23 -23 46 46">
+        <circle data-hf-id="hf-jr7l" r="23" fill="#111214" />
+        <clipPath data-hf-id="hf-mkcl" id="o-mark-clip"><circle data-hf-id="hf-mkcc" r="23" /></clipPath>
+        <g data-hf-id="hf-mkwg" clip-path="url(#o-mark-clip)"><path data-hf-id="hf-3lbb" id="o-wave" d="M-17 2 C-11 -6 -5 -6 0 1 C5 8 11 8 17 0" fill="none" stroke="#ffffff" stroke-width="4.2" stroke-linecap="round" /></g>
+      </svg>
+      <div data-hf-id="hf-o3c3" id="o-intro" class="abs" data-text="Introducing"></div>
+      <div data-hf-id="hf-ic1p" id="o-word" class="abs" data-text="TIDAL"></div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    const D = 15.15; // runs 0.45 s into the next shot, so the mark is pushed up as that shot rises
+    gsap.set("#o-dot", { scale: 0 });
+
+    // ---------------------------------------------------------------- helpers
+    let seed = 11;
+    const rnd = () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
+    const clamp01 = (v) => Math.min(1, Math.max(0, v));
+    const easeOut = (v) => 1 - Math.pow(1 - clamp01(v), 3);
+    const easeIO = (v) => { v = clamp01(v); return v < 0.5 ? 4 * v * v * v : 1 - Math.pow(-2 * v + 2, 3) / 2; };
+    const lerp = (a, b, k) => a + (b - a) * k;
+    const PHOTO = (n) => `assets/photos/city-${String(n).padStart(2, "0")}.jpg`;
+    const spans = (el, byChar) => {
+      const parts = byChar ? [...el.dataset.text] : el.dataset.text.split(/(\s+)/);
+      return parts.map((p) => { const s = document.createElement("span"); s.textContent = p; el.append(s); return s; });
+    };
+
+    // ---------------------------------------------------------------- timing (seconds)
+    const BEATS = [2.0, 3.1, 4.2, 5.3]; // They grow / hire / expand / change
+    const HERO_SHAPE = [[800, 540], [560, 700], [800, 540], [560, 700]]; // landscape and portrait in turn
+    const BURST = 6.25;                  // the wall's last frame (also sets how far below the frame tiles start)
+    const PUSH = 6.2, GATHER = 0.55;     // the wall's photos fly into the ball as it forms around the camera
+    const BALL = 6.6;                    // orbits come in
+    const TWIST = [7.82, 11.44];         // the change's clock (the study's 2–7.75 s), fitted to the reference in agent-workdir/ball-lab
+    const DOT = 11.9;                    // the ball collapses to a point
+
+    // ---------------------------------------------------------------- tiles
+    // the first GHOSTS are large pale soft squares far back, the next SHARP are the photos near the
+    // lens; every tile, those two sets included, ends up in the ball
+    // the wall's rise: still until "stand" lands, a surge in, a pause with the opening line, a surge
+    // that carries the line away into the first big photo, then a pause and a short surge at each
+    // big-photo change; S(t) is the distance travelled, sampled once
+    const bump = (t, c, w, peak) => peak * Math.exp(-Math.pow((t - c) / w, 2));
+    const HOLD = [1.05, 1.65]; // the wall and the opening line pause together
+    const speedAt = (t) => {
+      if (t < 0.55) return 0;
+      let v = 40 + bump(t, 0.78, 0.17, 4700) + bump(t, 1.95, 0.17, 2400);
+      for (let i = 1; i < BEATS.length; i++) v += bump(t, BEATS[i] + 0.1, 0.18, 1500);
+      return v * clamp01((t - 0.55) / 0.08);
+    };
+    const STEP = 1 / 240, TRAVEL = [0];
+    for (let n = 1; n * STEP <= D + STEP; n++) TRAVEL.push(TRAVEL[n - 1] + speedAt((n - 0.5) * STEP) * STEP);
+    const S = (t) => { const f = Math.max(0, t) / STEP, n = Math.floor(f); return n + 1 < TRAVEL.length ? lerp(TRAVEL[n], TRAVEL[n + 1], f - n) : TRAVEL[TRAVEL.length - 1]; };
+    // each tile rides the same rise scaled by its own speed (near tiles faster), starting a given
+    // distance below the frame
+    const N = 50, GHOSTS = 22, SHARP = 28, F = 1600;
+    const field = document.getElementById("o-field");
+    const placed = [];
+    const tiles = Array.from({ length: N }, (_, i) => {
+      const el = document.createElement("div");
+      el.className = "o-tile";
+      const ghost = i < GHOSTS, sharp = !ghost && i < GHOSTS + SHARP;
+      // each tile is a pale pane with its photo on top; on the wall the photo develops in as the
+      // pane rises (the far panes stay pale), and in the ball every photo shows
+      const img = document.createElement("i");
+      img.style.backgroundImage = `url(${PHOTO((i % 16) + 1)})`;
+      el.append(img);
+      field.append(el);
+      // photos ride one layer at one speed and never overlap each other; larger and smaller ones,
+      // landscape and portrait, mixed; the pale panes behind drift slower, which gives the depth
+      const near = sharp && rnd() < 0.45;
+      const portrait = rnd() < 0.4;
+      // sizes measured on the reference: landscape about 290 × 220, portrait 186 × 232, panes 190 × 140
+      const w = ghost ? 160 + rnd() * 60 : portrait ? 180 + rnd() * 16 : 270 + rnd() * 34;
+      const h = ghost ? w * 0.72 : portrait ? w * 1.25 : w * 0.75;
+      let x = (rnd() - 0.5) * 2100;
+      const v = ghost ? 150 + rnd() * 40 : 300; // rising speed, px/s
+      let t0 = ghost ? -0.2 + rnd() * 7.4 : 0.3 + Math.pow(rnd(), 1.35) * 7.2; // when it would cross the bottom edge without the surge
+      // keep the middle clear while the opening line is on screen: centre-column photos come later
+      const burst = { x: (rnd() - 0.5) * 1880, y: (rnd() - 0.5) * 1040 };
+      const k = (i + 0.5) / N, phi = Math.acos(1 - 2 * k), theta = Math.PI * (1 + Math.sqrt(5)) * i;
+      const sph = [Math.sin(phi) * Math.cos(theta), Math.cos(phi), Math.sin(phi) * Math.sin(theta)];
+      // how far below the frame it starts, in the wall's travel: a good share arrive with the first
+      // surge and sit around the opening line while the wall pauses
+      const sp = v / 300;
+      const pick = () => {
+        let U = rnd() < 0.36 ? 60 + rnd() * 1300 : 1360 + rnd() * (S(BURST) - 1360);
+        U = Math.max(U, S(0.6)); // nothing on screen before the first surge
+        // photos may brush the opening line, but the large ones pass beside it while it holds
+        const yAt = (t) => h / 2 + 560 + sp * (U - S(t));
+        if (near && Math.abs(x) - w / 2 < 440 && yAt(HOLD[1]) - h / 2 < 60 && yAt(HOLD[0]) + h / 2 > -60)
+          x = (x < 0 ? -1 : 1) * (440 + w / 2 + rnd() * 480);
+        return U;
+      };
+      let u = pick();
+      if (sharp) {
+        // keep a clear gap to every photo already on the wall
+        // and stay off each big photo while it holds in the middle (centred 90 px above the frame's)
+        const onHero = () => BEATS.some((b, i) => {
+          const [hw, hh] = HERO_SHAPE[i], from = b + 0.35, to = i < 3 ? BEATS[i + 1] - 0.15 : BURST;
+          const yAt = (t) => h / 2 + 560 + u - S(t);
+          return Math.abs(x) - w / 2 < hw / 2 + 36 && yAt(to) - h / 2 < hh / 2 - 90 + 36 && yAt(from) + h / 2 > -hh / 2 - 90 - 36;
+        });
+        // and off the opening line while the wall pauses with it
+        const onLine = () => {
+          const yAt = (t) => h / 2 + 560 + u - S(t);
+          return Math.abs(x) - w / 2 < 520 && yAt(HOLD[1]) - h / 2 < 70 && yAt(HOLD[0]) + h / 2 > -70;
+        };
+        const clash = () => onHero() || onLine() || placed.some((q) => Math.abs(q.x - x) < (q.w + w) / 2 + 70 && Math.abs(q.c - (u + h / 2)) < (q.h + h) / 2 + 70);
+        for (let n = 0; n < 200 && clash(); n++) { x = (rnd() - 0.5) * 2100; u = pick(); }
+        placed.push({ x, w, h, c: u + h / 2 });
+      }
+      return { el, img, below: sp * u, dev: 60 + rnd() * 220, ghost, sharp, near, w, h, x, v, t0, burst, sph, blur: ghost ? 0.8 + rnd() * 1.2 : 0, pale: ghost ? 0.55 + rnd() * 0.4 : 1, delay: rnd() };
+    });
+    const wallAt = (p, t) => ({ x: p.x, y: p.h / 2 + 20 + 540 + p.below - (p.v / 300) * S(t) });
+
+    function draw(p, x, y, z, w, h, alpha, filter, zi) {
+      const s = F / (F - z);
+      p.el.style.transform = `translate(${960 + x * s}px, ${540 + y * s}px) scale(${(w / 100) * s}, ${(h / 70) * s})`;
+      p.el.style.opacity = alpha;
+      p.el.style.filter = filter;
+      p.el.style.zIndex = zi;
+    }
+
+    // ball radius (world units, seen by a camera CAM away from the centre). At PUSH the ball is larger
+    // than the camera's distance, so the camera sits inside it; as it shrinks, the photos on the near
+    // side sweep in past the camera from all round the frame, and the rim closes in from outside
+    // (about 1.1 frame widths across at 6.7 s). After 7 s the projected sizes follow the reference:
+    // 540 at 7.0 s, 420 at 7.4, 380 at 8.2, 280 at 9.0, 230 by 10.5 (world 508, 404, 368, 275, 227).
+    const CAM = 1500;
+    // From 7.0 s the ball's diameter follows the reference, measured frame by frame (px): it shrinks
+    // fast, eases, shrinks fast again and eases, never stopping. One monotone cubic through all the
+    // points keeps the speed continuous (world radius ≈ 0.5 × projected diameter, a touch more once the
+    // cards have shrunk, since the measured edge is the cards' outer edge).
+    const SHRINK = [[6.1, 2600], [PUSH, 2600], [6.45, 1468], [6.7, 864], [6.85, 600],
+      ...[[7.0, 1081], [7.2, 956], [7.4, 851], [7.6, 796], [7.8, 775], [8.0, 766], [8.2, 754], [8.4, 733], [8.6, 703],
+        [8.8, 637], [9.0, 555], [9.2, 519], [9.4, 501], [9.6, 486], [9.8, 465], [10.0, 453], [10.6, 456], [11.8, 452]].map(([t, d]) => [t, d * (0.5 + 0.035 * clamp01((t - 9) / 1.5))])];
+    const SHRINK_M = (() => {
+      // Fritsch–Carlson tangents
+      const n = SHRINK.length, d = [], m = [];
+      for (let i = 0; i < n - 1; i++) d.push((SHRINK[i + 1][1] - SHRINK[i][1]) / (SHRINK[i + 1][0] - SHRINK[i][0]));
+      for (let i = 0; i < n; i++) m.push(i === 0 ? d[0] : i === n - 1 ? d[n - 2] : d[i - 1] * d[i] <= 0 ? 0 : (d[i - 1] + d[i]) / 2);
+      for (let i = 0; i < n - 1; i++) {
+        if (d[i] === 0) { m[i] = m[i + 1] = 0; continue; }
+        const a = m[i] / d[i], b = m[i + 1] / d[i], h = a * a + b * b;
+        if (h > 9) { const k = 3 / Math.sqrt(h); m[i] = k * a * d[i]; m[i + 1] = k * b * d[i]; }
+      }
+      return m;
+    })();
+    const radiusAt = (t) => {
+      if (t <= SHRINK[0][0]) return SHRINK[0][1];
+      for (let i = 0; i < SHRINK.length - 1; i++) {
+        const [t0, r0] = SHRINK[i], [t1, r1] = SHRINK[i + 1];
+        if (t > t1) continue;
+        const h = t1 - t0, u = (t - t0) / h, u2 = u * u, u3 = u2 * u;
+        return (2 * u3 - 3 * u2 + 1) * r0 + (u3 - 2 * u2 + u) * h * SHRINK_M[i] + (-2 * u3 + 3 * u2) * r1 + (u3 - u2) * h * SHRINK_M[i + 1];
+      }
+      return SHRINK[SHRINK.length - 1][1];
+    };
+
+    function fieldAt(t) {
+      tiles.forEach((p) => {
+        // ---- the wall: tiles rise from below; far ones big, pale, soft and slow
+        if (t >= PUSH + GATHER || !(p.ghost || p.sharp)) { p.el.style.opacity = 0; return; }
+        if (t >= PUSH) {
+          // ---- the gather: each photo flies towards the ball's middle, shrinking to a card's size,
+          // and fades only as it arrives, as if it took its place in the ball; outer ones leave later
+          const from = wallAt(p, PUSH), d = Math.hypot(from.x, from.y);
+          p.img.style.opacity = p.ghost ? 0 : clamp01((540 + p.h / 2 - from.y - p.dev) / 220); // as developed at PUSH, whatever frame came before
+          const q = easeIO((t - PUSH - 0.1 * clamp01(d / 1100)) / (GATHER - 0.12));
+          const f = Math.min(1, 380 / Math.max(d, 1)) * 0.75;
+          const qs = Math.sqrt(q), w = lerp(p.w, 30, qs), h = lerp(p.h, 21, qs);
+          const alpha = (p.ghost ? p.pale * (1 - q) ** 4 : 1 - clamp01((q - 0.25) / 0.4)) * (Math.abs(from.y) < 540 + p.h ? 1 : 0);
+          draw(p, lerp(from.x, from.x * f, q), lerp(from.y, from.y * f, q), 0, w, h, alpha, p.ghost ? `blur(${p.blur}px)` : "none", p.ghost ? 1 : p.near ? 3 : 2);
+          return;
+        }
+        const { x, y } = wallAt(p, t);
+        // the photo develops once the pane has risen a little way into the frame
+        p.img.style.opacity = p.ghost ? 0 : clamp01((540 + p.h / 2 - y - p.dev) / 220);
+        const h = p.h;
+        const on = y < 540 + h && y > -540 - h;
+        const alpha = on ? p.pale * clamp01((t - 0.15) / 0.3) : 0;
+        draw(p, x, y, 0, p.w, h, alpha, p.ghost ? `blur(${p.blur}px)` : "none", p.ghost ? 1 : p.near ? 3 : 2);
+      });
+    }
+
+    // ---------------------------------------------------------------- the photo ball (WebGL)
+    // Small photo cards drawn in one instanced pass from a 4 × 4 atlas, filling the ball evenly (points
+    // spread by best-candidate sampling, as in the studio's photo-sphere study). Cards face the camera; the
+    // ball turns about a slightly tilted vertical axis and fades from colour to pale grey as it shrinks.
+    const GL_N = 3000, LAB_DEPTH_VAR = 0.25; // dense, as on the reference: the ball reads as a solid of small photos
+    const ballPts = (() => {
+      let s2 = 4022;
+      const r2 = () => ((s2 = (s2 * 16807) % 2147483647) - 1) / 2147483646;
+      const pts = [];
+      for (let i = 0; i < GL_N; i++) {
+        let best = null, score = -1;
+        for (let k = 0; k < 8; k++) {
+          const z = r2() * 2 - 1, a = r2() * Math.PI * 2, r = 1 - LAB_DEPTH_VAR * Math.pow(r2(), 1.6), q = Math.sqrt(1 - z * z) * r; // mostly near the surface, some deeper: the fold reads because the far wall shows through, and the ball is never a tidy shell
+          const c = [q * Math.cos(a), z * r, q * Math.sin(a)];
+          let near = Infinity;
+          for (let j = 0; j < pts.length && near > score; j++) { const d = pts[j]; near = Math.min(near, (d[0] - c[0]) ** 2 + (d[1] - c[1]) ** 2 + (d[2] - c[2]) ** 2); }
+          if (near > score) { score = near; best = c; }
+        }
+        pts.push(best);
+      }
+      // each photo also gets its own size, tilt, drift direction and timing, so the ball never moves as
+      // one tidy body
+      return pts.map((c, i) => {
+        const ja = r2() * Math.PI * 2, jz = r2() * 2 - 1, jq = Math.sqrt(1 - jz * jz);
+        return { c, cell: i % 16, aspect: 0.66 + r2() * 0.08, k: r2(), sz: 0.55 + r2() * 0.9, rl: r2() * 2 - 1, j: [jq * Math.cos(ja), jz, jq * Math.sin(ja)], jm: Math.pow(r2(), 0.7), tj: r2() * 2 - 1, dr: r2() };
+      });
+    })();
+    const glCanvas = document.getElementById("o-gl"), atlasImg = document.getElementById("o-atlas");
+    const gl = glCanvas.getContext("webgl2", { premultipliedAlpha: true, preserveDrawingBuffer: true, antialias: true });
+    const glProgram = (() => {
+      const vs = `#version 300 es
+        layout(location=0) in vec2 corner; layout(location=1) in vec4 c01; layout(location=2) in vec4 c23; layout(location=3) in vec3 cellAlpha;
+        out vec2 uv; out vec2 local; out float alpha; out float defocus;
+        void main() {
+          vec2 px = gl_VertexID == 0 ? c01.xy : gl_VertexID == 1 ? c01.zw : gl_VertexID == 2 ? c23.xy : c23.zw;
+          gl_Position = vec4(px.x / 960.0 - 1.0, 1.0 - px.y / 540.0, 0.0, 1.0);
+          float cell = cellAlpha.x;
+          vec2 origin = vec2(mod(cell, 4.0), floor(cell / 4.0)) * vec2(248.0, 168.0) + 4.0;
+          uv = (origin + corner * vec2(240.0, 160.0)) / vec2(992.0, 672.0);
+          alpha = cellAlpha.y;
+          defocus = cellAlpha.z;
+          local = corner;
+        }`;
+      const fs = `#version 300 es
+        precision mediump float; in vec2 uv; in vec2 local; in float alpha; in float defocus; uniform sampler2D atlas; uniform float sat; out vec4 color;
+        void main() {
+          // depth of field: an out-of-focus card samples a blurrier mip, washes towards white and
+          // loses its hard edge
+          vec3 c = texture(atlas, uv, defocus * 3.5).rgb;
+          float e = 0.02 + defocus * 0.45;
+          float edge = smoothstep(0.0, e, local.x) * smoothstep(0.0, e, 1.0 - local.x) * smoothstep(0.0, e, local.y) * smoothstep(0.0, e, 1.0 - local.y);
+          float l = dot(c, vec3(0.299, 0.587, 0.114));
+          vec3 grey = clamp((vec3(l) - 0.5) * mix(0.95, 0.55, defocus) + 0.5, 0.0, 1.0) * mix(1.16, 1.35, defocus);
+          c = mix(min(grey, 1.0), c, sat);
+          c = mix(c, vec3(1.0), defocus * 0.4);
+          float a = alpha * edge;
+          color = vec4(c * a, a);
+        }`;
+      const sh = (type, src) => { const o = gl.createShader(type); gl.shaderSource(o, src); gl.compileShader(o); return o; };
+      const pr = gl.createProgram();
+      gl.attachShader(pr, sh(gl.VERTEX_SHADER, vs)); gl.attachShader(pr, sh(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(pr);
+      return pr;
+    })();
+    const STRIDE = 11, glVao = gl.createVertexArray(), glInst = gl.createBuffer(), glData = new Float32Array(GL_N * STRIDE * 4);
+    gl.bindVertexArray(glVao);
+    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]), gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+    gl.bindBuffer(gl.ARRAY_BUFFER, glInst);
+    gl.bufferData(gl.ARRAY_BUFFER, glData.byteLength, gl.DYNAMIC_DRAW);
+    gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1, 4, gl.FLOAT, false, STRIDE * 4, 0); gl.vertexAttribDivisor(1, 1);
+    gl.enableVertexAttribArray(2); gl.vertexAttribPointer(2, 4, gl.FLOAT, false, STRIDE * 4, 16); gl.vertexAttribDivisor(2, 1);
+    gl.enableVertexAttribArray(3); gl.vertexAttribPointer(3, 3, gl.FLOAT, false, STRIDE * 4, 32); gl.vertexAttribDivisor(3, 1);
+    let glTex = null;
+    const glOrder = ballPts.map((_, i) => i), glDepth = new Float32Array(GL_N), glPos = new Float32Array(GL_N * 3);
+
+    // The change, ported as is from the studio's approved photo-sphere study (two-beat.ts and
+    // photo-lifecycle.ts with CENTER_PRESET): every photo makes one extra turn about the vertical
+    // axis, with a delay that varies smoothly over the ball, so it folds into travelling bands and
+    // comes back; meanwhile the outer photos draw in, shrink and fade, leaving a small centre band, and
+    // return sector by sector. The study's 2–7.75 s of its 8 s cycle is mapped onto TWIST.
+    const smooth5 = (v) => { v = clamp01(v); return v * v * v * (v * (v * 6 - 15) + 10); };
+    const PRESET = { twist: 1.05, compression: 0.52, propagation: 0.8, reassembly: 0.8 };
+    const studyTime = (t) => 2 + Math.max(0, t - TWIST[0]) * (5.75 / (TWIST[1] - TWIST[0]));
+    // Parameters fitted to the reference frame by frame in agent-workdir/ball-lab (an automatic
+    // search over 9.0–11.4 s, then corrected by eye); the movement below is the lab's, unchanged.
+    const LAB = { spread: 1.157, turns: 0.3, pinch: 0.12, dent: 0.098, sBend: 0.759, azWeight: 1.144, hWeight: 0.24, azPhase: 0,
+      shrink: 0.145, goneStart: 0.5, goneLen: 0.3, pullOuter: 0.236, speck: 0.2, speckPull: 0.72, backT: 10.2, backSpan: 1.0, defocus: 0.6,
+      lagTurn: 1.099, card: 12.5, depth: 0.55, spin: 0.6, sizeVar: 0.4, roll: 0.18, scatter: 0.2, timeJitter: 0.25, drag: 0.6 };
+    function changeAt(p, spin, t, out) {
+      // One movement. Each photo has a single progress u through the change; its delay runs round the
+      // ball and bends with height, so the crease between photos that have turned on and those that
+      // have not is an upright S. Along its u each photo turns on a little, the sides pinch in and the
+      // top and bottom draw to points (the peach), the whole ball shrinks gently, the outer photos draw
+      // in and fade, and they come back while still turning into place: outline first, then the far
+      // side, then the near side, soft and then in focus.
+      const L = LAB, [x, y, z] = p.c, k = p.k, h = y, radius = Math.hypot(x, z), r = Math.hypot(x, y, z), az = Math.atan2(z, x);
+      const T = studyTime(t);
+      const raw = 1.12 + L.hWeight * Math.sin(Math.PI * h) + L.azWeight * Math.sin(az + L.azPhase + L.sBend * Math.sin(Math.PI * h)) + 0.22 * (r - 0.5);
+      const u = clamp01((T - 2.5 - L.spread * smooth5(raw / 2.24) + L.timeJitter * p.tj) / 3.65);
+      const pulse = Math.sin(Math.PI * u) ** 2;
+      let angle = az - spin - 2 * Math.PI * L.turns * smooth5(u) + L.drag * (p.dr - 0.3) * pulse; // some photos trail behind the turn
+      // the order photos come back in, by how far each is from the viewer right now: the outline
+      // (side-on) first, then the far side, then the near side
+      const zr = Math.sin(angle), f = zr >= 0 ? 0.35 + 0.65 * zr : 0.315 * -zr;
+      const back = smooth5((t - L.backT - L.backSpan * f) / 0.5);
+      const leaving = smooth5((u - L.goneStart) / L.goneLen);
+      angle += L.lagTurn * (1 - back) * leaving;
+      const dent = L.dent * pulse;
+      let X = radius * (1 - dent) * Math.cos(angle), Y = y * (1 - 0.04 * pulse), Z = radius * (1 - dent) * Math.sin(angle);
+      const pin = L.pinch * pulse;
+      X *= (1 - 0.5 * pin) * (1 - pin * Y * Y);
+      const shrink = 1 - L.shrink * Math.sin(Math.PI * clamp01((t - TWIST[0] - 0.9) / 2.1)) ** 2;
+      const gone = leaving * (1 - back);
+      const speck = k < L.speck; // these gather at the middle as small dark specks
+      const pull = shrink * (1 - (speck ? L.speckPull : L.pullOuter * smooth5((r - 0.5) / 0.4)) * gone);
+      // each photo drifts off along its own direction while the change is under way, more at the rim
+      const sc = L.scatter * p.jm * Math.max(pulse, gone) * (0.4 + 0.6 * smooth5((r - 0.5) / 0.4));
+      out[0] = X * pull + p.j[0] * sc; out[1] = Y * pull + p.j[1] * sc; out[2] = Z * pull + p.j[2] * sc;
+      out[3] = (1 - (speck ? 0.6 : 0.45) * gone) * lerp(1, p.sz, L.sizeVar);
+      out[4] = speck ? 1 - 0.4 * gone : 1 - 0.55 * gone; // a faint trace stays and keeps turning, so the ball never stops moving
+      out[5] = 0;
+      out[6] = speck ? 0 : L.defocus * Math.max(gone, (1 - smooth5((t - L.backT - L.backSpan * f - 0.1) / 0.55)) * leaving);
+      return out;
+    }
+    const FLAT = 0; // cards face the camera, as on the reference (1 would lay them flat on the ball)
+    const glFold = new Float32Array(7), glCore = new Float32Array(GL_N), glDefocus = new Float32Array(GL_N), glScale = new Float32Array(GL_N), glAlpha = new Float32Array(GL_N);
+
+    // the gather, for the big photo: it sinks into the middle of the forming ball, shrinking to a
+    // card's size and fading as it arrives
+    const heroLayer = document.getElementById("o-heroes");
+    function pushAt(t) {
+      const q = easeIO((t - PUSH) / GATHER);
+      heroLayer.style.transformOrigin = "960px 450px";
+      heroLayer.style.transform = q > 0 ? `scale(${lerp(1, 0.05, Math.pow(q, 0.5))})` : "none";
+      heroLayer.style.opacity = 1 - clamp01((q - 0.5) / 0.5);
+      const soft = Math.sin(Math.PI * clamp01((t - PUSH) / 0.6));
+      glCanvas.style.filter = soft > 0 ? `blur(${1.2 * soft}px)` : "none";
+    }
+
+    const spinAt = (t) => LAB.spin * (t - BALL); // one steady turn, as in the ball lab
+
+    // spacing guard, as the study's safeSizes: a card never grows past 0.88 of the gap to its nearest
+    // neighbour, so photos packed into a fold get smaller instead of piling into a solid patch
+    const glNear = new Float32Array(GL_N), glCell = new Map();
+    function nearestGaps() {
+      const c = 0.14, key = (x, y, z) => (x + 64) * 16384 + (y + 64) * 128 + (z + 64);
+      glCell.clear();
+      for (let i = 0; i < GL_N; i++) {
+        const k = key(Math.floor(glPos[i * 3] / c), Math.floor(glPos[i * 3 + 1] / c), Math.floor(glPos[i * 3 + 2] / c));
+        const a = glCell.get(k); if (a) a.push(i); else glCell.set(k, [i]);
+      }
+      for (let i = 0; i < GL_N; i++) {
+        const x = glPos[i * 3], y = glPos[i * 3 + 1], z = glPos[i * 3 + 2];
+        const cx = Math.floor(x / c), cy = Math.floor(y / c), cz = Math.floor(z / c);
+        let near = c;
+        for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) for (let e = -1; e <= 1; e++) {
+          const ids = glCell.get(key(cx + a, cy + b, cz + e)); if (!ids) continue;
+          for (const j of ids) if (j !== i) near = Math.min(near, Math.hypot(glPos[j * 3] - x, glPos[j * 3 + 1] - y, glPos[j * 3 + 2] - z));
+        }
+        glNear[i] = near;
+      }
+    }
+
+    function ballAt(t) {
+      gl.viewport(0, 0, 1920, 1080);
+      gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
+      if (t < PUSH || t > DOT + 0.35) return;
+      if (!glTex) {
+        if (!atlasImg.complete || !atlasImg.naturalWidth) return;
+        glTex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, glTex);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, atlasImg);
+        gl.generateMipmap(gl.TEXTURE_2D);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+      }
+      // motion blur: four looks spread over a short shutter (1/150 s), each at a quarter of
+      // the opacity it needs to build back to the card's own, so moving cards streak and still ones
+      // stay crisp
+      for (let k = 0; k < SHUTTER_N; k++) fillAt(t - (SHUTTER * k) / (SHUTTER_N - 1), k * GL_N);
+      gl.useProgram(glProgram);
+      gl.uniform1f(gl.getUniformLocation(glProgram, "sat"), 0.32 + 0.4 * (1 - clamp01((t - 6.5) / 0.8))); // a little warmth stays, as on the reference
+      gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+      gl.bindVertexArray(glVao);
+      gl.bindBuffer(gl.ARRAY_BUFFER, glInst); gl.bufferSubData(gl.ARRAY_BUFFER, 0, glData);
+      gl.bindTexture(gl.TEXTURE_2D, glTex);
+      gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, GL_N * SHUTTER_N);
+    }
+
+    const SHUTTER = 1 / 150, SHUTTER_N = 4; // a short shutter: the fast fold stays legible, the rush in still softens
+    function fillAt(t, base) {
+      const spin = spinAt(t);
+      const R = radiusAt(t), tilt = 0.06; // tilt as in the study
+      const cs = Math.cos(spin), sn = Math.sin(spin), ct = Math.cos(tilt), st = Math.sin(tilt);
+      const collapse = easeIO((t - DOT) / 0.3);
+      // cards are a touch larger while the ball is huge, as on the reference (about 45 px wide at the
+      // hand-over, about 26 px once the whole ball is in frame)
+      const labW = smooth5((t - 8.6) / 0.6); // the lab's look, eased in before the change shows
+      const card = lerp(R < 508 ? 24 * Math.pow(R / 508, 0.75) : 24 + 0.006 * (R - 508), LAB.card, labW) * (1 - collapse * 0.7); // the far side of the huge early ball still reads as a full screen of photos
+      ballPts.forEach((p, i) => {
+        let [x, y, z] = changeAt(p, spin, t, glFold);
+        glScale[i] = glFold[3]; glAlpha[i] = glFold[4]; glCore[i] = glFold[5]; glDefocus[i] = glFold[6];
+        [y, z] = [y * ct - z * st, y * st + z * ct];
+        glPos[i * 3] = x; glPos[i * 3 + 1] = y; glPos[i * 3 + 2] = z;
+        glDepth[i] = z;
+      });
+      nearestGaps();
+      // focus follows the front of the photos, so a ball that draws in stays sharp in front
+      let front = 0;
+      for (let i = 0; i < GL_N; i++) if (glAlpha[i] > 0.5) front = Math.max(front, glPos[i * 3 + 2]);
+      const focusFront = front || 1;
+      for (let i = 0; i < GL_N; i++) { glPos[i * 3] *= R * (1 - collapse); glPos[i * 3 + 1] *= R * (1 - collapse); }
+      glOrder.sort((a, b) => glDepth[a] - glDepth[b]); // back to front
+      const fadeIn = easeIO((t - PUSH - 0.05) / 0.35), fadeOut = 1 - clamp01((t - DOT - 0.22) / 0.08);
+      glOrder.forEach((i, k) => {
+        // each card lies mostly flat on the ball (its plane tangent to the sphere through it), so the
+        // cards round the rim turn edge-on and the ball reads as a solid; a little of the camera-facing
+        // pose is kept so none vanishes completely. Corners are projected one by one, in perspective.
+        const nx = glPos[i * 3] / (R * (1 - collapse) || 1), ny = glPos[i * 3 + 1] / (R * (1 - collapse) || 1), nz = glPos[i * 3 + 2];
+        const nl = Math.hypot(nx, ny, nz) || 1;
+        let ux = nz / nl, uz = -nx / nl;
+        const ul = Math.hypot(ux, uz) || 1; ux /= ul; uz /= ul;
+        let vx = (ny / nl) * -uz, vy = (nz / nl) * ux - (nx / nl) * -uz, vz = -(ny / nl) * ux;
+        // blend towards facing the camera
+        let ax = lerp(1, ux, FLAT), ay = 0, az = lerp(0, uz, FLAT), bx = lerp(0, vx, FLAT), by = lerp(1, vy, FLAT), bz = lerp(0, vz, FLAT);
+        const al = Math.hypot(ax, ay, az), bl = Math.hypot(bx, by, bz);
+        const focusZ = R * (1 - collapse) * focusFront, czw = glPos[i * 3 + 2] * R * (1 - collapse);
+        const blurDepth = Math.min(1, clamp01((focusZ - czw) / (2 * Math.max(focusZ, 1))) * 0.85 * lerp(1, LAB.depth / 0.6, labW) * (1 - 0.8 * glCore[i]) + clamp01((700 - (CAM - czw)) / 600) * 0.9 + glDefocus[i]);
+        // the spacing guard trims crowded photos by at most 30%, so a crease still reads as a dark seam
+        const w = Math.min(card * glScale[i], Math.max(glNear[i] * R * 0.88 / 1.18 * 1.6, card * glScale[i] * 0.7)) * (1 + 0.45 * blurDepth) / 2, h = w * ballPts[i].aspect;
+        ax *= w / al; az *= w / al; bx *= h / bl; by *= h / bl; bz *= h / bl;
+        const rl = LAB.roll * ballPts[i].rl, cr = Math.cos(rl), sr = Math.sin(rl); // a slight tilt in the picture
+        [ax, ay] = [ax * cr - ay * sr, ax * sr + ay * cr]; [bx, by] = [bx * cr - by * sr, bx * sr + by * cr];
+        const cx = glPos[i * 3], cy = glPos[i * 3 + 1], cz = glPos[i * 3 + 2] * R * (1 - collapse);
+        const dist = CAM - cz, near = clamp01((dist - 90) / 420); // photos passing the camera fade rather than fill the lens
+        const front = clamp01((glPos[i * 3 + 2] / focusFront + 0.4) / 0.9); // measured against the front of the photos, as the focus
+        const o = (base + k) * STRIDE;
+        [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sa, sb], c) => {
+          const X = cx + sa * ax + sb * bx, Y = cy + sa * ay + sb * by, Z = cz + sa * az + sb * bz;
+          const sc = CAM / Math.max(CAM - Z, 40);
+          glData[o + c * 2] = 960 + X * sc; glData[o + c * 2 + 1] = 540 + Y * sc;
+        });
+        const dd = lerp(0.6, LAB.depth, labW), a = (1 - dd + dd * front) * glAlpha[i] * near * fadeIn * fadeOut;
+        glData[o + 8] = ballPts[i].cell; glData[o + 9] = 1 - Math.pow(1 - Math.min(a, 0.999), 1 / SHUTTER_N);
+        // focus sits on the near face of the ball: the far side and anything rushing past the camera blur
+        glData[o + 10] = blurDepth;
+      });
+    }
+
+    // ---------------------------------------------------------------- hero photos: each rises in
+    // with a surge, holds with the wall, and scrolls on up as the next one arrives
+    const heroes = document.getElementById("o-heroes");
+    const HERO = [5, 4, 7, 6].map((n, i) => {
+      const d = document.createElement("div"), [w, h] = HERO_SHAPE[i];
+      d.className = "abs o-hero";
+      d.style.backgroundImage = `url(${PHOTO(n)})`;
+      Object.assign(d.style, { width: `${w}px`, height: `${h}px`, left: `${960 - w / 2}px`, marginTop: `${-h / 2}px` });
+      heroes.append(d);
+      return d;
+    });
+    function heroesAt(t) {
+      HERO.forEach((d, i) => {
+        const b = BEATS[i], next = i < 3 ? BEATS[i + 1] : 99;
+        let y;
+        const IN = 0.4, a = b + 0.35; // arrives with the surge, settles at a
+        if (t < a - IN) y = 1500;
+        else if (t < a) y = lerp(1450, 450, easeOut((t - (a - IN)) / IN));
+        else if (i === 3) y = 450 - 20 * (t - a);
+        else { const k = clamp01((t - (next - 0.15)) / 0.5); y = 450 - 20 * (t - a) - 1100 * k * k; }
+        d.style.transform = `translateY(${y}px)`;
+        d.style.opacity = y > 1400 || y < -400 ? 0 : 1;
+      });
+    }
+    // "They" rises in once; after that only the verb changes, the old one lifting away as the new
+    // one rises in from below
+    const rise = (el, at) => tl.fromTo(el, { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.4, ease: "power3.out", immediateRender: false }, at);
+    rise(".o-they", BEATS[0] + 0.3);
+    gsap.utils.toArray(".o-verb").forEach((el, i) => {
+      rise(el, BEATS[i] + (i ? 0.25 : 0.48));
+      if (i < 3) tl.to(el, { opacity: 0, y: -30, duration: 0.2, ease: "power2.in" }, BEATS[i + 1] + 0.04);
+    });
+    tl.to("#o-cap", { opacity: 0, duration: 0.2, ease: "power1.in" }, PUSH);
+
+    // ---------------------------------------------------------------- headline: word by word from
+    // below, then it rides up with the wall
+    const headline = document.getElementById("o-headline");
+    const words = spans(headline).filter((s) => s.textContent.trim());
+    [0.0, 0.25, 0.5, 0.75].forEach((at, i) => tl.fromTo(words[i], { opacity: 0, y: 34, color: "#b7bac0" }, { opacity: 1, y: 0, color: "#1f2124", duration: 0.5, ease: "power3.out", immediateRender: i === 0 }, at));
+    // the line leaves with the wall's second surge, at the wall's own pace (moved in the update)
+
+    // ---------------------------------------------------------------- side lines: typed on, then a
+    // random-letter scramble from one line to the next
+    const GLYPHS = "abcdefghijklmnopqrstuvwxyz";
+    const glyph = (i, t) => GLYPHS[(i * 7 + Math.floor(t * 24) * 13) % GLYPHS.length];
+    const typed = (text, k) => text.slice(0, Math.round(text.length * clamp01(k)));
+    function scramble(from, to, k, t) {
+      const n = Math.max(from.length, to.length);
+      let out = "";
+      for (let i = 0; i < n; i++) {
+        const turn = (i / n) * 0.55 + (((i * 37) % 11) / 11) * 0.3; // when this letter settles
+        if (k >= turn + 0.15) out += to[i] || "";
+        else if (k >= turn) out += (to[i] || from[i] || " ") === " " ? " " : glyph(i, t);
+        else out += from[i] || " ";
+      }
+      return out.replace(/\s+$/, "");
+    }
+    const L = document.getElementById("o-l"), Rt = document.getElementById("o-r");
+    function sidesAt(t) {
+      let l = "", r = "";
+      if (t >= 7.0 && t < 9.0) l = typed("And every change", (t - 7.0) / 0.6);
+      else if (t >= 9.0) l = scramble("And every change", "A reason to reach out", (t - 9.0) / 1.2, t);
+      if (t >= 8.0 && t < 9.1) r = typed("leaves a signal.", (t - 8.0) / 0.5);
+      else if (t >= 9.1 && t < 9.8) r = scramble("leaves a signal.", "", (t - 9.1) / 0.6, t);
+      else if (t >= 10.6) r = typed("if you catch it in time.", (t - 10.6) / 1.1);
+      const fade = 1 - clamp01((t - DOT + 0.1) / 0.2);
+      if (L.textContent !== l) L.textContent = l;
+      if (Rt.textContent !== r) Rt.textContent = r;
+      L.style.opacity = Rt.style.opacity = fade;
+    }
+
+    // ---------------------------------------------------------------- orbits around the ball
+    // Three circles in space around the ball, seen in perspective, close in size but tipped different
+    // ways so they cross one another, and reaching nearly to the edges of the frame as on the reference. The half behind the ball is drawn
+    // under it, thin and pale; the half in front over it, a little heavier. Each ring keeps its own
+    // tilt and rocks gently, never turning edge-on; it grows and shrinks with the ball, and while the
+    // ball folds the rings swing over with it and settle back. Two beads ride each ring, larger and darker in front.
+    const NS = "http://www.w3.org/2000/svg", RING_CAM = 3200;
+    const ORB = [
+      { base: 560, tilt: 1.3, turn: 0.55, roll: -0.5, phase: 0.4, speed: 0.5, swing: 0.5 },
+      { base: 600, tilt: 0.95, turn: -0.6, roll: 0.35, phase: 2.2, speed: 0.38, swing: -0.6 },
+      { base: 640, tilt: 1.15, turn: 0.1, roll: 1.35, phase: 4.1, speed: 0.3, swing: 0.4 },
+    ];
+    const mk = (tag, parent) => { const e = document.createElementNS(NS, tag); document.getElementById(parent).append(e); return e; };
+    const ringBack = ORB.map(() => mk("path", "o-rings")), ringFront = ORB.map(() => mk("path", "o-rings-front"));
+    const beads = ORB.flatMap(() => [0, Math.PI].map((off) => ({ off, back: mk("circle", "o-sats"), front: mk("circle", "o-sats-front") })));
+    function ringFrame(o, t) {
+      // the ball's fold, as one number: how far through its extra turn it is on average
+      const fold = smooth5((studyTime(t) - 2.4) / 4.6);
+      // each ring rocks about a heading that keeps it broad to the camera, and swings with the fold
+      const a = o.turn + 0.22 * Math.sin(0.5 * t + o.phase) + o.swing * Math.sin(Math.PI * fold);
+      const tilt = o.tilt + 0.18 * Math.sin(Math.PI * fold) * Math.sign(o.swing);
+      return { a, tilt, roll: o.roll };
+    }
+    function ringPoint(o, f, rho, th) {
+      // circle in its own plane, tipped back by tilt, turned about the vertical by a, rolled in the picture
+      let x = rho * Math.cos(th), y = 0, z = rho * Math.sin(th);
+      [y, z] = [y * Math.cos(f.tilt) - z * Math.sin(f.tilt), y * Math.sin(f.tilt) + z * Math.cos(f.tilt)];
+      [x, z] = [x * Math.cos(f.a) + z * Math.sin(f.a), -x * Math.sin(f.a) + z * Math.cos(f.a)];
+      [x, y] = [x * Math.cos(f.roll) - y * Math.sin(f.roll), x * Math.sin(f.roll) + y * Math.cos(f.roll)];
+      const s = RING_CAM / (RING_CAM - z);
+      return [960 + x * s, 540 + y * s, z, s];
+    }
+    function orbitsAt(t) {
+      if (t < BALL - 0.1 || t > DOT + 0.45) return;
+      // as the ball collapses to its point the rings close in on it too, a beat ahead of the ball,
+      // and fade as they get small
+      const close = easeIO((t - DOT + 0.15) / 0.5), R = radiusAt(t) * (1 - close);
+      const ringScale = 1 - close;
+      ORB.forEach((o, j) => {
+        const f = ringFrame(o, t), rho = (o.base + 1.1 * R / Math.max(1 - close, 1e-3)) * ringScale;
+        let back = "", front = "", pb = false, pf = false;
+        for (let k = 0; k <= 120; k++) {
+          const [x, y, z] = ringPoint(o, f, rho, (k / 120) * Math.PI * 2);
+          const pt = `${x.toFixed(1)} ${y.toFixed(1)}`;
+          if (z >= 0) { front += (pf ? " L" : " M") + pt; pf = true; pb = false; }
+          else { back += (pb ? " L" : " M") + pt; pb = true; pf = false; }
+        }
+        ringBack[j].setAttribute("d", back); ringFront[j].setAttribute("d", front);
+      });
+      beads.forEach((b, n) => {
+        const o = ORB[n >> 1], f = ringFrame(o, t), rho = (o.base + 1.1 * R / Math.max(1 - close, 1e-3)) * ringScale;
+        const [x, y, z, sc] = ringPoint(o, f, rho, o.phase + b.off + t * o.speed);
+        const on = z >= 0 ? b.front : b.back, off = z >= 0 ? b.back : b.front;
+        on.setAttribute("cx", x); on.setAttribute("cy", y); on.setAttribute("r", 10 * sc * (0.4 + 0.6 * ringScale)); on.style.opacity = 1;
+        off.style.opacity = 0;
+      });
+    }
+    tl.fromTo(["#o-orbits", "#o-orbits-front"], { opacity: 0 }, { opacity: 1, duration: 0.6, ease: "power1.out" }, BALL);
+    tl.to(["#o-orbits", "#o-orbits-front"], { opacity: 0, duration: 0.35, ease: "power1.in" }, DOT + 0.05);
+
+    // ---------------------------------------------------------------- the point, the word, the mark
+    // the point lands big (about 230 px, as on the reference) and settles to 120 px
+    tl.fromTo("#o-dot", { scale: 0, x: 0 }, { scale: 1.95, duration: 0.2, ease: "power2.out" }, DOT + 0.12);
+    tl.to("#o-dot", { scale: 1, duration: 0.35, ease: "power2.inOut" }, DOT + 0.35);
+    const LOCK = { dot: 1250, shift: -194.5 }; // the point's resting centre, and the lockup's slide to centre
+    tl.to("#o-dot", { scale: 104 / 120, x: LOCK.dot - 960, duration: 0.62, ease: "power1.out" }, 12.75);
+    const intro = spans(document.getElementById("o-intro"), true);
+    intro.forEach((c, i) => tl.fromTo(c, { opacity: 0 }, { opacity: 1, duration: 0.05, immediateRender: false }, 12.76 + i * 0.055));
+    tl.set("#o-dot", { opacity: 0 }, 13.62);
+    tl.fromTo("#o-mark", { opacity: 0 }, { opacity: 1, duration: 0.01 }, 13.62);
+    // the white wave pushes in from the left, growing as it goes, and settles inside the point; the
+    // point swells a little as it takes the wave in and eases back, so the two read as merging
+    tl.fromTo("#o-wave", { x: -40, scale: 0.55, transformOrigin: "50% 50%" }, { x: 0, scale: 1, duration: 0.42, ease: "power2.inOut" }, 13.62);
+    tl.fromTo("#o-mark", { scale: 1, transformOrigin: "50% 50%" }, { scale: 1.12, duration: 0.2, ease: "sine.out", immediateRender: false }, 13.7);
+    tl.to("#o-mark", { scale: 1, duration: 0.3, ease: "sine.inOut" }, 13.9);
+    const letters = spans(document.getElementById("o-word"), true);
+    letters.forEach((c, i) => tl.fromTo(c, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.25, ease: "power2.out", immediateRender: false }, 13.9 + i * 0.07));
+    tl.fromTo("#o-lock", { x: 0 }, { x: LOCK.shift, duration: 0.5, ease: "power2.inOut" }, 13.8);
+    // hand over to the next shot: the words clear and the mark rises to the top
+    tl.to(["#o-intro", "#o-word"], { opacity: 0, duration: 0.2, ease: "power1.in" }, 14.55);
+    tl.to("#o-mark", { x: 960 - LOCK.dot - LOCK.shift, y: -380, scale: 56 / 104, duration: 0.45, ease: "power2.inOut" }, 14.65); // to the top centre, as the next shot's mark
+
+    // ---------------------------------------------------------------- one clock for everything drawn
+    const clock = { t: 0 };
+    tl.fromTo(clock, { t: 0 }, {
+      t: D, duration: D, ease: "none",
+      onUpdate: () => { const t = clock.t; pushAt(t); headline.style.transform = `translateY(${-Math.max(0, S(t) - S(HOLD[1]))}px)`; fieldAt(t); ballAt(t); heroesAt(t); sidesAt(t); orbitsAt(t); },
+    }, 0);
+
+    window.__timelines["open"] = tl;
+  </script>
+</template>

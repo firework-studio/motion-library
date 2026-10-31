@@ -1,0 +1,691 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Plus Jakarta Sans";
+      font-weight: 500;
+      src: url("assets/fonts/PlusJakartaSans-500.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "Plus Jakarta Sans";
+      font-weight: 600;
+      src: url("assets/fonts/PlusJakartaSans-600.woff2") format("woff2");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: #ffffff;
+      font-family: "Plus Jakarta Sans", sans-serif;
+      color: #2a2c30;
+    }
+    .abs {
+      position: absolute;
+    }
+    #d-canvas,
+    #d-gl {
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+    }
+    #d-gl {
+      opacity: 0;
+    }
+    /* ---- the map's markers: a flag disc on the spot, and a card with the country and its count ---- */
+    .d-pin {
+      left: 0;
+      top: 0;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      opacity: 0;
+    }
+    .d-pin.l {
+      flex-direction: row-reverse;
+    }
+    .d-pin i {
+      flex: none;
+      width: 66px;
+      height: 66px;
+      border-radius: 50%;
+      background-size: cover;
+      background-position: center;
+      box-shadow: 0 0 0 4px #fff, 0 8px 20px rgba(30, 30, 40, 0.18);
+    }
+    .d-pin span {
+      display: block;
+      padding: 14px 26px 14px 22px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.94);
+      box-shadow: 0 0 0 1.5px #eceef1, 0 12px 30px rgba(30, 30, 40, 0.1);
+      white-space: pre;
+    }
+    .d-pin em {
+      display: block;
+      font-style: normal;
+      font-size: 22px;
+      font-weight: 500;
+      color: #8a8d93;
+    }
+    .d-pin b {
+      font-size: 34px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    .d-pin small {
+      margin-left: 8px;
+      font-size: 22px;
+      font-weight: 500;
+      color: #a3a6ac;
+    }
+    /* ---- the stat cards ---- */
+    .d-card {
+      left: 0;
+      top: 0;
+      width: 940px;
+      height: 860px;
+      overflow: hidden;
+      background-size: cover;
+      background-position: center;
+      transform-origin: 0 0;
+      opacity: 0;
+    }
+    .d-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(20, 22, 26, 0.38), rgba(20, 22, 26, 0) 45%);
+    }
+    .d-card b {
+      position: absolute;
+      left: 48px;
+      top: 36px;
+      font-size: 84px;
+      font-weight: 500;
+      line-height: 1.02;
+      letter-spacing: -0.01em;
+      color: #fff;
+      white-space: pre;
+    }
+    /* ---- the filter chips ---- */
+    #d-chips {
+      left: 0;
+      top: 494px;
+      height: 92px;
+      display: flex;
+      gap: 28px;
+      white-space: pre;
+    }
+    .d-chip {
+      flex: none;
+      height: 92px;
+      padding: 0 36px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 20px;
+      background: #fff;
+      box-shadow: 0 0 0 2px #e7e8eb, 0 10px 26px rgba(30, 30, 40, 0.07);
+      font-size: 40px;
+      font-weight: 500;
+      color: #3a3d42;
+      opacity: 0;
+    }
+    .d-chip em {
+      font-style: normal;
+      color: #2fd37a;
+    }
+    .d-chip u {
+      text-decoration: none;
+      margin-left: 10px;
+      color: #9a9da3;
+    }
+    /* ---- lines of type ---- */
+    #d-ones {
+      left: 0;
+      top: 500px;
+      width: 1920px;
+      text-align: center;
+      font-size: 56px;
+      font-weight: 500;
+      white-space: pre;
+    }
+    #d-ones span,
+    #d-billions span,
+    #d-agents span {
+      opacity: 0;
+    }
+    #d-box {
+      left: 660px;
+      top: 420px;
+      width: 600px;
+      height: 240px;
+      background: #0d0e10;
+      opacity: 0;
+    }
+    #d-billions {
+      left: 0;
+      top: 462px;
+      width: 1920px;
+      text-align: center;
+      font-size: 64px;
+      font-weight: 500;
+      line-height: 1.22;
+      color: #fff;
+      white-space: pre;
+    }
+    #d-billions b {
+      font-weight: 600;
+    }
+    #d-agents {
+      left: 96px;
+      top: 64px;
+      font-size: 54px;
+      font-weight: 500;
+      line-height: 1.3;
+      white-space: pre;
+      z-index: 3;
+    }
+    .d-tag {
+      left: 0;
+      top: 0;
+      height: 76px;
+      display: flex;
+      align-items: center;
+      padding: 0 30px 0 32px;
+      background: #fff;
+      border-left: 8px solid #0d0e10;
+      box-shadow: 0 10px 26px rgba(30, 30, 40, 0.12);
+      font-size: 32px;
+      font-weight: 500;
+      white-space: pre;
+      opacity: 0;
+      z-index: 3;
+    }
+  </style>
+  <div data-hf-id="hf-d3rt" id="root" data-composition-id="data" data-width="1920" data-height="1080">
+    <canvas data-hf-id="hf-d3gl" id="d-gl" class="abs" width="1920" height="1080"></canvas>
+    <canvas data-hf-id="hf-d3cv" id="d-canvas" class="abs" width="1920" height="1080"></canvas>
+    <div data-hf-id="hf-d3pn" id="d-pins" class="abs" style="inset: 0"></div>
+    <div data-hf-id="hf-d3cd" id="d-cards" class="abs" style="inset: 0"></div>
+    <div data-hf-id="hf-d3ch" id="d-chips" class="abs"></div>
+    <div data-hf-id="hf-d3on" id="d-ones" class="abs" data-text="Brings you the ones that matter."></div>
+    <div data-hf-id="hf-d3bx" id="d-box" class="abs"></div>
+    <div data-hf-id="hf-d3bl" id="d-billions" class="abs"></div>
+    <div data-hf-id="hf-d3ag" id="d-agents" class="abs"></div>
+    <div data-hf-id="hf-d3tg" id="d-tags" class="abs" style="inset: 0"></div>
+    <img data-hf-id="hf-d3mp" id="d-mapsrc" src="assets/data/apac-dots.png" alt="" style="display: none" />
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    const D = 19.65;
+    const clamp01 = (v) => Math.min(1, Math.max(0, v));
+    const lerp = (a, b, k) => a + (b - a) * k;
+    const easeOut = (v) => 1 - Math.pow(1 - clamp01(v), 3);
+    const easeIO = (v) => { v = clamp01(v); return v < 0.5 ? 4 * v * v * v : 1 - Math.pow(-2 * v + 2, 3) / 2; };
+    let seed = 7;
+    const rnd = () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
+    const cv = document.getElementById("d-canvas"), cx = cv.getContext("2d");
+
+    // ---------------------------------------------------------------- shot times (local seconds)
+    const MAP = [0, 1.45], NUM = [1.45, 8.3], UP_D = 0.55;
+    // the map leaves upward and the numbers come up from below with it, as one move
+    const upAt = (t) => 1080 * easeIO((t - NUM[0]) / UP_D);
+    // at the end of the numbers the picture slides away to the left and fades as the filters come in
+    const OUT_D = 0.5, outAt = (t) => easeIO((t - (NUM[1] - OUT_D)) / OUT_D);
+    const MAP_END = NUM[0] + UP_D, NUMS_IN = (t) => 1080 - upAt(t);
+    const FIL = [8.3, 9.7], ONES = [9.7, 12.05], BIL = [12.05, 13.95], FIELD = [13.95, D];
+
+    // ---------------------------------------------------------------- A. the dot map of Asia-Pacific
+    // land dots from Natural Earth (agent-workdir/scripts/build_dotmap.py); markers count up in turn
+    // the dots come as a mask image, one pixel per dot (15 px apart in a 2400 × 2196 plane)
+    const MAPD = { w: 2400, h: 2196, step: 15, lon0: 66, lat1: 56, sx: 20.718, k: 0.99863, dots: null };
+    const mapImg = document.getElementById("d-mapsrc");
+    const readMap = () => {
+      if (MAPD.dots || !mapImg.complete || !mapImg.naturalWidth) return;
+      const c = document.createElement("canvas"); c.width = mapImg.naturalWidth; c.height = mapImg.naturalHeight;
+      const g = c.getContext("2d"); g.drawImage(mapImg, 0, 0);
+      const px = g.getImageData(0, 0, c.width, c.height).data, dots = [];
+      for (let y = 0; y < c.height; y++) for (let x = 0; x < c.width; x++) if (px[(y * c.width + x) * 4] > 128) dots.push([x * 15 + 7, y * 15 + 7]);
+      MAPD.dots = dots;
+    };
+    const proj = (lon, lat) => [(lon - MAPD.lon0) * MAPD.sx * MAPD.k, (MAPD.lat1 - lat) * MAPD.sx];
+    // in no set order across the map, as the view settles
+    const PINS = [
+      { code: "jp", name: "Japan", lon: 139.7, lat: 35.7, n: 1847320, t: 0.5 },
+      { code: "in", name: "India", lon: 72.9, lat: 19.1, n: 1126580, t: 0.78 },
+      { code: "cn", name: "China", lon: 121.5, lat: 31.2, n: 2463915, t: 0.64, left: true },
+      { code: "sg", name: "Singapore", lon: 103.8, lat: 1.35, n: 662185, t: 0.42 },
+      { code: "au", name: "Australia", lon: 151.2, lat: -33.9, n: 1463915, t: 0.56 },
+    ];
+    const pinBox = document.getElementById("d-pins");
+    const pinEls = PINS.map((p) => {
+      const el = document.createElement("div");
+      el.className = "abs d-pin" + (p.left ? " l" : "");
+      el.innerHTML = `<i style="background-image:url(assets/flags/${p.code}.svg)"></i><span><em>${p.name}</em><b>0</b><small>companies</small></span>`;
+      pinBox.append(el);
+      return el;
+    });
+    // camera over the map: a slight drift up and out
+    // the camera starts close on the region (scale 1.7, around Hong Kong) and pulls back to the whole
+    // of it (scale 0.55, around lon 114, lat 1), easing in a long tail
+    const mapCam = (t) => {
+      const k = 1 - Math.pow(1 - clamp01((t - MAP[0]) / 1.4), 4), s = 0.55 * Math.pow(1.7 / 0.55, 1 - k);
+      const lon = lerp(117, 114, k), lat = lerp(18, 1, k);
+      const cxm = (lon - MAPD.lon0) * MAPD.sx * MAPD.k, cym = (MAPD.lat1 - lat) * MAPD.sx;
+      return { s, ox: -(cxm - MAPD.w / 2) * s, oy: -(cym - MAPD.h / 2) * s };
+    };
+    function drawMap(t) {
+      readMap();
+      if (!MAPD.dots) return;
+      const c = mapCam(t);
+      cx.fillStyle = "#c9cbcf";
+      const r = MAPD.step * c.s * 0.36;
+      for (const [x, y] of MAPD.dots) {
+        const X = 960 + (x - MAPD.w / 2) * c.s + c.ox, Y = 540 + (y - MAPD.h / 2) * c.s + c.oy - upAt(t);
+        if (X < -10 || X > 1930 || Y < -10 || Y > 1090) continue;
+        cx.fillRect(X - r, Y - r, r * 2, r * 2);
+      }
+      PINS.forEach((p, i) => {
+        const [x, y] = proj(p.lon, p.lat);
+        const X = 960 + (x - MAPD.w / 2) * c.s + c.ox, Y = 540 + (y - MAPD.h / 2) * c.s + c.oy - upAt(t);
+        // a quiet arrival: it fades up and settles 10 px, the count running up underneath
+        const k = easeOut((t - p.t) / 0.35), n = Math.round(p.n * (1 - Math.pow(1 - clamp01((t - p.t) / 0.55), 3)));
+        const lift = 10 * (1 - k);
+        pinEls[i].style.transform = p.left ? `translate(${X + 33}px, ${Y - 33 + lift}px) translateX(-100%)` : `translate(${X - 33}px, ${Y - 33 + lift}px)`;
+        pinEls[i].style.opacity = t < MAP_END ? k : 0;
+        pinEls[i].querySelector("b").textContent = n.toLocaleString("en-US");
+      });
+    }
+
+    // ---------------------------------------------------------------- B. the big numbers and the cards
+    // the number is drawn as a halftone: the text is rasterised once per frame off screen and read
+    // back as a grid of dots sized by coverage; while it counts, the changing digits smear sideways
+    // each count runs up from 70% of its value, odometer style: every digit rolls up into the next, the
+    // fast ones streaking vertically (motion blur on the halftone dots), then settles
+    const NUMS = [
+      { at: 1.45, to: 8.2, unit: "m", dec: 1, label: "8.2 million\ncompanies", photo: 14 },
+      { at: 3.6, to: 14.6, unit: "m", dec: 1, label: "14.6 million\ncontacts", photo: 13 },
+      { at: 6.05, to: 600, unit: "+", dec: 0, label: "600+\ndata fields", photo: 10 },
+    ];
+    const RUN = 1.0, ROW = 300;
+    const off = document.createElement("canvas"); off.width = 1100; off.height = ROW;
+    const ox = off.getContext("2d", { willReadFrequently: true });
+    const curAt = (t) => { let c = NUMS[0]; for (const n of NUMS) if (t >= n.at) c = n; return c; };
+    // the count as an integer of the smallest unit (tenths for "8.2"), smooth in time
+    const countAt = (c, t) => { const k = 1 - Math.pow(1 - clamp01((t - c.at) / RUN), 3); return lerp(0.7, 1, k) * c.to * Math.pow(10, c.dec); };
+    // odometer: for each place, the digit showing and how far it has rolled towards the next
+    function places(N, n) {
+      const out = [];
+      let carry = N - Math.floor(N); // the lowest place rolls continuously
+      for (let k = 0; k < n; k++) {
+        const pk = Math.floor(N / Math.pow(10, k)), d = pk % 10;
+        const f = k === 0 ? carry : (Math.floor(N / Math.pow(10, k - 1)) % 10 === 9 ? out[k - 1].f : 0);
+        out.push({ d, f });
+      }
+      return out.reverse(); // most significant first
+    }
+    function drawNumber(t) {
+      const c = curAt(t), N = countAt(c, t), Np = countAt(c, t - 1 / 30);
+      const n = String(Math.round(c.to * Math.pow(10, c.dec))).length;
+      const P = places(N, n), Pp = places(Np, n);
+      cx.globalAlpha = 1 - outAt(t);
+      ox.clearRect(0, 0, 1100, ROW);
+      ox.fillStyle = "#000"; ox.font = "600 280px 'Plus Jakarta Sans'"; ox.textBaseline = "middle"; ox.textAlign = "center";
+      // lay out: digit cells of one width, the point after the last but dec, then the unit
+      const cw = ox.measureText("0").width * 1.02, pw = ox.measureText(".").width, uw = ox.measureText(c.unit).width;
+      const total = n * cw + (c.dec ? pw : 0) + uw;
+      let x = 550 - total / 2;
+      const cells = [];
+      P.forEach((p, k) => {
+        if (c.dec && k === n - c.dec) { ox.fillText(".", x + pw / 2, ROW / 2 + 10); x += pw; }
+        ox.save(); ox.beginPath(); ox.rect(x, 0, cw, ROW); ox.clip();
+        ox.fillText(String(p.d), x + cw / 2, ROW / 2 + 10 - p.f * ROW);
+        if (p.f > 0) ox.fillText(String((p.d + 1) % 10), x + cw / 2, ROW / 2 + 10 + (1 - p.f) * ROW);
+        ox.restore();
+        // how fast this cell is rolling, in px per frame
+        const sp = Math.abs((P[k].d + P[k].f) - (Pp[k].d + Pp[k].f)), v = Math.min(sp > 5 ? 10 - sp : sp, 1) * ROW;
+        cells.push([x, x + cw, Math.min(v, 110)]);
+        x += cw;
+      });
+      ox.fillText(c.unit, x + uw / 2, ROW / 2 + 10);
+      const img = ox.getImageData(0, 0, 1100, ROW).data, G = 11;
+      cx.fillStyle = "#16181b";
+      for (let y = G / 2; y < ROW; y += G) for (let xx = G / 2; xx < 1100; xx += G) {
+        const a = img[(Math.floor(y) * 1100 + Math.floor(xx)) * 4 + 3] / 255;
+        if (a < 0.08) continue;
+        const r = (G / 2) * Math.sqrt(a) * 0.98, X = 410 + xx - 1100 * outAt(t), Y = 10 + y + NUMS_IN(t);
+        const cell = cells.find((q) => xx >= q[0] && xx < q[1]), streak = cell ? cell[2] * 0.4 : 0;
+        if (streak > 3) { cx.globalAlpha = (1 - outAt(t)) * 0.6; cx.fillRect(X - r * 0.7, Y - r - streak / 2, r * 1.4, 2 * r + streak); cx.globalAlpha = 1 - outAt(t); continue; }
+        cx.beginPath(); cx.arc(X, Y, r, 0, Math.PI * 2); cx.fill();
+      }
+      cx.globalAlpha = 1;
+    }
+    // cards: one, then two, then three side by side, each new one rising in from below
+    const cardBox = document.getElementById("d-cards");
+    const cards = NUMS.map((n) => {
+      const el = document.createElement("div");
+      el.className = "abs d-card";
+      el.style.backgroundImage = `url(assets/photos/city-${String(n.photo).padStart(2, "0")}.jpg)`;
+      el.innerHTML = `<b>${n.label}</b>`;
+      cardBox.append(el);
+      return el;
+    });
+    // layouts: [x, y, scale] of each card, for one, two and three cards
+    // one card 940 wide; two at 0.8 (752 wide, 36 apart); three at 0.56 (526 wide, 30 apart)
+    const LAY = [[[490, 360, 1]], [[190, 380, 0.8], [978, 380, 0.8]], [[146, 400, 0.56], [702, 400, 0.56], [1258, 400, 0.56]]];
+    function layoutAt(t) {
+      const a = easeIO((t - 3.5) / 0.5), b = easeIO((t - 5.95) / 0.5); // the cards make room first
+      return cards.map((_, i) => {
+        if (i === 0) { const p = LAY[0][0], q = LAY[1][0], r = LAY[2][0]; return [0, 1, 2].map((k) => lerp(lerp(p[k], q[k], a), r[k], b)); }
+        if (i === 1) { const q = LAY[1][1], r = LAY[2][1]; return [0, 1, 2].map((k) => lerp(q[k], r[k], b)); }
+        return LAY[2][2];
+      });
+    }
+    function cardsAt(t) {
+      const L = layoutAt(t), show = t >= NUM[0] && t < NUM[1];
+      cards.forEach((el, i) => {
+        const rise = easeOut((t - NUMS[i].at - 0.15) / 0.6), [x, y, s] = L[i]; // then the new one rises into the space
+        const lift = i === 0 ? NUMS_IN(t) : 760 * (1 - rise); // the first comes up with the move; the others rise in to their place
+        el.style.transform = `translate(${x - 1100 * outAt(t)}px, ${y + lift}px) scale(${s})`;
+        el.style.opacity = show && (i === 0 || t >= NUMS[i].at + 0.15) ? 1 - outAt(t) : 0;
+      });
+    }
+
+    // ---------------------------------------------------------------- C. filters thin the field
+    // a field of large grey dots pans left; filter chips arrive one by one in the middle row and with
+    // each one more of the dots fade away
+    const FD = [];
+    // four rows above the chips and four below, filling the frame
+    for (const y of [60, 150, 240, 330, 750, 840, 930, 1020]) for (let c = 0; c < 32; c++) {
+      FD.push({ x: c * 84, y, g: 175 + Math.floor(rnd() * 70), k: rnd() });
+    }
+    const CHIPS = [["Industry: ", "Fintech"], ["Location: ", "Singapore"], ["Company size: ", "50 - 500"], ["Buying intent: ", "High", true], ["Funding: ", "Any", true]];
+    const chipRow = document.getElementById("d-chips");
+    const chipEls = CHIPS.map(([k, v, plain], i) => {
+      const el = document.createElement("div");
+      el.className = "d-chip";
+      el.innerHTML = `${k}${plain ? `<span style="color:#9a9da3">${v}</span>` : `<em>${v}</em>`}<u>×</u>`;
+      chipRow.append(el);
+      tl.fromTo(el, { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.25, ease: "power2.out" }, FIL[0] + 0.05 + i * 0.22);
+      return el;
+    });
+    const filPan = (t) => -420 * (t - FIL[0]); // px, steady
+    function drawFilter(t) {
+      const u = clamp01((t - FIL[0]) / (FIL[1] - FIL[0] + 0.5)), pan = filPan(t);
+      for (const d of FD) {
+        const gone = clamp01((u * 1.25 - d.k * 0.9) / 0.12); // a little more of the field leaves with each chip
+        const a = 1 - gone;
+        if (a <= 0.01) continue;
+        // the field comes in from the right as the numbers leave to the left (no wrap until it is in)
+        let X = d.x + pan - 384; if (t > FIL[0] + 0.2 && X < -100) X += 2688;
+        X += 1700 * (1 - easeOut((t - FIL[0] + 0.45) / 0.6));
+        cx.globalAlpha = a; cx.fillStyle = `rgb(${d.g},${d.g},${d.g + 3})`;
+        cx.beginPath(); cx.arc(X, d.y, 36 * (0.85 + 0.15 * a), 0, Math.PI * 2); cx.fill();
+      }
+      cx.globalAlpha = 1;
+      chipRow.style.transform = `translateX(${260 + pan * 1.0}px)`;
+      chipRow.style.opacity = t >= FIL[0] && t < FIL[1] + 0.2 ? 1 - clamp01((t - FIL[1]) / 0.2) : 0;
+    }
+
+    // ---------------------------------------------------------------- D. the ones that matter
+    // the last dots drift off; one black dot is left in the middle, then three, then the line writes in
+    const words = (el, html) => { el.innerHTML = html; return [...el.querySelectorAll("span")]; };
+    const ones = document.getElementById("d-ones");
+    const oneWords = words(ones, '<span style="opacity:1" id="d-dots"></span>' + ones.dataset.text.split(" ").map((w) => `<span>${w}</span>`).join(" "));
+    function drawOnes(t) {
+      const lt = t - ONES[0];
+      // stragglers from the filter field fade out over the first 0.6 s
+      if (lt < 0.7) {
+        for (const d of FD) {
+          if (d.k < 0.93) continue;
+          const X = ((d.x + filPan(FIL[1])) % 2688 + 2688) % 2688 - 384;
+          cx.globalAlpha = 1 - clamp01(lt / 0.6); cx.fillStyle = `rgb(${d.g},${d.g},${d.g + 3})`;
+          cx.beginPath(); cx.arc(X, d.y, 36, 0, Math.PI * 2); cx.fill();
+        }
+        cx.globalAlpha = 1;
+      }
+    }
+    const dotsEl = document.getElementById("d-dots");
+    dotsEl.style.display = "inline-block"; dotsEl.style.marginRight = "20px";
+    dotsEl.innerHTML = '<i style="display:inline-block;width:42px;height:42px;border-radius:50%;background:#1f2124;margin:0 4px;vertical-align:-3px"></i>'.repeat(3);
+    const dotIs = [...dotsEl.querySelectorAll("i")];
+    tl.set(ones, { opacity: 0 }, 0);
+    tl.set(ones, { opacity: 1 }, ONES[0]);
+    dotIs.forEach((d, i) => tl.fromTo(d, { scale: 0 }, { scale: 1, duration: 0.25, ease: "back.out(2)" }, ONES[0] + 0.05 + i * 0.12));
+    oneWords.slice(1).forEach((w, i) => tl.fromTo(w, { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.3, ease: "power2.out" }, ONES[0] + 0.55 + i * 0.16));
+    tl.set(ones, { opacity: 0 }, ONES[1]);
+
+    // ---------------------------------------------------------------- E. from billions of data points
+    // the background is the top of the column field of the next shot, seen from straight above: soft
+    // flat grey discs packed in a square grid, each twinkling a little. As the shot ends the camera
+    // swings down to a low angle and the discs show themselves as the tops of columns (drawGrid, below).
+    const FALL = [BIL[1] - 0.45, BIL[1] + 0.5];
+    const bil = document.getElementById("d-billions");
+    const bilWords = words(bil, "<span>From</span> <span><b>billions</b></span> <span>of</span>\n<span>data</span> <span>points</span>");
+    // box: from wide to the line's size, then easing down a little
+    tl.set("#d-box", { opacity: 1 }, BIL[0]);
+    tl.fromTo("#d-box", { scaleX: 1400 / 600, scaleY: 3.4 }, { scaleX: 1, scaleY: 1, duration: 0.45, ease: "power3.out", immediateRender: false }, BIL[0]);
+    tl.fromTo("#d-box", { y: 0 }, { y: 25, duration: 1.4, ease: "sine.inOut", immediateRender: false }, BIL[0] + 0.5);
+    tl.to("#d-box", { opacity: 0, duration: 0.25, ease: "power1.in" }, FALL[0] - 0.1);
+    tl.set(bil, { opacity: 0 }, 0);
+    tl.set(bil, { opacity: 1 }, BIL[0]);
+    tl.fromTo(bil, { y: 0 }, { y: 25, duration: 1.4, ease: "sine.inOut", immediateRender: false }, BIL[0] + 0.5);
+    bilWords.forEach((w, i) => tl.fromTo(w, { opacity: 0 }, { opacity: 1, duration: 0.25, ease: "power1.out" }, BIL[0] + 0.15 + i * 0.16));
+    tl.to(bil, { opacity: 0, duration: 0.25, ease: "power1.in" }, FALL[0] - 0.1);
+
+    // ---------------------------------------------------------------- F. the field in depth, and signals
+    // the dots stand up as short columns on a plane seen at a low angle; green markers glow on the
+    // ground, lines run between them, and three pins rise with the signal each one stands for
+    // ---- the capsule grid (Three.js): white round-topped columns packed on a square grid one unit
+    // apart, drawn as instanced meshes (one per height), under soft white ambient light with a low sun
+    // casting pale grey shadows, fading into white haze. Seen from straight above the capsule tops read
+    // as soft balls; the camera then swings down to a low oblique view. A few capsules light up green,
+    // one by one: the agents picking out the companies to act on.
+    const T3 = window.THREE;
+    const glc = document.getElementById("d-gl");
+    const renderer = new T3.WebGLRenderer({ canvas: glc, antialias: true, preserveDrawingBuffer: true });
+    renderer.setPixelRatio(1); renderer.setSize(1920, 1080, false);
+    renderer.shadowMap.enabled = true; renderer.shadowMap.type = T3.PCFSoftShadowMap;
+    const scene = new T3.Scene();
+    scene.background = new T3.Color(0xffffff);
+    scene.fog = new T3.Fog(0xffffff, 16, 44);
+    const cam3 = new T3.PerspectiveCamera(50, 1920 / 1080, 0.1, 200);
+    cam3.rotation.order = "YXZ";
+    scene.add(new T3.HemisphereLight(0xffffff, 0xe8eaee, 2.75));
+    const sun = new T3.DirectionalLight(0xffffff, 0.6);
+    sun.position.set(-7, 40, -6); sun.target.position.set(0, 0, -16); // high: short soft shadows
+    sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); sun.shadow.radius = 6; sun.shadow.bias = -0.0002; sun.shadow.normalBias = 0.05;
+    Object.assign(sun.shadow.camera, { left: -34, right: 34, top: 34, bottom: -34, near: 1, far: 90 });
+    scene.add(sun, sun.target);
+    const ground = new T3.Mesh(new T3.PlaneGeometry(300, 300), new T3.ShadowMaterial({ opacity: 0.07 }));
+    ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
+    // one material for all: matte, tinted per capsule; a green capsule also glows (its emissive follows
+    // how green its tint is)
+    const capMat = new T3.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9, metalness: 0 });
+    capMat.onBeforeCompile = (sh) => {
+      sh.fragmentShader = sh.fragmentShader.replace("#include <emissivemap_fragment>",
+        "#include <emissivemap_fragment>\n  totalEmissiveRadiance += vec3(0.12, 0.95, 0.45) * clamp((vColor.g - vColor.r) * 2.2, 0.0, 1.0) * 0.85;");
+    };
+    // full round balls resting on the ground, 1.5 apart, almost all white: from above a grid of balls,
+    // from low down the same balls lying across the plane
+    const RAD = 0.6, SP = 1.27; // balls nearly touching
+    const COLS = [];
+    for (let r = 0; r < 36; r++) for (let c = 0; c < 61; c++) COLS.push({ gx: (c - 30) * SP, gz: r * SP, g: rnd() < 0.06 ? 0.86 + rnd() * 0.04 : 0.93 + rnd() * 0.06, ph: rnd() * 6.28, w: 6 + rnd() * 7, amp: rnd() < 0.4 ? 0.045 : 0.015, green: 0, gt: 0 });
+    const ballMesh = new T3.InstancedMesh(new T3.SphereGeometry(RAD, 40, 28), capMat, COLS.length);
+    ballMesh.castShadow = true; ballMesh.receiveShadow = true;
+    {
+      const o = new T3.Object3D();
+      COLS.forEach((c, k) => { c.mesh = ballMesh; c.k = k; c.top = RAD * 2; o.position.set(c.gx, RAD, -c.gz); o.updateMatrix(); ballMesh.setMatrixAt(k, o.matrix); ballMesh.setColorAt(k, new T3.Color(1, 1, 1)); });
+      scene.add(ballMesh);
+    }
+    const meshes = [ballMesh];
+    // camera: from straight above (pitch 90°, 40 up with a long lens, over gz 14) it swings down to the field view
+    // (pitch 0, 9 up, at gz -6, horizon at y 360), then pushes in slowly and drifts
+    const F = 900;
+    function camAt(t) {
+      const k = easeIO((t - FALL[0]) / (FALL[1] - FALL[0])), lt = Math.max(0, t - FIELD[0]);
+      const top = { x: 0, y: 40, z: 14 + 0.05 * (t - BIL[0]), p: Math.PI / 2, cy: 540, F: 3000 }; // high and long-lensed: the tops read as an even grid of balls
+      // the camera keeps pushing in, lower and closer, until the three pins fill the frame in close-up
+      const push = easeIO(lt / (D - FIELD[0]));
+      const fld = { x: lerp(0.6, 1.9, push), y: lerp(6.2, 3.6, push), z: lerp(-7, 3.5, push), p: lerp(0.12, 0.05, push), cy: 380, F: 1000 }; // a longer lens keeps the near balls round
+      return { k, x: lerp(top.x, fld.x, k), y: lerp(top.y, fld.y, k), z: lerp(top.z, fld.z, k), p: lerp(top.p, fld.p, k), cy: lerp(top.cy, fld.cy, k), F: lerp(top.F, fld.F, k) };
+    }
+    function setCam(t) {
+      const c = camAt(t);
+      cam3.fov = (2 * Math.atan(540 / c.F) * 180) / Math.PI;
+      cam3.position.set(c.x, c.y, -c.z);
+      cam3.rotation.set(-c.p, 0.16 * c.k, 0); // a slight turn, so the rows don't line up dead ahead
+      scene.fog.near = lerp(80, 16, c.k); scene.fog.far = lerp(140, 44, c.k); // no haze from above
+      cam3.setViewOffset(1920, 1080, 0, 540 - c.cy, 1920, 1080);
+      cam3.updateProjectionMatrix(); cam3.updateMatrixWorld();
+      return c;
+    }
+    // screen position (and px per unit there) of a point on the grid
+    const V = new T3.Vector3();
+    const toScreen = (gx, gy, gz, t) => {
+      const c = setCam(t);
+      V.set(gx, gy, -gz).applyMatrix4(cam3.matrixWorldInverse);
+      if (V.z > -0.3) return null;
+      const d = -V.z;
+      V.set(gx, gy, -gz).project(cam3);
+      return [(V.x + 1) * 960, (1 - V.y) * 540, c.F / d, d];
+    };
+    // the field seems to breathe: quick waves of light and shade roll across it, neighbouring capsules
+    // brightening and dimming together, which reads as a swell though nothing moves
+    const wave = (x, z, t) => (Math.sin(0.8 * x + 0.45 * z - 4.4 * t) * 0.55 + Math.sin(-0.4 * x + 0.85 * z - 3.3 * t + 1.7) * 0.45);
+    const GCOL = [0.3, 0.92, 0.55];
+    const tint = new T3.Color();
+    function drawGrid(t) {
+      setCam(t);
+      for (const c of COLS) {
+        const v = clamp01(c.g + 0.04 * wave(c.gx / SP, c.gz / SP, t) + c.amp * Math.sin(c.w * t + c.ph));
+        const w = c.green ? easeIO((t - c.gt) / 0.8) : 0;
+        tint.setRGB(lerp(v, GCOL[0], w), lerp(v, GCOL[1], w), lerp(v, GCOL[2], w), T3.SRGBColorSpace);
+        c.mesh.setColorAt(c.k, tint);
+      }
+      meshes.forEach((m) => (m.instanceColor.needsUpdate = true));
+      renderer.render(scene, cam3);
+      lens(t);
+    }
+    // the lens: the render is laid onto the 2D canvas with a shallow depth of field (the far rows and the
+    // nearest ones soft, a band in between sharp) and a soft bloom over everything
+    const tmp = document.createElement("canvas"); tmp.width = 1920; tmp.height = 1080;
+    const tx = tmp.getContext("2d");
+    function soft(px, mask) {
+      tx.globalCompositeOperation = "source-over"; tx.clearRect(0, 0, 1920, 1080);
+      tx.filter = `blur(${px}px)`; tx.drawImage(glc, 0, 0); tx.filter = "none";
+      if (mask) { tx.globalCompositeOperation = "destination-in"; tx.fillStyle = mask; tx.fillRect(0, 0, 1920, 1080); tx.globalCompositeOperation = "source-over"; }
+      return tmp;
+    }
+    function lens(t) {
+      const c = camAt(t), k = c.k, hz = c.cy;
+      cx.drawImage(glc, 0, 0);
+      // seen from above: everything slightly soft; from the side: far and near soft, the middle sharp
+      if (k < 0.99) { cx.globalAlpha = 1 - k; cx.drawImage(soft(2.2), 0, 0); cx.globalAlpha = 1; }
+      if (k > 0.01) {
+        const far = cx.createLinearGradient(0, hz - 40, 0, hz + 330);
+        far.addColorStop(0, "rgba(0,0,0,1)"); far.addColorStop(1, "rgba(0,0,0,0)");
+        cx.globalAlpha = k; cx.drawImage(soft(5, far), 0, 0);
+        const near = cx.createLinearGradient(0, 760, 0, 1080);
+        near.addColorStop(0, "rgba(0,0,0,0)"); near.addColorStop(1, "rgba(0,0,0,1)");
+        cx.drawImage(soft(7, near), 0, 0); cx.globalAlpha = 1;
+      }
+      // bloom: a wide soft copy screened over the top lifts the lights and softens the contrast
+      cx.globalCompositeOperation = "screen"; cx.globalAlpha = 0.5;
+      cx.drawImage(soft(26), 0, 0);
+      cx.globalCompositeOperation = "source-over"; cx.globalAlpha = 1;
+    }
+    // ---- three targets. In turn: a flat green dot appears on the ground; a green line comes up from
+    // below the frame, turning along the gaps between the rows, and runs into it; a stem rises from
+    // the dot to a glowing green head, and its signal comes up beside it.
+    const GAP = (v) => (Math.round(v / SP - 0.5) + 0.5) * SP; // the middle of a gap between columns
+    const TARGETS = [
+      { gx: GAP(-5.5), gz: GAP(11), x0: GAP(-10), turn: GAP(6), dot: 0.5, line: 1.2, pin: 2.4, up: 3.0, tag: "Hired new CTO" },
+      { gx: GAP(0), gz: GAP(13.5), x0: GAP(-3), turn: GAP(8), dot: 0.75, line: 1.45, pin: 2.65, up: 3.6, tag: "Opening new office" },
+      { gx: GAP(4.5), gz: GAP(12), x0: GAP(4), turn: GAP(5), dot: 1.0, line: 1.7, pin: 2.9, up: 3.3, tag: "New budget for software" },
+    ];
+    // each line: from the first row (below the frame) forward, across, and forward again to its dot
+    TARGETS.forEach((g) => {
+      const pts = [[g.x0, 0], [g.x0, g.turn], [g.gx, g.turn], [g.gx, g.gz]], len = [0];
+      for (let k = 1; k < pts.length; k++) len.push(len[k - 1] + Math.hypot(pts[k][0] - pts[k - 1][0], pts[k][1] - pts[k - 1][1]));
+      g.path = pts; g.len = len;
+    });
+    const tagBox = document.getElementById("d-tags");
+    const tagEls = TARGETS.map((p) => { const el = document.createElement("div"); el.className = "abs d-tag"; el.textContent = p.tag; tagBox.append(el); return el; });
+    const GREENC = "rgba(70, 196, 138, 0.9)"; // a soft mint, not a saturated green
+    function drawField(t) {
+      const lt = t - FIELD[0];
+      TARGETS.forEach((g, i) => {
+        // the line, drawn along its path up to how far it has run
+        const k = easeIO((lt - g.line) / 0.8);
+        if (k > 0) {
+          // a fine line on the ground, 0.05 wide: a little heavier near the camera, finer with distance
+          const L = g.len[g.len.length - 1] * k;
+          cx.strokeStyle = GREENC; cx.lineCap = "round"; cx.lineJoin = "round";
+          let prev = null;
+          for (let s = 0; s < g.path.length - 1; s++) {
+            const [ax, az] = g.path[s], [bx, bz] = g.path[s + 1], l0 = g.len[s], l1 = g.len[s + 1];
+            if (L <= l0) break;
+            const steps = 30, end = Math.min(1, (L - l0) / (l1 - l0));
+            for (let q = 0; q <= steps * end; q++) {
+              const u = Math.min(end, q / steps), p = toScreen(lerp(ax, bx, u), 0.02, lerp(az, bz, u), t);
+              if (!p) { prev = null; continue; }
+              if (prev) { cx.lineWidth = Math.min(5, Math.max(2, 0.05 * (p[2] + prev[2]) / 2)); cx.beginPath(); cx.moveTo(prev[0], prev[1]); cx.lineTo(p[0], p[1]); cx.stroke(); }
+              prev = p;
+            }
+          }
+        }
+        // the dot on the ground: flat, no glow
+        const dk = easeOut((lt - g.dot) / 0.35);
+        if (dk > 0) {
+          const p = toScreen(g.gx, 0.02, g.gz, t);
+          if (p) { const r = 0.3 * p[2] * dk; cx.fillStyle = GREENC; cx.beginPath(); cx.ellipse(p[0], p[1], r, r * 0.42, 0, 0, Math.PI * 2); cx.fill(); }
+        }
+        // the stem and its glowing head
+        const pk = easeOut((lt - g.pin) / 0.7);
+        if (pk <= 0) { tagEls[i].style.opacity = 0; return; }
+        const base = toScreen(g.gx, 0.02, g.gz, t), head = toScreen(g.gx, g.up * pk, g.gz, t);
+        if (!base || !head) return;
+        cx.strokeStyle = "#2a2c30"; cx.lineWidth = Math.min(3, Math.max(1.5, 0.03 * head[2])); cx.beginPath(); cx.moveTo(base[0], base[1]); cx.lineTo(head[0], head[1]); cx.stroke();
+        const r = 0.28 * head[2], glow = clamp01((lt - g.pin - 0.4) / 0.4);
+        const gr = cx.createRadialGradient(head[0], head[1], 0, head[0], head[1], r * 3.2);
+        gr.addColorStop(0, "rgba(150, 240, 196, 0.9)"); gr.addColorStop(0.3, `rgba(90, 214, 158, ${0.45 * glow + 0.15})`); gr.addColorStop(1, "rgba(90, 214, 158, 0)");
+        cx.fillStyle = gr; cx.beginPath(); cx.arc(head[0], head[1], r * 3.2, 0, Math.PI * 2); cx.fill();
+        cx.fillStyle = "#8fe3bb"; cx.beginPath(); cx.arc(head[0], head[1], r * 0.85, 0, Math.PI * 2); cx.fill();
+        const tk = clamp01((lt - g.pin - 0.55) / 0.3);
+        tagEls[i].style.opacity = tk;
+        // centred above its head, clear of the other pins and their signals
+        tagEls[i].style.transform = `translate(${head[0]}px, ${head[1] - r * 2.6 - 92 + 10 * (1 - tk)}px) translateX(-50%)`;
+      });
+    }
+    const ag = document.getElementById("d-agents");
+    const agWords = words(ag, "<span>Tidal’s</span> <span>AI</span> <span>agents</span> <span>find</span> <span>you</span>\n<span>which</span> <span>company</span> <span>to</span> <span>act</span> <span>on.</span>");
+    tl.set(ag, { opacity: 0 }, 0);
+    tl.set(ag, { opacity: 1 }, FIELD[0]);
+    agWords.forEach((w, i) => tl.fromTo(w, { opacity: 0 }, { opacity: 1, duration: 0.3, ease: "power1.out" }, FIELD[0] + 0.1 + i * 0.3));
+    // once the three pins stand, the line moves up and out of the frame, leaving the close-up
+    tl.to(ag, { y: -320, opacity: 0, duration: 0.7, ease: "power2.in", immediateRender: false }, FIELD[0] + 4.0);
+
+    // ---------------------------------------------------------------- one clock draws the canvas
+    function frame(t) {
+      cx.clearRect(0, 0, 1920, 1080);
+      if (t < MAP_END) drawMap(t);
+      else pinEls.forEach((e) => (e.style.opacity = 0));
+      if (t >= NUM[0] && t < NUM[1]) drawNumber(t);
+      cardsAt(t);
+      if (t >= FIL[0] - 0.45 && t < FIL[1]) drawFilter(t);
+      else chipRow.style.opacity = 0;
+      if (t >= ONES[0] && t < ONES[1]) drawOnes(t);
+      if (t >= BIL[0]) drawGrid(t);
+      if (t >= FIELD[0]) drawField(t);
+      else tagEls.forEach((e) => (e.style.opacity = 0));
+    }
+    const clock = { t: 0 };
+    tl.fromTo(clock, { t: 0 }, { t: D, duration: D, ease: "none", onUpdate: () => frame(clock.t) }, 0);
+    frame(0);
+
+    window.__timelines = window.__timelines || {};
+    window.__timelines["data"] = tl;
+  </script>
+</template>

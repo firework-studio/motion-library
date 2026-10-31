@@ -1,0 +1,92 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Inter";
+      font-weight: 700;
+      src: url("assets/fonts/Inter-700.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "Inter";
+      font-weight: 500;
+      src: url("assets/fonts/Inter-500.woff2") format("woff2");
+    }
+    /* the studio's sign-off, on the black the film fades to: the glass mark opens out of a warm glow,
+       then the name and line come up beside it */
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: #08080b;
+      font-family: "Inter", sans-serif;
+    }
+    .abs {
+      position: absolute;
+    }
+    #s-glow {
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+      background: radial-gradient(520px 420px at 530px 540px, rgba(226, 84, 60, 0.42), rgba(160, 50, 80, 0.16) 55%, rgba(0, 0, 0, 0) 100%);
+      opacity: 0;
+    }
+    #s-mark {
+      left: 330px;
+      top: 340px;
+      width: 400px;
+      height: 400px;
+    }
+    #s-text {
+      left: 790px;
+      top: 418px;
+    }
+    #s-rule {
+      width: 64px;
+      height: 6px;
+      border-radius: 3px;
+      background: linear-gradient(90deg, #ff4d5e, #ffb340);
+      transform-origin: 0 50%;
+    }
+    #s-name {
+      margin-top: 30px;
+      font-size: 108px;
+      font-weight: 700;
+      letter-spacing: -0.035em;
+      line-height: 1;
+      color: #f4f2ee;
+      white-space: pre;
+    }
+    #s-line {
+      margin-top: 26px;
+      font-size: 40px;
+      font-weight: 500;
+      color: #9a9aa3;
+      white-space: pre;
+    }
+  </style>
+  <div data-hf-id="hf-s5rt" id="root" data-composition-id="studio" data-width="1920" data-height="1080">
+    <div data-hf-id="hf-s5gl" id="s-glow" class="abs"></div>
+    <img data-hf-id="hf-s5mk" id="s-mark" class="abs" src="assets/images/studio-mark.png" alt="" />
+    <div data-hf-id="hf-s5tx" id="s-text" class="abs">
+      <div data-hf-id="hf-s5ru" id="s-rule"></div>
+      <div data-hf-id="hf-s5nm" id="s-name">Firework Studio</div>
+      <div data-hf-id="hf-s5ln" id="s-line">Motion design for SaaS &amp; AI products</div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    // the glow warms up, and the mark opens out of it: from small, soft and turned, to sharp and still
+    tl.fromTo("#s-glow", { opacity: 0, scale: 0.7, transformOrigin: "530px 540px" }, { opacity: 1, scale: 1, duration: 1.1, ease: "power2.out" }, 0.1);
+    tl.fromTo("#s-mark", { opacity: 0, scale: 0.72, rotation: -28, filter: "blur(18px)" }, { opacity: 1, scale: 1, rotation: 0, filter: "blur(0px)", duration: 1.0, ease: "power3.out" }, 0.15);
+    // then the rule draws, the name rises in and the line follows
+    tl.fromTo("#s-rule", { scaleX: 0 }, { scaleX: 1, duration: 0.4, ease: "power2.out" }, 0.75);
+    tl.fromTo("#s-name", { opacity: 0, y: 36 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 0.85);
+    tl.fromTo("#s-line", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.55, ease: "power3.out" }, 1.1);
+    // a slow settle, then everything fades to black
+    tl.fromTo(["#s-mark", "#s-glow"], { x: 0 }, { x: -12, duration: 2.6, ease: "sine.inOut" }, 0.9);
+    tl.to(["#s-glow", "#s-mark", "#s-text"], { opacity: 0, duration: 0.6, ease: "power1.in" }, 3.0);
+    tl.set({}, {}, 3.6);
+    window.__timelines = window.__timelines || {};
+    window.__timelines["studio"] = tl;
+  </script>
+</template>

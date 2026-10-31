@@ -1,0 +1,298 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Plus Jakarta Sans";
+      font-weight: 500;
+      src: url("assets/fonts/PlusJakartaSans-500.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "Plus Jakarta Sans";
+      font-weight: 600;
+      src: url("assets/fonts/PlusJakartaSans-600.woff2") format("woff2");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: #ffffff;
+      font-family: "Plus Jakarta Sans", sans-serif;
+      color: #1f2124;
+    }
+    .abs {
+      position: absolute;
+    }
+    /* ---- the busywork cloud, under a camera that starts in close and pulls back ---- */
+    #c-cam {
+      inset: 0;
+      transform-origin: 700px 540px;
+    }
+    #c-cloud {
+      inset: 0;
+    }
+    .c-verb {
+      position: absolute;
+      left: 0;
+      top: 0;
+      font-size: 54px;
+      font-weight: 500;
+      color: #a7aab0;
+      white-space: pre;
+    }
+    #c-less {
+      left: 0;
+      top: 474px;
+      width: 1920px;
+      text-align: center;
+      font-size: 112px;
+      font-weight: 500;
+      letter-spacing: -0.015em;
+      white-space: pre;
+      z-index: 2;
+      text-shadow: 0 0 24px #fff, 0 0 48px #fff, 0 0 72px #fff;
+    }
+    #c-less b {
+      font-weight: 600;
+    }
+    /* ---- what matters ---- */
+    #c-mark {
+      left: 895px;
+      top: 330px;
+      width: 130px;
+      height: 130px;
+      opacity: 0;
+    }
+    #c-matters {
+      left: 0;
+      top: 540px;
+      width: 1920px;
+      text-align: center;
+      font-size: 80px;
+      font-weight: 500;
+      color: #8f9298;
+      white-space: pre;
+    }
+    #c-matters b {
+      font-weight: 600;
+      color: #1f2124;
+    }
+    /* ---- find, sync, reach ---- */
+    #c-three {
+      left: 680px;
+      top: 270px;
+      transform-origin: 400px 200px;
+    }
+    .c-line {
+      position: absolute;
+      left: 0;
+      font-size: 96px;
+      font-weight: 500;
+      white-space: pre;
+    }
+    .c-line i {
+      font-style: normal;
+      color: #a7aab0;
+    }
+    /* ---- the end card ---- */
+    #c-lock {
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+      opacity: 0;
+    }
+    #c-lock svg {
+      position: absolute;
+      left: 665px;
+      top: 420px;
+      width: 160px;
+      height: 160px;
+    }
+    #c-word {
+      position: absolute;
+      left: 865px;
+      top: 440px;
+      font-size: 104px;
+      font-weight: 600;
+      letter-spacing: 0.26em;
+      white-space: pre;
+    }
+    #c-tag {
+      left: 0;
+      top: 630px;
+      width: 1920px;
+      text-align: center;
+      font-size: 62px;
+      font-weight: 500;
+      white-space: pre;
+    }
+    /* the end card under its own camera: it arrives large and settles, then slowly pushes in */
+    #c-end {
+      inset: 0;
+      transform-origin: 960px 560px;
+    }
+    #c-word span {
+      display: inline-block;
+      opacity: 0;
+    }
+    #c-black {
+      inset: 0;
+      background: #000;
+      opacity: 0;
+      z-index: 10;
+    }
+    /* each word is its own box with its own space after it, so the line keeps its spacing as words arrive */
+    #c-less span,
+    #c-matters span,
+    #c-tag span,
+    .c-line span {
+      display: inline-block;
+      margin-right: 0.26em;
+    }
+    /* no trailing space after the last word, so each line sits truly centred */
+    #c-less span:last-child,
+    #c-matters span:last-child,
+    .c-line span:last-child,
+    #c-tag span:last-child {
+      margin-right: 0;
+    }
+    #c-less span,
+    #c-matters span,
+    .c-line span,
+    #c-tag span {
+      opacity: 0;
+    }
+  </style>
+  <div data-hf-id="hf-c4rt" id="root" data-composition-id="close" data-width="1920" data-height="1080">
+    <div data-hf-id="hf-c4cm" id="c-cam" class="abs">
+      <div data-hf-id="hf-c4cl" id="c-cloud" class="abs" data-layout-allow-overlap></div>
+      <div data-hf-id="hf-c4ls" id="c-less" class="abs" data-layout-allow-overlap></div>
+    </div>
+    <svg data-hf-id="hf-c4mk" id="c-mark" class="abs" viewBox="-23 -23 46 46">
+      <circle data-hf-id="hf-c4m1" r="23" fill="#111214" />
+      <path data-hf-id="hf-c4m2" d="M-17 2 C-11 -6 -5 -6 0 1 C5 8 11 8 17 0" fill="none" stroke="#ffffff" stroke-width="4.2" stroke-linecap="round" />
+    </svg>
+    <div data-hf-id="hf-c4mt" id="c-matters" class="abs"></div>
+    <div data-hf-id="hf-c4th" id="c-three" class="abs"></div>
+    <div data-hf-id="hf-c4en" id="c-end" class="abs">
+      <div data-hf-id="hf-c4lk" id="c-lock" class="abs">
+        <svg data-hf-id="hf-c4l1" viewBox="-23 -23 46 46">
+          <circle data-hf-id="hf-c4l2" r="23" fill="#111214" />
+          <path data-hf-id="hf-c4l3" d="M-17 2 C-11 -6 -5 -6 0 1 C5 8 11 8 17 0" fill="none" stroke="#ffffff" stroke-width="4.2" stroke-linecap="round" />
+        </svg>
+        <div data-hf-id="hf-c4wd" id="c-word"><span>T</span><span>I</span><span>D</span><span>A</span><span>L</span></div>
+      </div>
+      <div data-hf-id="hf-c4tg" id="c-tag" class="abs"></div>
+    </div>
+    <div data-hf-id="hf-c4bk" id="c-black" class="abs"></div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    const D = 16.4;
+    const clamp01 = (v) => Math.min(1, Math.max(0, v));
+    let seed = 23;
+    const rnd = () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
+    const words = (el, html) => { el.innerHTML = html; return [...el.querySelectorAll("span")]; };
+    const wordIn = (w, at) => tl.fromTo(w, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.3, ease: "power2.out", immediateRender: false }, at);
+
+    // ---------------------------------------------------------------- shot times (local seconds)
+    const LESS = [0, 4.3], MATTER = [4.3, 7.0], THREE = [7.2, 10.75], LOCK = [10.72, D]; // the end card arrives as the three finish fading
+
+    // ---------------------------------------------------------------- 1. so you spend less time..
+    // the line writes in a word at a time while the busywork types itself in all round it, a few
+    // words at first and then more and more until the frame is full
+    const less = document.getElementById("c-less");
+    // the camera starts in close on the left of the line, the words huge, and eases back until it settles
+    tl.fromTo("#c-cam", { scale: 2.6 }, { scale: 1, duration: 0.85, ease: "power3.out" }, 0);
+    // the line builds a word at a time, each one rising slowly into place from below
+    words(less, "<span>So</span><span>you</span><span>spend</span><span><b>less</b></span><span><b>time..</b></span>").forEach((w, i) =>
+      tl.fromTo(w, { opacity: 0, y: 46 }, { opacity: 1, y: 0, duration: 0.6, ease: "power2.out", immediateRender: false }, 0.1 + i * 0.32)); // complete by 2 s (54 s)
+    tl.set(less, { opacity: 0 }, LESS[1]);
+    // then the whole picture draws away into the middle and fades
+    tl.to("#c-cam", { scale: 0.55, opacity: 0, duration: 0.45, ease: "power2.in" }, LESS[1] - 0.45);
+    const VERBS = ["searching", "checking", "guessing", "scanning", "filtering", "sorting", "comparing", "browsing", "verifying", "digging", "chasing", "listing", "tagging", "tracking", "matching", "updating", "copying", "pasting", "emailing", "calling", "waiting", "reviewing", "mapping", "cleaning", "merging", "exporting", "importing", "googling", "scrolling", "logging", "noting", "asking", "tidying", "researching", "refreshing", "counting"];
+    // a loose grid of slots, filled in a random order that favours the edges first
+    const slots = [];
+    for (let r = 0; r < 12; r++) for (let c = 0; c < 5; c++) {
+      const x = 24 + c * 390 + (rnd() - 0.5) * 40, y = 30 + r * 88 + (rnd() - 0.5) * 10; // a calm grid: words never touch
+      const edge = Math.min(Math.abs(y - 540) / 540, 1);
+      // keep a clear band round the line, so nothing sits behind it
+      if (y > 400 && y < 650) continue; // the line's whole row stays clear
+      // depth: some words sit nearer (larger, a little soft), most at the focus, some further back (smaller, paler, soft)
+      const d = rnd();
+      slots.push({ x, y, order: rnd() * 0.7 + (1 - edge) * 0.5, sc: d < 0.2 ? 1.12 : d < 0.7 ? 1 : 0.82, blur: d < 0.2 ? 1.6 : d < 0.7 ? 0 : 2.4, a: d < 0.2 ? 0.85 : d < 0.7 ? 1 : 0.6 });
+    }
+    slots.sort((a, b) => a.order - b.order);
+    const cloud = document.getElementById("c-cloud");
+    const verbs = slots.map((s, i) => {
+      const el = document.createElement("div");
+      el.className = "c-verb";
+      el.style.transform = `translate(${s.x}px, ${s.y}px) scale(${s.sc})`;
+      el.style.transformOrigin = "0 50%";
+      el.style.filter = s.blur ? `blur(${s.blur}px)` : "none";
+      el.style.opacity = s.a;
+      cloud.append(el);
+      // words come quicker as the cloud builds
+      const at = 0.02 + 3.45 * Math.pow(i / slots.length, 0.75); // the cloud is full by about 4 s (56 s)
+      return { el, word: VERBS[i % VERBS.length], at };
+    });
+    function cloudAt(t) {
+      const show = t >= LESS[0] && t < LESS[1];
+      cloud.style.opacity = show ? 1 : 0;
+      verbs.forEach((v) => {
+        const n = show ? Math.max(0, Math.min(v.word.length, Math.floor((t - v.at) / 0.035))) : 0;
+        const s = v.word.slice(0, n);
+        if (v.el.textContent !== s) v.el.textContent = s;
+      });
+    }
+
+    // ---------------------------------------------------------------- 2. and more time on what matters
+    tl.fromTo("#c-mark", { opacity: 0, scale: 0.85 }, { opacity: 1, scale: 1, duration: 0.4, ease: "power2.out", immediateRender: false }, MATTER[0] + 0.1);
+    const matters = document.getElementById("c-matters");
+    words(matters, "<span>And</span><span>more</span><span>time</span><span>on</span><span><b>what</b></span><span><b>matters.</b></span>").forEach((w, i) => wordIn(w, MATTER[0] + 0.35 + i * 0.3));
+    tl.to(["#c-mark", matters], { opacity: 0, y: -24, duration: 0.3, ease: "power1.in" }, MATTER[1] - 0.1);
+
+    // ---------------------------------------------------------------- 3. find them. sync them. reach them.
+    const three = document.getElementById("c-three");
+    ["Find", "Sync", "Reach"].forEach((v, i) => {
+      const line = document.createElement("div");
+      line.className = "c-line";
+      line.style.top = `${i * 190}px`;
+      three.append(line);
+      const [a, b] = words(line, `<span>${v}</span><span><i>them.</i></span>`);
+      // in step with the voice: Find 59.2, Sync 60.2, Reach 61.15
+      const at = THREE[0] + [0, 1.0, 1.95][i];
+      wordIn(a, at);
+      wordIn(b, at + 0.2);
+      tl.to(b.querySelector("i"), { color: "#1f2124", duration: 0.35 }, at + 0.45);
+    });
+    // the three step back a little before the cut
+    // they draw back into the middle and fade, and the end card arrives out of the same move
+    tl.to(three, { scale: 0.62, opacity: 0, duration: 0.55, ease: "power2.in" }, THREE[1] - 0.5);
+
+    // ---------------------------------------------------------------- 4. the end card
+    // the card comes in large and settles back; the mark fades up, then the letters come in left to right
+    tl.set("#c-lock", { opacity: 1 }, LOCK[0]);
+    tl.fromTo("#c-end", { scale: 1.3 }, { scale: 1, duration: 1.0, ease: "power3.out", immediateRender: false }, LOCK[0]);
+    tl.fromTo("#c-lock svg", { opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, duration: 0.45, ease: "power2.out", immediateRender: false }, LOCK[0]);
+    [...document.querySelectorAll("#c-word span")].forEach((c, i) =>
+      tl.fromTo(c, { opacity: 0, x: -10 }, { opacity: 1, x: 0, duration: 0.3, ease: "power2.out", immediateRender: false }, LOCK[0] + 0.2 + i * 0.08));
+    tl.to("#c-lock", { y: -40, duration: 0.5, ease: "power2.inOut" }, LOCK[0] + 0.8);
+    // then a slow push in to the end, as it fades out
+    tl.to("#c-end", { scale: 1.1, duration: D - LOCK[0] - 1.0, ease: "sine.in" }, LOCK[0] + 1.0);
+    const tag = document.getElementById("c-tag");
+    // the first half rises in a word at a time from below; the second half slides in whole from the
+    // right and lands with a slight overshoot
+    const tagWords = words(tag, "<span>Every</span><span>company</span><span>in</span><span>Asia-Pacific.</span><span>The moment it moves.</span>");
+    tagWords.slice(0, 4).forEach((w, i) =>
+      tl.fromTo(w, { opacity: 0, y: 34 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out", immediateRender: false }, LOCK[0] + 0.95 + i * 0.18));
+    tl.fromTo(tagWords[4], { opacity: 0, x: 90 }, { opacity: 1, x: 0, duration: 0.5, ease: "back.out(2)", immediateRender: false }, LOCK[0] + 3.78); // with the voice
+    tl.fromTo("#c-black", { opacity: 0 }, { opacity: 1, duration: 1.0, ease: "power1.in" }, D - 1.1);
+
+    const clock = { t: 0 };
+    tl.fromTo(clock, { t: 0 }, { t: D, duration: D, ease: "none", onUpdate: () => cloudAt(clock.t) }, 0);
+    cloudAt(0);
+
+    window.__timelines = window.__timelines || {};
+    window.__timelines["close"] = tl;
+  </script>
+</template>

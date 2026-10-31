@@ -1,0 +1,858 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Inter";
+      font-weight: 400;
+      src: url("assets/fonts/Inter-400.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "Inter";
+      font-weight: 500;
+      src: url("assets/fonts/Inter-500.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "Inter";
+      font-weight: 700;
+      src: url("assets/fonts/Inter-700.woff2") format("woff2");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: #ffffff;
+      font-family: "Inter", sans-serif;
+      color: #2a2c30;
+    }
+    .abs {
+      position: absolute;
+    }
+    /* ---- positioning shot ---- */
+    /* sizes measured on the reference at 1920 wide: mark 56 px at y 160, a hairline under it, the
+       headline about 54 px in two centred lines */
+    #g-mark {
+      left: 932px;
+      top: 132px;
+      width: 56px;
+      height: 56px;
+    }
+    #g-rule {
+      left: 750px;
+      top: 214px;
+      width: 420px;
+      height: 1.5px;
+      background: #dcdee2;
+    }
+    #g-head {
+      left: 0;
+      width: 1920px;
+      top: 236px;
+      text-align: center;
+      font-size: 54px;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+      line-height: 1.42;
+      white-space: pre;
+    }
+    #g-head span {
+      opacity: 0;
+    }
+    /* industry cards about 500 px wide, set a little higher or lower in turn; the top of each photo
+       fades to white and the label sits in that pale band */
+    #g-strip {
+      left: 0;
+      top: 0;
+      height: 1080px;
+      width: 6000px;
+    }
+    /* a carousel card: the photo, with a frosted title bar across its top that takes its tint from
+       the photo (a blurred, whitened copy of it); the label sits in the bar */
+    .g-card {
+      position: absolute;
+      left: 0;
+      top: 520px;
+      width: 520px;
+      height: 700px;
+      margin-left: -260px;
+      overflow: hidden;
+      transform-origin: 50% 0;
+    }
+    .g-card > i {
+      position: absolute;
+      inset: 0;
+      background-size: cover;
+      background-position: center;
+    }
+    .g-card > u {
+      position: absolute;
+      left: -30px;
+      right: -30px;
+      top: -30px;
+      height: 112px;
+      background-size: 580px auto;
+      background-position: center top;
+      filter: blur(14px) saturate(0.8) brightness(1.55) contrast(0.7);
+    }
+    .g-card > s {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      height: 82px;
+      background: rgba(255, 255, 255, 0.35);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+    }
+    .g-card b {
+      position: absolute;
+      left: 28px;
+      top: 22px;
+      font-size: 32px;
+      font-weight: 500;
+      color: #55585e;
+    }
+    /* ---- the card that the camera falls into ---- */
+    #g-full {
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      opacity: 0;
+    }
+    /* the photo inside the window, so the push-in never moves the window itself */
+    #g-full i {
+      position: absolute;
+      inset: 0;
+      background: url("assets/photos/bg-aerial.jpg") center / cover;
+    }
+    #g-fog {
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1160px;
+      overflow: hidden;
+      opacity: 0;
+    }
+    #g-fog-in {
+      position: absolute;
+      inset: 0 0 -80px 0; /* taller than the frame, so the small rise never shows an edge */
+      background: url("assets/photos/bg-fog.jpg") center / cover;
+    }
+    /* ---- app icon that stretches into the search bar ---- */
+    /* the search box on the reference is about 1620 × 240 with the query in two lines of ~36 px */
+    /* the search bar: frosted glass with a soft lift (a light top edge, a gentle two-layer shadow);
+       its glass is a layer of its own (.g-bg) so it can grow while the text stays put */
+    #g-search {
+      left: 150px;
+      top: 400px;
+      width: 1620px;
+      height: 240px;
+    }
+    .g-glass-bg {
+      position: absolute;
+      border-radius: 56px;
+      border: 1px solid rgba(255, 255, 255, 0.45);
+      background: linear-gradient(180deg, rgba(251, 249, 246, 0.74), rgba(238, 234, 229, 0.62));
+      backdrop-filter: blur(22px) saturate(1.15);
+      box-shadow: 0 28px 64px rgba(40, 25, 10, 0.2), 0 4px 14px rgba(40, 25, 10, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    }
+    #g-bg,
+    #g-bg-sh {
+      left: 0;
+      top: 0;
+      width: 1620px;
+      height: 240px;
+      opacity: 0;
+    }
+    /* the bar's lift lives on its own layer (clip-path would cut it off the glass) */
+    #g-bg {
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    }
+    #g-bg-sh {
+      border-radius: 56px;
+      box-shadow: 0 28px 64px rgba(40, 25, 10, 0.2), 0 4px 14px rgba(40, 25, 10, 0.08);
+      transform-origin: 0 50%;
+    }
+    /* the app tile: soft white, well rounded, a gentle shadow and a faint light rim */
+    #g-tile {
+      left: 830px;
+      top: 400px;
+      width: 260px;
+      height: 240px;
+      border-radius: 66px;
+      background: linear-gradient(180deg, #ffffff, #f3f1ee);
+      box-shadow: 0 28px 64px rgba(40, 25, 10, 0.2), 0 4px 14px rgba(40, 25, 10, 0.08), inset 0 1px 0 #ffffff;
+      opacity: 0;
+      z-index: 2; /* its mark stays on top of the bar that takes its place */
+    }
+    #g-icon {
+      position: absolute;
+      left: 60px;
+      top: 50px;
+      width: 140px;
+      height: 140px;
+    }
+    /* the white face the tile shows; it rides the bar's outline while the bar takes over */
+    #g-bg-white {
+      left: 0;
+      top: 0;
+      width: 1620px;
+      height: 240px;
+      border-radius: 56px;
+      background: linear-gradient(180deg, #ffffff, #f3f1ee);
+      box-shadow: inset 0 1px 0 #ffffff;
+      opacity: 0;
+    }
+    #g-query {
+      position: absolute;
+      left: 130px;
+      top: 68px;
+      width: 1400px;
+      font-size: 36px;
+      line-height: 1.45;
+      color: #3a3c40;
+      white-space: pre;
+      opacity: 0;
+    }
+    #g-query span {
+      opacity: 0;
+    }
+    #g-glass {
+      position: absolute;
+      left: 54px;
+      top: 50%;
+      width: 44px;
+      height: 44px;
+      margin-top: -22px;
+      opacity: 0;
+    }
+    .g-res {
+      left: 530px;
+      width: 860px;
+      height: 150px;
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      padding: 0 40px;
+      border-radius: 40px;
+      border: 1px solid rgba(255, 255, 255, 0.45);
+      background: linear-gradient(180deg, rgba(251, 249, 246, 0.78), rgba(238, 234, 229, 0.66));
+      backdrop-filter: blur(22px) saturate(1.15);
+      box-shadow: 0 22px 50px rgba(40, 25, 10, 0.16), 0 3px 10px rgba(40, 25, 10, 0.07), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+      opacity: 0;
+    }
+    .g-res i {
+      flex: none;
+      width: 60px;
+      height: 60px;
+      border-radius: 16px;
+    }
+    .g-res b {
+      display: block;
+      font-size: 34px;
+      font-weight: 500;
+    }
+    .g-res small {
+      display: block;
+      margin-top: 6px;
+      font-size: 24px;
+      color: #6b6e75;
+    }
+    /* ---- integration lines and the table ---- */
+    #g-lines {
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+      opacity: 0;
+    }
+    /* app chips that ride the lines: white discs with a soft shadow and the app's own glyph */
+    .g-app {
+      left: 0;
+      top: 0;
+      width: 124px;
+      height: 124px;
+      margin: -62px 0 0 -62px;
+      border-radius: 50%;
+      background: linear-gradient(180deg, #ffffff, #f2f1ef);
+      box-shadow: 0 12px 28px rgba(30, 30, 40, 0.16), 0 2px 6px rgba(30, 30, 40, 0.08), inset 0 1px 0 #fff;
+      display: grid;
+      place-items: center;
+      opacity: 0;
+    }
+    .g-app svg {
+      width: 70px;
+      height: 70px;
+    }
+    #g-lines2 {
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+      opacity: 0;
+      overflow: visible;
+    }
+    /* the contact table the chips feed: a light window, rows arriving in green and settling */
+    #g-ctable {
+      left: 960px;
+      top: 60px;
+      width: 1400px;
+      height: 840px;
+      border-radius: 34px;
+      background: #fff;
+      box-shadow: 0 30px 70px rgba(30, 30, 40, 0.12), 0 0 0 1.5px rgba(30, 30, 40, 0.06);
+      opacity: 0;
+      overflow: hidden;
+    }
+    #g-ctable .g-dots {
+      left: 34px;
+      top: 30px;
+    }
+    #g-ctable .g-dots i {
+      width: 20px;
+      height: 20px;
+    }
+    .g-cr {
+      position: absolute;
+      left: 16px;
+      right: 16px;
+      padding: 0 22px;
+      top: 128px;
+      height: 74px;
+      display: grid;
+      grid-template-columns: 54px 2fr 1.9fr 1.9fr 1.6fr;
+      align-items: center;
+      font-size: 27px;
+      color: #3a3d42;
+    }
+    .g-cr.h {
+      top: 90px;
+      height: 50px;
+      font-size: 21px;
+      color: #9a9da3;
+    }
+    .g-cr i {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: #e3e5e8;
+    }
+    .g-cr {
+      border-radius: 14px;
+    }
+    .g-cr b {
+      font-weight: 500;
+    }
+    .g-cr small {
+      font-size: 24px;
+      color: #9a9da3;
+    }
+    #g-table {
+      left: 880px;
+      top: 140px;
+      width: 1100px;
+      height: 640px;
+      border-radius: 22px;
+      background: #fff;
+      box-shadow: 0 30px 70px rgba(30, 30, 40, 0.14), 0 0 0 1px rgba(30, 30, 40, 0.06);
+      opacity: 0;
+      overflow: hidden;
+      transform-origin: 0 0;
+    }
+    .g-dots {
+      position: absolute;
+      left: 26px;
+      top: 22px;
+      display: flex;
+      gap: 9px;
+    }
+    .g-dots i {
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: #d6d8dc;
+    }
+    #g-table h4 {
+      position: absolute;
+      left: 40px;
+      top: 70px;
+      font-size: 24px;
+      font-weight: 700;
+    }
+    .g-tr {
+      position: absolute;
+      left: 22px;
+      right: 22px;
+      padding: 0 18px;
+      height: 54px;
+      display: grid;
+      grid-template-columns: 2.2fr 1.4fr 1.3fr 1fr 2fr;
+      align-items: center;
+      border-bottom: 1px solid #eef0f2;
+      font-size: 18px;
+      color: #3a3d42;
+    }
+    .g-tr {
+      border-radius: 12px;
+    }
+    .g-tr.h {
+      font-size: 15px;
+      color: #8a8d93;
+    }
+    .g-tr em {
+      font-style: normal;
+      color: #1e9e5a;
+    }
+    /* close-up on one contact */
+    #g-contact {
+      left: -60px;
+      top: 160px;
+      width: 1700px;
+      height: 760px;
+      border-radius: 60px;
+      background: #fff;
+      box-shadow: 0 40px 90px rgba(30, 30, 40, 0.12);
+      opacity: 0;
+    }
+    #g-contact .g-dots {
+      left: 70px;
+      top: 60px;
+      gap: 18px;
+    }
+    #g-contact .g-dots i {
+      width: 30px;
+      height: 30px;
+    }
+    .g-ch {
+      position: absolute;
+      top: 330px;
+      font-size: 34px;
+      color: #9a9da3;
+    }
+    .g-cv {
+      position: absolute;
+      top: 430px;
+      font-size: 44px;
+      font-weight: 500;
+      color: #2a2c30;
+    }
+    #g-green {
+      position: absolute;
+      left: 110px;
+      top: 436px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #3fd77e;
+      box-shadow: 0 0 30px rgba(63, 215, 126, 0.8);
+    }
+    /* ---- company card with live updates ---- */
+    #g-co {
+      left: 640px;
+      top: 210px;
+      width: 640px;
+      height: 760px;
+      border-radius: 26px;
+      background: #fff;
+      box-shadow: 0 40px 90px rgba(20, 20, 20, 0.28);
+      overflow: hidden;
+      opacity: 0;
+    }
+    #g-co-in {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+    }
+    .g-co-row {
+      padding: 0 44px;
+      font-size: 18px;
+      color: #8a8d93;
+    }
+    .g-co-row b {
+      display: block;
+      margin-top: 4px;
+      font-size: 24px;
+      font-weight: 500;
+      color: #2a2c30;
+    }
+    .g-note {
+      width: 600px;
+      height: 106px;
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      padding: 0 28px;
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.95);
+      box-shadow: 0 24px 60px rgba(20, 20, 20, 0.28);
+      opacity: 0;
+    }
+    .g-note svg {
+      flex: none;
+    }
+    .g-note b {
+      display: block;
+      font-size: 25px;
+      font-weight: 700;
+    }
+    .g-note small {
+      display: block;
+      margin-top: 4px;
+      font-size: 18px;
+      color: #8a8d93;
+    }
+  </style>
+  <div data-hf-id="hf-ysxc" id="root" data-composition-id="signals" data-width="1920" data-height="1080">
+    <svg data-hf-id="hf-i7zb" id="g-mark" class="abs" viewBox="-23 -23 46 46"><circle data-hf-id="hf-56gw" r="23" fill="#16181b" /><path data-hf-id="hf-4jch" d="M-17 2 C-11 -6 -5 -6 0 1 C5 8 11 8 17 0" fill="none" stroke="#fff" stroke-width="4.2" stroke-linecap="round" /></svg>
+    <div data-hf-id="hf-rule" id="g-rule" class="abs"></div>
+    <div data-hf-id="hf-w2xk" id="g-head" class="abs"></div>
+    <div data-hf-id="hf-h4fs" id="g-strip" class="abs"></div>
+
+    <div data-hf-id="hf-y16l" id="g-full" class="abs"><i data-hf-id="hf-80a0" id="g-full-img"></i></div>
+    <div data-hf-id="hf-60ru" id="g-fog" class="abs"><i data-hf-id="hf-fogi" id="g-fog-in"></i></div>
+
+    <svg data-hf-id="hf-305k" id="g-lines" class="abs" viewBox="0 0 1920 1080"></svg>
+    <svg data-hf-id="hf-lns2" id="g-lines2" class="abs" viewBox="0 0 1920 1080"></svg>
+    <div data-hf-id="hf-trj7" class="abs g-app" id="g-app0"><svg data-hf-id="hf-wt6k" viewBox="-20 -20 40 40"><path data-hf-id="hf-ap0a" d="M-13 6 a8 8 0 0 1 2 -15 a10 10 0 0 1 18 2 a7 7 0 0 1 4 13 z" fill="#2d9cdb" /></svg></div>
+    <div data-hf-id="hf-mdts" class="abs g-app" id="g-app1"><svg data-hf-id="hf-zeb8" viewBox="-20 -20 40 40"><circle data-hf-id="hf-ap1a" cx="3" cy="3" r="7" fill="none" stroke="#ef6c45" stroke-width="4" /><path data-hf-id="hf-ap1b" d="M-2 -2 L-10 -10 M-10 -14 v8 M3 -4 v-10" stroke="#ef6c45" stroke-width="3.6" stroke-linecap="round" fill="none" /></svg></div>
+    <div data-hf-id="hf-elwo" class="abs g-app" id="g-app2"><svg data-hf-id="hf-y7e5" viewBox="-20 -20 40 40"><path data-hf-id="hf-ap2a" d="M-11 -14 L11 -3 L-11 14 z" fill="#6c4ce0" /><path data-hf-id="hf-ap2b" d="M-11 -14 L3 -7 L3 7 L-11 14 z" fill="#3b5bdb" /></svg></div>
+
+    <div data-hf-id="hf-tile" id="g-tile" class="abs">
+        <svg data-hf-id="hf-1vlo" id="g-icon" viewBox="-23 -23 46 46"><circle data-hf-id="hf-dy48" r="23" fill="#16181b" /><path data-hf-id="hf-dwit" d="M-17 2 C-11 -6 -5 -6 0 1 C5 8 11 8 17 0" fill="none" stroke="#fff" stroke-width="4.2" stroke-linecap="round" /></svg>
+    </div>
+    <div data-hf-id="hf-3s4q" id="g-search" class="abs">
+      <div data-hf-id="hf-gbg0" id="g-bg-sh" class="abs"></div>
+      <div data-hf-id="hf-gbg1" id="g-bg" class="abs g-glass-bg"></div>
+      <div data-hf-id="hf-gbgw" id="g-bg-white" class="abs"></div>
+      <svg data-hf-id="hf-cqhg" id="g-glass" viewBox="0 0 24 24" fill="none" stroke="#6b6e75" stroke-width="2.4" stroke-linecap="round"><circle data-hf-id="hf-4tbh" cx="10" cy="10" r="7" /><path data-hf-id="hf-c6xb" d="M15.5 15.5 L21 21" /></svg>
+      <div data-hf-id="hf-jeat" id="g-query" data-text="Find fintech companies in Singapore and Jakarta with&#10;50–500 employees, hiring in sales."></div>
+    </div>
+
+    <div data-hf-id="hf-i7ab" class="abs g-res" id="g-res0" style="top: 470px"><i data-hf-id="hf-h9kz" style="background: #1f6f6b"></i><div data-hf-id="hf-yeow"><b data-hf-id="hf-48w3">Harborline Pay</b><small data-hf-id="hf-kuqd">Fintech · Singapore · 320 employees</small></div></div>
+    <div data-hf-id="hf-nde9" class="abs g-res" id="g-res1" style="top: 640px"><i data-hf-id="hf-ltxf" style="background: #c2763d"></i><div data-hf-id="hf-y7yw"><b data-hf-id="hf-d5bo">Lumora Ledger</b><small data-hf-id="hf-kbdb">Payments · Jakarta · 140 employees</small></div></div>
+    <div data-hf-id="hf-pdwm" class="abs g-res" id="g-res2" style="top: 810px"><i data-hf-id="hf-ksbc" style="background: #4a5bb8"></i><div data-hf-id="hf-x11t"><b data-hf-id="hf-25we">Kitewire Remit</b><small data-hf-id="hf-6dlf">Cross-border · Singapore · 85 employees</small></div></div>
+
+    <div data-hf-id="hf-ctbl" id="g-ctable" class="abs">
+      <div data-hf-id="hf-ctdt" class="g-dots"><i data-hf-id="hf-ctd1"></i><i data-hf-id="hf-ctd2"></i><i data-hf-id="hf-ctd3"></i></div>
+      <div data-hf-id="hf-cthd" class="g-cr h"><span data-hf-id="hf-cth0"></span><span data-hf-id="hf-cth1">Contact</span><span data-hf-id="hf-cth2">Title</span><span data-hf-id="hf-cth3">Company</span><span data-hf-id="hf-cth4">Phone</span></div>
+    </div>
+    <div data-hf-id="hf-trkm" id="g-table" class="abs">
+      <div data-hf-id="hf-7gr0" class="g-dots"><i data-hf-id="hf-ylp6"></i><i data-hf-id="hf-0l8b"></i><i data-hf-id="hf-0zjc"></i></div>
+      <h4 data-hf-id="hf-stny">Asia-Pacific Companies</h4>
+      <div data-hf-id="hf-2pec" class="g-tr h" style="top: 120px"><span data-hf-id="hf-581k">Company</span><span data-hf-id="hf-2utn">Industry</span><span data-hf-id="hf-7d7a">City</span><span data-hf-id="hf-koz1">Staff</span><span data-hf-id="hf-qei6">Latest signal</span></div>
+    </div>
+
+    <div data-hf-id="hf-q8ju" id="g-contact" class="abs">
+      <div data-hf-id="hf-x7s4" class="g-dots"><i data-hf-id="hf-zsm9"></i><i data-hf-id="hf-06xa"></i><i data-hf-id="hf-26gf"></i></div>
+      <div data-hf-id="hf-78cx" class="g-ch" style="left: 180px">Contact</div>
+      <div data-hf-id="hf-sl5r" class="g-ch" style="left: 900px">Title</div>
+      <i data-hf-id="hf-iwq6" id="g-green"></i>
+      <div data-hf-id="hf-mg6k" class="g-cv" style="left: 180px">Mei Tanaka</div>
+      <div data-hf-id="hf-eu3a" class="g-cv" style="left: 900px">Head of Operations</div>
+    </div>
+
+    <div data-hf-id="hf-b2io" id="g-co" class="abs">
+      <div data-hf-id="hf-en95" id="g-co-in">
+        <div data-hf-id="hf-vmze" style="display: flex; align-items: center; gap: 16px; padding: 40px 44px 26px">
+          <i data-hf-id="hf-85b8" style="width: 46px; height: 46px; border-radius: 13px; background: #1f6f6b"></i>
+          <div data-hf-id="hf-w3qs" style="font-size: 26px; font-weight: 700">Harborline Pay</div>
+        </div>
+        <div data-hf-id="hf-6rxu" class="g-co-row" style="padding-bottom: 22px">Industry<b data-hf-id="hf-72oe">Fintech · Payments</b></div>
+        <div data-hf-id="hf-8tuv" class="g-co-row" style="padding-bottom: 22px">Headquarters<b data-hf-id="hf-hfa9">Singapore</b></div>
+        <div data-hf-id="hf-ybtp" class="g-co-row" style="padding-bottom: 22px">Employees<b data-hf-id="hf-5lmo">320</b></div>
+        <div data-hf-id="hf-g4fb" class="g-co-row" style="padding-bottom: 22px">Annual revenue<b data-hf-id="hf-iwgn">$52M</b></div>
+        <div data-hf-id="hf-a1op" class="g-co-row" style="padding-bottom: 22px">Latest signal<b data-hf-id="hf-1s2m"><span data-hf-id="hf-85bl" style="color: #1e9e5a">●</span> Raised $18M Series B</b></div>
+        <div data-hf-id="hf-zxiz" class="g-co-row" style="padding-bottom: 22px">Decision makers<b data-hf-id="hf-hecn">12 contacts</b></div>
+        <div data-hf-id="hf-3evz" class="g-co-row" style="padding-bottom: 40px">Synced to<b data-hf-id="hf-bwxv">CRM · Sheets · Slack-style chat</b></div>
+      </div>
+    </div>
+    <div data-hf-id="hf-l91u" class="abs g-note" id="g-note0" style="left: 660px; top: 360px">
+      <svg data-hf-id="hf-ur1w" width="54" height="54" viewBox="-23 -23 46 46"><circle data-hf-id="hf-cr75" r="23" fill="#16181b" /><path data-hf-id="hf-f3fw" d="M-17 2 C-11 -6 -5 -6 0 1 C5 8 11 8 17 0" fill="none" stroke="#fff" stroke-width="4.2" stroke-linecap="round" /></svg>
+      <div data-hf-id="hf-xfcu"><b data-hf-id="hf-up8i">Raised $18M Series B</b><small data-hf-id="hf-rgwy">Funding round · Just now</small></div>
+    </div>
+    <div data-hf-id="hf-u0vj" class="abs g-note" id="g-note1" style="left: 600px; top: 760px">
+      <svg data-hf-id="hf-9or0" width="54" height="54" viewBox="-23 -23 46 46"><circle data-hf-id="hf-d5i6" r="23" fill="#16181b" /><path data-hf-id="hf-ep4v" d="M-17 2 C-11 -6 -5 -6 0 1 C5 8 11 8 17 0" fill="none" stroke="#fff" stroke-width="4.2" stroke-linecap="round" /></svg>
+      <div data-hf-id="hf-w8fr"><b data-hf-id="hf-q52f">Opened new office in Tokyo</b><small data-hf-id="hf-t4eq">New location · Just now</small></div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    const split = (el, byChar) => {
+      const parts = byChar ? [...el.dataset.text] : el.dataset.text.split(/(\s+)/);
+      el.textContent = "";
+      return parts.map((p) => { const s = document.createElement("span"); s.textContent = p; el.append(s); return s; });
+    };
+
+    // ---- positioning: the headline types on under the mark; industry photos slide past below
+    const head = document.getElementById("g-head");
+    head.dataset.text = "Asia-Pacific Company Signals\nbuilt to give you the advantage.";
+    const hw = split(head);
+    // the shot rises in under the previous one's mark and pushes it up to the top: for the first
+    // 0.45 s the background is clear and that mark stays on top; this shot's own mark takes over in
+    // the same place once it has arrived
+    tl.set("#root", { backgroundColor: "rgba(255,255,255,0)" }, 0);
+    tl.set("#root", { backgroundColor: "#ffffff" }, 0.45);
+    tl.fromTo("#g-mark", { opacity: 0 }, { opacity: 1, duration: 0.01, immediateRender: true }, 0.44);
+    hw.forEach((w, i) => tl.fromTo(w, { opacity: 0 }, { opacity: 1, duration: 0.25, immediateRender: i === 0 }, 0.4 + i * 0.12));
+    tl.fromTo("#g-rule", { scaleX: 0 }, { scaleX: 1, duration: 0.5, ease: "power2.out" }, 0.35);
+
+    // ---- the carousel: cards run right to left at a steady 833 px/s, 600 px apart, then ease to a stop
+    // with the eighth card (the aerial) in the middle; the camera then pushes into it.
+    const CATS = [["SaaS", 1], ["Fintech", 8], ["Real Estate", 4], ["Logistics", 7], ["Healthcare", 11], ["Energy", 10], ["Retail", 15], ["Smart Cities", 16], ["Warehousing", 12], ["Travel", 13]];
+    const PITCH = 600, SPEED = 833, STOP = 3.55, DEC = 0.7, PUSH = 0.6;
+    // distance run by time t: steady, then a smooth stop over DEC seconds ending at STOP
+    const runAt = (t) => { const t0 = STOP - DEC, u = Math.min(1, Math.max(0, (t - t0) / DEC)); return t < t0 ? SPEED * t : SPEED * (t0 + (DEC / 2) * (1 - (1 - u) * (1 - u))); };
+    const START = 960 + runAt(STOP) - 7 * PITCH; // the eighth card stops in the middle
+    const strip = document.getElementById("g-strip");
+    const cards = CATS.map(([name, n], i) => {
+      const c = document.createElement("div");
+      c.className = "g-card";
+      const url = typeof n === "string" ? `url(assets/photos/${n}.jpg)` : `url(assets/photos/city-${String(n).padStart(2, "0")}.jpg)`;
+      c.innerHTML = `<i style="background-image:${url}"></i><u style="background-image:${url}"></u><s></s><b>${name}</b>`;
+      strip.append(c);
+      return c;
+    });
+    // the row rises from below as the shot opens, pushing the previous shot's mark up
+    tl.fromTo(strip, { y: 640 }, { y: 0, duration: 0.55, ease: "power3.out", immediateRender: true }, 0);
+    // the cards ride round the outside of a wide drum facing the camera: the one in the middle is
+    // nearest and largest, and each one shrinks and sinks a little as it moves off to the side, all
+    // from perspective alone (drum radius ARC, camera EYE away, vanishing point at y VP)
+    const ARC = 1800, EYE = 1500, VP = 1150, NEAR = 1.08; // side cards about 94% of the middle one, as on the reference
+    function carouselAt(t) {
+      cards.forEach((c, i) => {
+        const dx = START + i * PITCH - runAt(t) - 960, a = dx / ARC;   // the card's angle round the drum
+        const z = -ARC * (1 - Math.cos(a)), sc = NEAR * EYE / (EYE - z);
+        // the depth sets size and height; across the frame the cards keep an even spacing, as on the reference
+        c.style.transform = `translate(${960 + dx}px, ${(VP - 520) * (1 - sc)}px) scale(${sc})`;
+        c.style.zIndex = Math.round(1000 + z);
+      });
+    }
+    const clock = { t: 0 };
+    tl.fromTo(clock, { t: 0 }, { t: 4.5, duration: 4.5, ease: "none", onUpdate: () => carouselAt(clock.t) }, 0);
+    carouselAt(0);
+
+    // ---- once the row has stopped (the cards stay where they are), the next shot opens out of the middle
+    // card as a rounded window in front of the row (a different photo, the aerial) while the headline
+    // grows away over the top
+    const SG = 3.6, OX = 960, OY = 800, TY = 520 + (VP - 520) * (1 - NEAR);
+    [["#g-mark", 932, 132], ["#g-rule", 750, 214], ["#g-head", 0, 236]].forEach(([el, l, tp]) =>
+      tl.to(el, { scale: SG, transformOrigin: `${OX - l}px ${OY - tp}px`, duration: 0.3, ease: "power2.in" }, STOP)); // off the top in step with the window opening
+    const W0 = { l: 960 - 260 * NEAR, t: TY, r: 960 + 260 * NEAR, b: Math.min(1080, TY + 700 * NEAR) };
+    // the window is upright like the card (520 × 700): it first grows, centred in the frame, to a full
+    // height upright panel, then opens evenly to both sides to fill the width
+    const W1 = (1080 * 520) / 700, SIDE = (1920 - W1) / 2;
+    tl.fromTo("#g-full", { clipPath: `inset(${W0.t}px ${1920 - W0.r}px ${1080 - W0.b}px ${W0.l}px round 18px)` },
+      { clipPath: `inset(0px ${SIDE}px 0px ${SIDE}px round 18px)`, duration: 0.3, ease: "power2.in", immediateRender: false }, STOP);
+    // (explicit from-values: the browser would report the panel's inset in shortened form, which GSAP
+    // would pair up with the wrong sides)
+    tl.fromTo("#g-full", { clipPath: `inset(0px ${SIDE}px 0px ${SIDE}px round 18px)` }, { clipPath: "inset(0px 0px 0px 0px round 0px)", duration: 0.32, ease: "power2.out", immediateRender: false }, STOP + 0.3);
+    tl.fromTo("#g-full", { opacity: 0 }, { opacity: 1, duration: 0.2, ease: "power1.out", immediateRender: false }, STOP); // the window fades up as it opens
+    tl.set(["#g-strip", "#g-head", "#g-mark", "#g-rule"], { opacity: 0 }, STOP + PUSH);
+    tl.fromTo("#g-full-img", { scale: 1.25 }, { scale: 1, duration: 1.8, ease: "power2.out", immediateRender: false }, STOP); // the move carries on, slowing
+
+    // ---- the app icon, then it stretches into a frosted search bar and the query types
+    // the icon: a 120 px rounded window of the bar, which then opens to the full bar
+    tl.fromTo("#g-tile", { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.5, ease: "back.out(1.4)" }, STOP + 0.05); // the app tile comes as the window starts to grow
+    // the tile stretches out to the right and fades; the search bar then grows from the middle out to
+    // both sides, picking the movement up
+    // one shape all the way, as on the reference: at 4.4 the bar's own outline takes the tile's exact
+    // place (same size and white face), so nothing changes hands visibly. It stretches out to the right
+    // while the mark fades and the face turns from white to frosted glass, the magnifier and the first
+    // letters coming in where the mark was; then it keeps opening, now to both sides, and settles.
+    const T0 = 4.4, T1 = 4.72, T2 = 5.3, L0 = 680;
+    const SHAPE0 = `inset(0px ${1620 - L0 - 260}px 0px ${L0}px round 66px)`, SHAPE1 = `inset(0px ${1620 - L0 - 700}px 0px ${L0}px round 62px)`;
+    tl.set("#g-tile", { background: "rgba(255,255,255,0)", boxShadow: "0 0 0 rgba(0,0,0,0)" }, T0); // its mark stays a moment
+    tl.set(["#g-bg", "#g-bg-white", "#g-bg-sh"], { opacity: 1 }, T0);
+    tl.fromTo(["#g-bg", "#g-bg-white"], { clipPath: SHAPE0 }, { clipPath: SHAPE1, duration: T1 - T0, ease: "power1.in", immediateRender: false }, T0);
+    tl.fromTo(["#g-bg", "#g-bg-white"], { clipPath: SHAPE1 }, { clipPath: "inset(0px 0px 0px 0px round 56px)", duration: T2 - T1, ease: "power2.out", immediateRender: false }, T1);
+    tl.fromTo("#g-bg-sh", { x: L0, scaleX: 260 / 1620 }, { x: L0, scaleX: 700 / 1620, duration: T1 - T0, ease: "power1.in", immediateRender: false }, T0);
+    tl.fromTo("#g-bg-sh", { x: L0, scaleX: 700 / 1620 }, { x: 0, scaleX: 1, duration: T2 - T1, ease: "power2.out", immediateRender: false }, T1);
+    tl.to("#g-bg-white", { opacity: 0, duration: 0.3, ease: "sine.inOut" }, T0 + 0.18);
+    tl.to("#g-icon", { opacity: 0, scale: 0.85, duration: 0.25, ease: "power1.in" }, T0 + 0.1);
+    tl.set("#g-tile", { opacity: 0 }, T0 + 0.36);
+    // the magnifier and the text sit at the bar's left edge and travel with it as it opens
+    tl.fromTo(["#g-glass", "#g-query"], { x: L0 }, { x: 0, duration: T2 - T1, ease: "power2.out", immediateRender: false }, T1);
+    tl.fromTo("#g-glass", { opacity: 0 }, { opacity: 1, duration: 0.2 }, T0 + 0.24);
+    tl.fromTo("#g-query", { opacity: 0 }, { opacity: 1, duration: 0.01 }, T1 - 0.05);
+    const q = split(document.getElementById("g-query"), true);
+    q.forEach((c, i) => tl.fromTo(c, { opacity: 0 }, { opacity: 1, duration: 0.03, immediateRender: false }, T1 - 0.02 + (i * 1.25) / q.length));
+
+    // ---- results pop in under the bar as it rises
+    tl.to("#g-search", { y: -232, duration: 0.5, ease: "power2.inOut" }, 6.05);
+    [0, 1, 2].forEach((i) => tl.fromTo(`#g-res${i}`, { opacity: 0, y: 40, scale: 0.96 }, { opacity: 1, y: 0, scale: 1, duration: 0.45, ease: "power3.out" }, 6.3 + i * 0.28));
+
+    // ---- to white: the results line up on the left and lines run from them into three apps
+    // everything moves off to the left together: the aerial and the search bar slide out and clear to
+    // white, the results glide over to the left edge, and the lines then run on from them left to right
+    tl.to("#g-full", { x: -280, opacity: 0, duration: 0.4, ease: "power2.in" }, 8.05);
+    tl.to("#g-search", { x: -700, opacity: 0, duration: 0.45, ease: "power2.in" }, 8.05);
+    // (and grow by a fifth, spread to rows at y 330, 545, 760 with their left edges at x 90)
+    [0, 1, 2].forEach((i) => tl.to(`#g-res${i}`, { x: -440, y: [-215, -170, -125][i], scale: 1.2, transformOrigin: "0% 50%", duration: 0.6, ease: "power3.inOut" }, 8.05 + i * 0.03));
+    const lines = document.getElementById("g-lines");
+    const NS = "http://www.w3.org/2000/svg";
+    const curve = (d, w) => { const p = document.createElementNS(NS, "path"); p.setAttribute("d", d); p.setAttribute("fill", "none"); p.setAttribute("stroke", "#2a2c30"); p.setAttribute("stroke-width", w); p.setAttribute("pathLength", "1"); p.setAttribute("stroke-dasharray", "1"); p.setAttribute("stroke-dashoffset", "1"); lines.append(p); return p; };
+    // three lines run from the results' right edges (x 950; rows at y 375, 545, 715) and merge at J into
+    // one line that carries on to the right. An app chip rides each line in turn, top first, joins the
+    // merged line: the lines draw first; then the chips set off from the results one after another,
+    // reach the junction in turn and run on along the merged line out of the frame; then the table.
+    const J = [1500, 545], ROWY = [330, 545, 760], X0 = 90 + 860 * 1.2;
+    // the three sweep in and meet the merged line along its own direction, so they join into it cleanly
+    const seg = (i) => [[X0, ROWY[i]], [X0 + 230, ROWY[i]], [J[0] - 200, J[1]], J];
+    const bez = (b, t) => [0, 1].map((k) => (1 - t) ** 3 * b[0][k] + 3 * (1 - t) ** 2 * t * b[1][k] + 3 * (1 - t) * t * t * b[2][k] + t ** 3 * b[3][k]);
+    const fromRes = [0, 1, 2].map((i) => { const b = seg(i); return curve(`M${b[0]} C ${b[1]}, ${b[2]}, ${b[3]}`, 3); });
+    const main = curve(`M${J} L 1920 ${J[1]}`, 3);
+    // the three draw together at an even pace and the merged line carries straight on from the junction
+    tl.fromTo("#g-lines", { opacity: 0 }, { opacity: 1, duration: 0.01 }, 8.2);
+    fromRes.forEach((p) => tl.to(p, { attr: { "stroke-dashoffset": 0 }, duration: 0.36, ease: "power1.in" }, 8.2));
+    tl.to(main, { attr: { "stroke-dashoffset": 0 }, duration: 0.42, ease: "power2.out" }, 8.56);
+    // each chip: s runs 0 → 1 along its curve, then on along the merged line by its place in the row
+    // ---- the cut (as on the reference, frame by frame): while the chips run along the merged line the
+    // picture cuts to a closer view further on. There the chips are back on three lines that come in
+    // from the left edge and merge at J2 into one that meets the table's left side; the camera drifts
+    // slowly right, and the chips run in one after another, spaced apart, through the junction into
+    // the table, where each one adds a row. The middle chip, last, waits at the junction.
+    const CUT = 9.23, J2 = [480, 545], TX = 960, ROW2 = [318, 545, 772], DRIFT = 260; // measured on the reference
+    const driftAt = (t) => DRIFT * (1 - Math.pow(1 - Math.max(0, Math.min(1, (t - CUT) / 1.4)), 2));
+    const segB = (i) => [[-60, ROW2[i]], [200, ROW2[i]], [J2[0] - 170, J2[1]], J2];
+    const lines2 = document.getElementById("g-lines2");
+    [0, 1, 2].forEach((i) => { const b = segB(i), p = curve(`M${b[0]} C ${b[1]}, ${b[2]}, ${b[3]}`, 4.5); p.setAttribute("stroke-dashoffset", "0"); lines2.append(p); });
+    { const p = curve(`M${J2} L ${TX} ${J2[1]}`, 4.5); p.setAttribute("stroke-dashoffset", "0"); lines2.append(p); }
+    const route = (pts) => { const len = [0]; for (let k = 1; k < pts.length; k++) len.push(len[k - 1] + Math.hypot(pts[k][0] - pts[k - 1][0], pts[k][1] - pts[k - 1][1])); return { pts, len }; };
+    const along = (r, d) => {
+      const { pts, len } = r;
+      if (d <= 0) return pts[0];
+      if (d >= len[len.length - 1]) return pts[pts.length - 1];
+      let k = 1; while (len[k] < d) k++;
+      const f = (d - len[k - 1]) / (len[k] - len[k - 1]);
+      return [pts[k - 1][0] + (pts[k][0] - pts[k - 1][0]) * f, pts[k - 1][1] + (pts[k][1] - pts[k - 1][1]) * f];
+    };
+    // before the cut: from the result into the merged line and on to the right
+    const ROUTE_A = [0, 1, 2].map((i) => { const pts = []; for (let k = 0; k <= 60; k++) pts.push(bez(seg(i), k / 60)); pts.push([1960, J[1]]); return route(pts); });
+    // after it: along its own line from the left edge, through J2, to the table
+    const ROUTE_B = [0, 1, 2].map((i) => { const pts = []; for (let k = 0; k <= 60; k++) pts.push(bez(segB(i), k / 60)); pts.push([TX, J2[1]]); return route(pts); });
+    const CHIP_T0 = [8.72, 8.75, 8.78], SPEED_C = 1800, ACC = 0.2; // all set off together, a touch apart
+    const distA = (d) => (d <= 0 ? 0 : d < ACC ? (SPEED_C * d * d) / (2 * ACC) : SPEED_C * (ACC / 2 + d - ACC));
+    // after the cut each chip starts a set way along its line and moves on at 1300 px/s: top first, then
+    // the bottom one, the middle one last, far enough apart never to touch
+    const B = [{ d0: 330, t0: CUT, stop: Infinity }, { d0: 230, t0: CUT, stop: null }, { d0: 260, t0: CUT, stop: Infinity }], SPEED_B = 1300; // all move at once; the queue sets the order
+    B[1].stop = Infinity; // the middle one follows the others into the table
+    const distB = (i, t) => Math.min(B[i].stop, B[i].d0 + SPEED_B * Math.max(0, t - B[i].t0));
+    const arriveB = (i) => { for (let t = CUT; t < CUT + 3; t += 1 / 120) if (placeB(t)[i] >= ROUTE_B[i].len[ROUTE_B[i].len.length - 1] - 70) return t; return CUT + 3; };
+    const chips = [0, 1, 2].map((i) => document.getElementById(`g-app${i}`));
+    // The chips run together on their own lines, but as they near the junction they fall into line in
+    // a set order, never closer than GAP along the merged line: each one's distance past its junction
+    // is held at least GAP behind the one ahead.
+    const GAP = 140, junc = (r) => r.len[60];
+    const queue = (order, want) => { const m = want.slice(); order.forEach((i, k) => { if (k) m[i] = Math.min(m[i], m[order[k - 1]] - GAP); }); return m; };
+    const placeA = (t) => queue([0, 1, 2], [0, 1, 2].map((i) => distA(t - CHIP_T0[i]) - junc(ROUTE_A[i]))).map((m, i) => m + junc(ROUTE_A[i]));
+    const placeB = (t) => queue([0, 2, 1], [0, 1, 2].map((i) => distB(i, t) - junc(ROUTE_B[i]))).map((m, i) => m + junc(ROUTE_B[i]));
+    const chipAt = (t) => { const dA = t < CUT ? placeA(t) : null, dB = t < CUT ? null : placeB(t); chips.forEach((el, i) => {
+      if (t < CUT) {
+        const [x, y] = along(ROUTE_A[i], dA[i]);
+        el.style.transform = `translate(${x}px, ${y}px)`;
+        el.style.opacity = Math.min(1, Math.max(0, (t - CHIP_T0[i] + 0.12) / 0.12));
+        return;
+      }
+      const r = ROUTE_B[i], end = r.len[r.len.length - 1], d = dB[i];
+      const [x, y] = along(r, d), into = Math.max(0, Math.min(1, (d - (end - 70)) / 70)); // taken in by the table
+      el.style.transform = `translate(${x - driftAt(t)}px, ${y}px) scale(${1 - 0.5 * into})`;
+      el.style.opacity = 1 - into;
+    }); };
+    const chipClock = { t: 8.2 };
+    tl.fromTo(chipClock, { t: 8.2 }, { t: 10.6, duration: 2.4, ease: "none", onUpdate: () => chipAt(chipClock.t) }, 8.2);
+    chipAt(8.2);
+
+    // ---- the table slides in and fills row by row
+    const table = document.getElementById("g-table");
+    const ROWS = [
+      ["Harborline Pay", "Fintech", "Singapore", "320", "<em>●</em> Raised Series B"],
+      ["Lumora Ledger", "Payments", "Jakarta", "140", "<em>●</em> Hiring 6 in sales"],
+      ["Kitewire Remit", "Cross-border", "Singapore", "85", "<em>●</em> New CFO"],
+      ["Tessel Freight", "Logistics", "Sydney", "610", "Opened Perth hub"],
+      ["Oriel Health", "Healthcare", "Seoul", "230", "New software budget"],
+      ["Brightmoor Grid", "Energy", "Tokyo", "1,200", "Expanding to Osaka"],
+      ["Canopy Retail", "Retail", "Hong Kong", "480", "Hiring 12 engineers"],
+      ["Lattice Works", "SaaS", "Shanghai", "95", "Raised seed round"],
+    ];
+    ROWS.forEach((r, i) => {
+      const row = document.createElement("div");
+      row.className = "g-tr";
+      row.style.top = `${174 + i * 54}px`;
+      row.innerHTML = r.map((c) => `<span>${c}</span>`).join("");
+      table.append(row);
+      // as in the contact table: each row is a slip of card that arrives tipped and lifted, in turn, and
+      // lays down into the table
+      const at = 10.68 + i * 0.08;
+      tl.fromTo(row, { opacity: 0, x: 0, y: -16, z: 60, scale: 0.97, rotationX: -55, transformPerspective: 900, transformOrigin: "50% 100%" },
+        { opacity: 1, x: 0, y: 0, z: 0, scale: 1, rotationX: 0, duration: 0.45, ease: "power3.out" }, at);
+      tl.fromTo(row, { backgroundColor: "rgba(255,255,255,1)", boxShadow: "0 16px 30px rgba(30,30,40,0.15), 0 0 0 1px rgba(30,30,40,0.05)" },
+        { backgroundColor: "rgba(255,255,255,0)", boxShadow: "0 0px 0px rgba(30,30,40,0), 0 0 0 1px rgba(30,30,40,0)", duration: 0.5, ease: "power1.inOut" }, at + 0.3);
+    });
+    // the pan: what was on screen slides off to the left as the next stretch slides in from the right
+    tl.set(["#g-lines", ".g-res"], { opacity: 0 }, CUT);
+    tl.set(["#g-lines2", "#g-ctable"], { opacity: 1 }, CUT);
+    tl.fromTo(["#g-lines2", "#g-ctable"], { x: 0 }, { x: -DRIFT, duration: 1.4, ease: "power1.out", immediateRender: false }, CUT); // the slow drift (as driftAt)
+    // a contact row arrives with each chip: it comes in green and settles to the table's own colours
+    const CONTACTS = [["Mei Tanaka", "Head of Operations", "Harborline Pay", "+65 6123 4401"], ["Arjun Rao", "CFO", "Lumora Ledger", "+62 21 555 0192"], ["Lin Wei", "Purchasing Lead", "Kitewire Remit", "+65 6789 2210"], ["Sora Park", "Head of Sales", "Oriel Health", "+82 2 555 0147"], ["Daniel Ho", "Finance Director", "Tessel Freight", "+61 2 5550 0193"], ["Hana Ito", "Operations Lead", "Lattice Works", "+81 3 5550 0148"]];
+    const ctable = document.getElementById("g-ctable");
+    CONTACTS.forEach((c, i) => {
+      const r = document.createElement("div");
+      r.className = "g-cr";
+      r.style.top = `${150 + i * 84}px`;
+      r.innerHTML = `<i></i><b>${c[0]}</b><small>${c[1]}</small><b>${c[2]}</b><small>${c[3]}</small>`;
+      ctable.append(r);
+      // the first three are already coming in at the cut; the rest arrive with the chips
+      const at = i < 3 ? CUT + 0.03 + i * 0.07 : arriveB([0, 2, 1][i - 3]);
+      // each row is its own slip of card: it arrives tipped towards us and lifted, with a shadow under
+      // it, then lays down flat into the table and the card fades into the page
+      tl.fromTo(r, { opacity: 0, x: 0, y: -18, z: 60, scale: 0.97, rotationX: -55, transformPerspective: 900, transformOrigin: "50% 100%" },
+        { opacity: 1, x: 0, y: 0, z: 0, scale: 1, rotationX: 0, duration: 0.45, ease: "power3.out" }, at);
+      tl.fromTo(r, { backgroundColor: "rgba(255,255,255,1)", boxShadow: "0 18px 34px rgba(30,30,40,0.16), 0 0 0 1px rgba(30,30,40,0.05)" },
+        { backgroundColor: "rgba(255,255,255,0)", boxShadow: "0 0px 0px rgba(30,30,40,0), 0 0 0 1px rgba(30,30,40,0)", duration: 0.5, ease: "power1.inOut" }, at + 0.3);
+      tl.fromTo(r.querySelectorAll("b"), { color: "#3fbf6a" }, { color: "#2a2c30", duration: 0.7, ease: "power1.inOut" }, at + 0.25);
+      tl.fromTo(r.querySelector("i"), { backgroundColor: "#5fd88a" }, { backgroundColor: i < 3 ? "#5fd88a" : "#e3e5e8", duration: 0.7 }, at + 0.25);
+    });
+    // then a cut to the companies table, at the same scale (1.25 × its drawn size)
+    tl.set(["#g-ctable", "#g-lines2", ".g-app"], { opacity: 0 }, 10.6);
+    tl.fromTo("#g-table", { opacity: 0, scale: 1.25 }, { opacity: 1, scale: 1.25, duration: 0.2, immediateRender: false }, 10.6);
+        tl.to("#g-table", { x: -820, scale: 1.3, duration: 0.85, ease: "power2.inOut" }, 11.05);
+    
+    // ---- close-up on one contact
+    tl.to("#g-table", { opacity: 0, scale: 2, duration: 0.45, ease: "power2.in" }, 11.9);
+    // the close-up opens over the foggy city: the fog comes up behind the card as it arrives
+    tl.fromTo("#g-fog", { opacity: 0 }, { opacity: 1, duration: 0.45, ease: "power1.out" }, 12.0);
+    tl.fromTo("#g-fog-in", { scale: 1.12 }, { scale: 1, duration: 5.6, ease: "power1.out" }, 12.0);
+    tl.fromTo("#g-contact", { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.55, ease: "power3.out" }, 12.05);
+    tl.fromTo("#g-green", { scale: 0 }, { scale: 1, duration: 0.35, ease: "back.out(3)" }, 12.45);
+    tl.to("#g-contact", { scale: 0.96, duration: 0.8, ease: "none" }, 12.6);
+
+    // ---- over the fog: the company card, and live updates arriving on it
+    // the picture moves up over the fog: the contact card leaves over the top as the company card
+    // and, a beat behind, the update rise in from below (the city behind shifts a little, for depth)
+    const UP = 13.15, UPD = 0.6;
+    tl.to("#g-contact", { y: -1180, duration: UPD, ease: "power2.inOut" }, UP);
+    tl.set("#g-contact", { opacity: 0 }, UP + UPD);
+    tl.fromTo("#g-fog", { y: 0 }, { y: -60, duration: UPD, ease: "power2.inOut", immediateRender: false }, UP); // the city behind moves a little: depth
+    tl.fromTo("#g-co", { opacity: 1, y: 1180, scale: 1.2 }, { opacity: 1, y: 0, scale: 1.2, duration: UPD + 0.1, ease: "power3.out", immediateRender: false }, UP + 0.05);
+    // the card comes in with only its header; the update floats over it, large and lifted, then eases
+    // down into the card (shrinking to the card's width, its shadow and glass thinning away), and the
+    // card's details write in after it, line by line from the top, the funding line last
+    const coRows = [...document.querySelectorAll("#g-co-in .g-co-row")];
+    const signal = coRows[4], details = coRows.filter((r) => r !== signal).concat([signal]);
+    tl.set(coRows, { opacity: 0 }, UP);
+    tl.fromTo("#g-note0", { opacity: 1, y: 1180, scale: 1.35, boxShadow: "0 40px 80px rgba(20,20,20,0.3)" }, { opacity: 1, y: 0, scale: 1.35, duration: UPD + 0.15, ease: "power3.out", immediateRender: false }, UP + 0.12);
+    const MERGE = 14.05;
+    tl.to("#g-note0", { scale: 1.1, y: 26, boxShadow: "0 0px 0px rgba(20,20,20,0)", backgroundColor: "rgba(255,255,255,0.6)", duration: 0.55, ease: "sine.inOut" }, MERGE);
+    tl.to("#g-note0", { opacity: 0, duration: 0.3, ease: "sine.in" }, MERGE + 0.3);
+    details.forEach((r, k) => tl.fromTo(r, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" }, MERGE + 0.45 + k * 0.1));
+    // the camera moves in on the lower part of the record (its latest signal) while it rises, and a
+    // second live update comes up from below and stays, tipped slightly towards us: the record keeps
+    // receiving new signals as they happen
+    tl.to("#g-co", { scale: 2.1, y: -590, duration: 0.6, ease: "power2.inOut" }, 15.7);
+    tl.fromTo("#g-note1", { opacity: 1, y: 520, scale: 1.55, rotation: -1.5, rotationX: 14, transformPerspective: 1200, boxShadow: "0 40px 80px rgba(20,20,20,0.3)" },
+      { opacity: 1, y: 0, scale: 1.55, rotation: -1.5, rotationX: 8, duration: 0.55, ease: "power3.out", immediateRender: false }, 16.0);
+    tl.to("#g-note1", { rotation: 0, rotationX: 4, y: -12, duration: 1.0, ease: "sine.inOut" }, 16.55);
+
+    window.__timelines["signals"] = tl;
+  </script>
+</template>
