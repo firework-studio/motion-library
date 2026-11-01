@@ -1,0 +1,406 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Inter";
+      font-weight: 100 900;
+      src: url("assets/fonts/Inter-Variable.ttf") format("truetype");
+    }
+    /* a static cut for the outlined word: a variable font's overlapping contours would show through the stroke */
+    @font-face {
+      font-family: "Inter Display";
+      font-weight: 500;
+      src: url("assets/fonts/InterDisplay-Medium.woff2") format("woff2");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: transparent;
+      font-family: "Inter", sans-serif;
+      color: #ffffff;
+    }
+    .abs {
+      position: absolute;
+    }
+    /* phase 1: a huge white "more" over the grid, hanging off the top-left */
+    #t-grid {
+      inset: 0;
+      background-color: #050306;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.13) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.13) 1px, transparent 1px);
+      background-size: 102px 102px;
+      background-position: 30px 22px;
+      opacity: 0;
+    }
+    #t-white {
+      left: 0;
+      top: -133px;
+      font-size: 466px;
+      line-height: 466px;
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+      opacity: 0;
+    }
+    #t-glass {
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+      opacity: 0;
+    }
+  </style>
+  <div id="root" data-composition-id="moretype" data-width="1920" data-height="1080">
+    <div id="t-grid" class="abs"></div>
+    <div id="t-white" class="abs">more</div>
+    <!-- phase 2: the word as clear glass half full of orange liquid, the same treatment as "reimagined" in the opening -->
+    <canvas id="t-glass" class="abs" width="1920" height="1080"></canvas>
+  </div>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+    const T0 = 18.933;   // this composition starts at 18.933 s on the root; times below are written as root seconds - T0
+    const at = (t) => t - T0;
+    const lerpKeys = (K, t) => {
+      let i = 0;
+      while (i < K.length - 2 && K[i + 1][0] <= t) i++;
+      const a = K[i], b = K[i + 1], u = Math.min(1, Math.max(0, (t - a[0]) / (b[0] - a[0])));
+      return a.map((v, j) => v + (b[j] - v) * u);
+    };
+
+    // ---------------------------------------------------------------- phase 1 (18.93-19.23 s)
+    // measured: the white word's left ink edge each frame, gathering speed to the right
+    const WHITE = [[18.933, 55], [18.967, 61], [19.0, 71], [19.033, 87], [19.067, 108], [19.1, 137], [19.133, 178], [19.167, 238], [19.2, 358], [19.233, 560]];
+    // phase 2 (19.23-19.87 s): the tube word's left ink edge and its size; it shoots in from the right and brakes,
+    // cruises left, then accelerates off, shrinking ~4 %
+    const TUBE = [[19.2, 1150, 1], [19.233, 751, 1], [19.267, 530, 1], [19.3, 418, 0.998], [19.333, 344, 0.995], [19.367, 288, 0.995], [19.4, 244, 0.993],
+                  [19.433, 208, 0.99], [19.467, 176, 0.99], [19.5, 147, 0.986], [19.533, 120, 0.986], [19.567, 94, 0.986], [19.6, 68, 0.981],
+                  [19.633, 36, 0.981], [19.667, -2, 0.977], [19.7, -44, 0.977], [19.733, -98, 0.972], [19.767, -164, 0.972], [19.8, -250, 0.972],
+                  [19.833, -370, 0.967], [19.867, -560, 0.963]];
+    const white = document.getElementById("t-white");
+    const LSB = 0.062;   // Inter's "m" left side bearing, em
+    const FS = 805;      // the glass word's size, px; its baseline sits at 1056 and the letters hang from a top line at 632
+
+    // ---------------------------------------------------------------- the glass word (WebGL), as in the opening
+    const TEX = { w: 2000, h: 760, ox: 60, base: 560 }; // word canvas: text origin at (ox, base)
+    const gcv = document.getElementById("t-glass");
+    const gl = gcv.getContext("webgl", { premultipliedAlpha: true, preserveDrawingBuffer: true, antialias: true });
+    let glReady = false, prog, uOrigin, uTime, uSurf, uStrips, uScl, uPiv, uSlp;
+
+    // the slosh. Every letter is its own little tank: the liquid surface leans against the word's acceleration
+    // (braking from the fast entry throws it forward to the left, the final push off to the left leaves it behind
+    // on the right), overshoots and rocks back as a damped spring. Narrow letters rock faster than wide ones.
+    // The travel comes from TUBE, smoothed so the keyframe corners do not read as jolts; it is integrated once,
+    // after the letters are measured, at a fixed step. The letters share one rhythm (only a slight difference in
+    // their rocking rate), so the word reads as one wave of liquid set off by one movement.
+    const SIM = { t0: 19.15, t1: 19.9, dt: 1 / 600, slope: [[], [], [], []], wave: [] };
+    const LET = { cen: [0, 0, 0, 0], wid: [1, 1, 1, 1] };   // letter centres and widths in text units (px at 805)
+    function simulate() {
+      const raw = (t) => lerpKeys(TUBE, t)[1];
+      const X = (t) => { let s = 0, n = 0; for (let k = -12; k <= 12; k++) { const w = Math.exp(-0.5 * (k / 6) ** 2); s += raw(t + k * 0.005) * w; n += w; } return s / n; };
+      const h = 1 / 240;
+      const acc = (t) => (X(t + h) - 2 * X(t) + X(t - h)) / (h * h);
+      const GEFF = 90000;   // px/s^2: how hard gravity holds the surface level against a push
+      const st = LET.wid.map(() => ({ s: 0, v: 0 }));
+      for (let t = SIM.t0; t <= SIM.t1 + 1e-9; t += SIM.dt) {
+        const a = acc(t);
+        // the surface tilts toward the pseudo-force: y grows downward, so a push to the right lifts the left side
+        const eq = Math.max(-0.26, Math.min(0.26, a / GEFF));
+        let vmax = 0;
+        st.forEach((k, i) => {
+          const w = 2 * Math.PI * 2.0 * (1 + 0.08 * (330 / LET.wid[i] - 1)), z = 0.2;
+          k.v += (-w * w * (k.s - eq) - 2 * z * w * k.v) * SIM.dt;
+          k.s += k.v * SIM.dt;
+          SIM.slope[i].push(Math.max(-0.3, Math.min(0.3, k.s)));
+          vmax = Math.max(vmax, Math.abs(k.v));
+        });
+        SIM.wave.push(2 + Math.min(9, vmax * 3));
+      }
+    }
+    const simAt = (arr, t) => arr.length ? arr[Math.max(0, Math.min(arr.length - 1, Math.round((t - SIM.t0) / SIM.dt)))] : 0;
+
+    function letterLayers() {
+      // each letter drawn alone at its place in the word, widely blurred; a pixel belongs to the strongest one
+      const out = [];
+      const mc = document.createElement("canvas").getContext("2d");
+      mc.font = '500 805px "Inter Display"';
+      mc.letterSpacing = "-28px";
+      "more".split("").forEach((ch, i) => {
+        const c = document.createElement("canvas");
+        c.width = TEX.w; c.height = TEX.h;
+        const g = c.getContext("2d");
+        g.font = '500 805px "Inter Display"';
+        g.textBaseline = "alphabetic";
+        g.filter = "blur(30px)";
+        g.fillStyle = "#fff";
+        g.fillText(ch, TEX.ox + (i ? mc.measureText("more".slice(0, i)).width : 0), TEX.base);
+        out.push(g.getImageData(0, 0, TEX.w, TEX.h).data);
+      });
+      return out;
+    }
+    function wordLayer(blur) {
+      const c = document.createElement("canvas");
+      c.width = TEX.w; c.height = TEX.h;
+      const g = c.getContext("2d");
+      g.font = '500 805px "Inter Display"';
+      g.letterSpacing = "-28px";
+      g.textBaseline = "alphabetic";
+      if (blur) g.filter = `blur(${blur}px)`;
+      g.fillStyle = "#fff";
+      g.fillText("more", TEX.ox, TEX.base);
+      return g.getImageData(0, 0, TEX.w, TEX.h).data;
+    }
+
+    function buildGlass() {
+      // R: the sharp letters, G: a medium blur for the bevel, B: a wide blur for thickness
+      const sharp = wordLayer(0), mid = wordLayer(10.5), wide = wordLayer(30), lets = letterLayers();
+      const mc = document.createElement("canvas").getContext("2d");
+      mc.font = '500 805px "Inter Display"';
+      mc.letterSpacing = "-28px";
+      let prev = 0;
+      ["m", "mo", "mor", "more"].forEach((sub, i) => {
+        const w = mc.measureText(sub).width;
+        LET.cen[i] = (prev + w) / 2;
+        LET.wid[i] = w - prev;
+        prev = w;
+      });
+      simulate();
+      const px = new Uint8Array(TEX.w * TEX.h * 4);
+      for (let i = 0; i < TEX.w * TEX.h; i++) {
+        let id = 0, best = -1;
+        for (let k = 0; k < 4; k++) if (lets[k][i * 4 + 3] > best) { best = lets[k][i * 4 + 3]; id = k; }
+        px[i * 4] = sharp[i * 4 + 3]; px[i * 4 + 1] = mid[i * 4 + 3]; px[i * 4 + 2] = wide[i * 4 + 3]; px[i * 4 + 3] = 40 + 60 * id;
+      }
+      const vs = "attribute vec2 p; void main(){ gl_Position = vec4(p, 0.0, 1.0); }";
+      const fs = `
+        precision highp float;
+        uniform sampler2D T; uniform vec2 texSize; uniform vec2 origin; uniform float time; uniform float scl;
+        // luminous orange gel. Colour comes from one ten-step ramp, built like the reference's own:
+        // near-black crimson -> red -> saturated orange -> light apricot, darks cooler and deeper, lights warmer
+        vec3 ramp(float x) {
+          x = clamp(x, 0.0, 1.0);
+          vec3 c0 = vec3(0.102, 0.008, 0.004), c1 = vec3(0.290, 0.020, 0.008), c2 = vec3(0.549, 0.067, 0.008);
+          vec3 c3 = vec3(0.816, 0.165, 0.000), c4 = vec3(1.000, 0.302, 0.024), c5 = vec3(1.000, 0.455, 0.141);
+          vec3 c6 = vec3(1.000, 0.604, 0.322), c7 = vec3(1.000, 0.733, 0.525), c8 = vec3(1.000, 0.839, 0.706);
+          vec3 c9 = vec3(1.000, 0.933, 0.867);
+          if (x < 0.10) return mix(c0, c1, x / 0.10);
+          if (x < 0.22) return mix(c1, c2, (x - 0.10) / 0.12);
+          if (x < 0.34) return mix(c2, c3, (x - 0.22) / 0.12);
+          if (x < 0.46) return mix(c3, c4, (x - 0.34) / 0.12);
+          if (x < 0.58) return mix(c4, c5, (x - 0.46) / 0.12);
+          if (x < 0.70) return mix(c5, c6, (x - 0.58) / 0.12);
+          if (x < 0.82) return mix(c6, c7, (x - 0.70) / 0.12);
+          if (x < 0.92) return mix(c7, c8, (x - 0.82) / 0.10);
+          return mix(c8, c9, (x - 0.92) / 0.08);
+        }
+        // ---- clear glass letters, half full of orange liquid that sloshes with the motion ----
+        uniform vec3 strips; // screen positions of the horizontal and vertical strip lights, and the diagonal one
+        uniform vec4 surf;   // x: level (screen y), z: wave amplitude
+        uniform vec4 piv;    // each letter's centre, screen x
+        uniform vec4 slp;    // each letter's surface slope
+        float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+        // a quiet gradient: near-black at the top, deep warm umber low down, one broad soft glow behind the word
+        vec3 backdrop(vec2 q) {
+          // clean near-black: a whisper of lift in the middle, a narrow low warm line under the word, a vignette
+          vec3 c = vec3(0.016, 0.012, 0.016);
+          vec2 m = (q - vec2(980.0, 600.0)) / vec2(900.0, 520.0);
+          c += vec3(0.022, 0.018, 0.022) * exp(-dot(m, m) * 1.4);
+          vec2 g = (q - vec2(1050.0, 1075.0)) / vec2(820.0, 120.0);
+          c += vec3(0.095, 0.030, 0.008) * exp(-dot(g, g));
+          vec2 e = (q - vec2(960.0, 540.0)) / vec2(1100.0, 720.0);
+          c *= 1.0 - 0.45 * smoothstep(0.5, 1.2, length(e));
+          c += (hash(floor(q)) - 0.5) / 255.0;                                     // dither, no banding
+          return c;
+        }
+        vec3 env(vec3 R, vec2 sp) {
+          float shift = (sp.x - 1250.0) / 1920.0 * 1.1;                          // reflections sweep as the word travels
+          float key = exp(-pow((R.x - 0.15 + shift) / 0.22, 2.0)) * smoothstep(0.1, -0.7, R.y);
+          float strip = exp(-pow((R.x - 0.62 + shift) / 0.05, 2.0)) * smoothstep(0.3, -0.5, R.y);
+          float broad = exp(-pow((R.x + 0.05 + shift * 1.4) / 0.45, 2.0)) * smoothstep(0.35, -0.25, R.y);
+          return vec3(1.0, 0.97, 0.94) * (key * 0.9 + strip * 1.4 + broad * 0.35);
+        }
+        void main() {
+          vec2 sp = vec2(gl_FragCoord.x, 1080.0 - gl_FragCoord.y);
+          vec3 bg = backdrop(sp);
+          vec2 tp = (sp - origin) / (texSize * scl);
+          if (tp.x < 0.0 || tp.y < 0.0 || tp.x > 1.0 || tp.y > 1.0) { gl_FragColor = vec4(bg, 1.0); return; }
+          vec4 s = texture2D(T, tp);
+          float a = s.r;
+          if (a < 0.003) { gl_FragColor = vec4(bg, 1.0); return; }
+          vec2 d = 6.0 / texSize;
+          float hx = (texture2D(T, tp + vec2(d.x, 0.0)).b - texture2D(T, tp - vec2(d.x, 0.0)).b)
+                   + 0.5 * (texture2D(T, tp + vec2(d.x, 0.0)).g - texture2D(T, tp - vec2(d.x, 0.0)).g);
+          float hy = (texture2D(T, tp + vec2(0.0, d.y)).b - texture2D(T, tp - vec2(0.0, d.y)).b)
+                   + 0.5 * (texture2D(T, tp + vec2(0.0, d.y)).g - texture2D(T, tp - vec2(0.0, d.y)).g);
+          vec3 N = normalize(vec3(-hx * 3.2, -hy * 3.2, 1.0));
+          float thick = smoothstep(0.08, 0.9, s.b);
+          float edge = smoothstep(0.35, 0.8, 1.0 - N.z);                          // 0 on the flat top, 1 on the steep rim
+
+          // lensing: near the rims the glass bends what is behind it strongly, in the middle hardly at all,
+          // so the liquid (and its surface) is seen shifted and magnified toward the walls
+          float lensF = pow(1.0 - N.z, 1.3);
+          vec2 q = sp - N.xy * 95.0 * lensF;
+          vec2 qs = sp - N.xy * 40.0 * lensF;
+          // the liquid surface: one level across the word, tilted by the slosh, with a small travelling ripple
+          // the surface of the letter this pixel belongs to, leaning about that letter's own centre
+          // (the letter is read from the glyphs, stored in the texture's alpha: 40, 100, 160, 220)
+          float pv = piv.x, sl = slp.x;
+          if (s.a > 0.27) { pv = piv.y; sl = slp.y; }
+          if (s.a > 0.51) { pv = piv.z; sl = slp.z; }
+          if (s.a > 0.75) { pv = piv.w; sl = slp.w; }
+          float x = qs.x - pv;
+          float sy = surf.x + sl * x + surf.z * (sin(x * 0.014 - time * 9.0) * 0.7 + sin(x * 0.029 + time * 13.0) * 0.3);
+          float dy = qs.y - sy;                                                     // > 0 below the surface
+          float wet = smoothstep(-3.0, 3.0, dy);
+
+          // liquid: bright just under the surface, saturated orange, deep red-brown at the bottom; glowing in thick parts
+          vec3 liq = mix(vec3(1.0, 0.66, 0.34), vec3(1.0, 0.38, 0.06), smoothstep(0.0, 110.0, dy));
+          liq = mix(liq, vec3(0.50, 0.07, 0.01), smoothstep(110.0, 340.0, dy));
+          liq *= 0.7 + 0.5 * thick;
+          liq *= 1.0 - edge * 0.55;                                                // the glass wall darkens the liquid at the sides
+          // meniscus: a fine bright line on the surface, a soft shadow just beneath it
+          liq += vec3(1.0, 0.86, 0.70) * exp(-pow((dy - 3.0) / 4.0, 2.0)) * 0.7;      // meniscus, softened by the frost
+          liq *= 1.0 - exp(-pow((dy - 10.0) / 5.0, 2.0)) * 0.25;
+          // a few small bubbles rising slowly through the liquid
+          vec2 cell = floor(vec2(sp.x - origin.x, sp.y) / 46.0);
+          float h = hash(cell);
+          if (h < 0.16 && dy > 30.0) {
+            vec2 c = (cell + vec2(0.25 + 0.5 * hash(cell + 3.1), fract(0.8 - time * (0.35 + 0.4 * hash(cell + 7.7)) + h * 9.0))) * 46.0;
+            c.x += origin.x;
+            float r = 2.0 + 3.0 * hash(cell + 1.3);
+            float dist = length(sp - c);
+            liq += vec3(1.0, 0.85, 0.7) * (smoothstep(r + 1.0, r, dist) - smoothstep(r - 0.6, r - 1.6, dist)) * 0.55;
+          }
+
+          // empty glass above the liquid. On black, glass shows itself through light, so it gets three kinds:
+          // 1) the walls: seen edge-on near the outline, a band of brighter glass that draws the whole letter
+          float wall = (1.0 - smoothstep(0.62, 0.95, s.g)) * smoothstep(0.02, 0.18, s.r);   // narrower than the opening: wider strokes here
+          // 2) the liquid's own glow climbing the glass above it, strongest on the walls
+          float up = max(0.0, -dy);
+          float spill = exp(-up / 55.0) * (0.25 + 0.75 * wall);
+          // 3) a barely-there grey haze in the body of the glass
+          // frosted: the gradient seen through the glass is softened by a small disc of samples, plus a milky haze
+          vec2 look = sp - N.xy * 80.0 * lensF;
+          vec3 seenBg = vec3(0.0);
+          for (int k = 0; k < 8; k++) {
+            float ang = float(k) * 0.785398;
+            seenBg += backdrop(look + vec2(cos(ang), sin(ang)) * 22.0);
+          }
+          seenBg /= 8.0;
+          vec3 empty = seenBg * 1.05 + vec3(0.022, 0.021, 0.024) * (1.0 - thick * 0.4);
+          empty += vec3(0.72, 0.74, 0.80) * wall * 0.26;                                 // glass walls, kept thin
+          empty += vec3(1.0, 0.45, 0.14) * spill * 0.4;
+          vec3 col = mix(empty, liq, wet);
+
+          // the glass over everything: reflections strongest at the rims, a thin highlight just inside the edge
+          vec3 R = vec3(2.0 * N.z * N.x, 2.0 * N.z * N.y, 2.0 * N.z * N.z - 1.0);
+          float fres = 0.03 + 0.97 * pow(1.0 - N.z, 4.0);
+          col = col * (1.0 - fres * 0.4) + env(R, sp) * (0.05 + fres * 0.9);
+          col += vec3(1.0, 0.95, 0.9) * smoothstep(0.72, 0.95, 1.0 - N.z) * smoothstep(0.02, 0.2, thick) * 0.4;
+          // the two specular edges of Apple-style glass: strong on the upper left, softer on the lower right
+          // the light is a point fixed just above the word, so every spot on a letter sees it from its own angle:
+          // as a letter travels past it, its bright edge swings from one side to the other
+          vec2 nd = normalize(N.xy + vec2(1e-5));
+          vec2 Lp = vec2(1250.0, 250.0);
+          vec2 toL = normalize(Lp - sp);
+          float near = exp(-pow((sp.x - Lp.x) / 650.0, 2.0));                      // letters right under the light shine most
+          float rimF = smoothstep(0.3, 0.85, 1.0 - N.z) * smoothstep(0.02, 0.15, s.r);
+          float hiTL = pow(max(dot(nd, toL), 0.0), 2.5) * rimF * (0.55 + 0.75 * near);
+          float hiBR = pow(max(dot(nd, -toL), 0.0), 2.5) * rimF * 0.8;
+          // a crisp line traced just inside the outline, much brighter where it faces upper left and lower right
+          float ring = smoothstep(0.30, 0.42, s.g) * (1.0 - smoothstep(0.50, 0.62, s.g));
+          float dir = 0.2 + 1.3 * pow(max(dot(nd, toL), 0.0), 2.0) * (0.6 + 0.6 * near) + 0.6 * pow(max(dot(nd, -toL), 0.0), 2.0);
+          col += vec3(1.0, 0.98, 0.95) * (hiTL * 0.5 + hiBR * 0.25 + ring * dir * 0.85);
+          // two strip lights fixed in the frame, seen in the glass. Where each one shows depends on the surface slope,
+          // so as the word drops the horizontal strip's reflection climbs each letter from bottom to top,
+          // and as it slides left the vertical strip's reflection crosses each letter from left to right
+          // only curved glass mirrors the strips: on the flat face they would lie as a grey film (this word lingers
+          // under them far longer than the opening's did), so here they live on the rims and bends alone
+          float curve = smoothstep(0.2, 0.65, 1.0 - N.z);
+          // the strips also travel against the word (strips.xy), so the light races across each letter
+          float hStrip = exp(-pow((sp.y + N.y * 200.0 - strips.x) / 40.0, 2.0)) * curve;
+          float vStrip = exp(-pow((sp.x + N.x * 200.0 - strips.y) / 44.0, 2.0)) * curve;
+          float dStrip = exp(-pow(((sp.x - sp.y * 0.6) + (N.x - N.y * 0.6) * 200.0 - strips.z) / 34.0, 2.0)) * curve;
+          float glassOnly = 1.0 - wet * 0.4;                                        // a touch softer where it sits over the liquid
+          col += vec3(1.0, 0.97, 0.93) * (hStrip * 1.1 + vStrip * 1.6 + dStrip * 1.2) * glassOnly;      // stronger here: the sweeps carry this shot
+          // two slanted window lights fixed in the frame (a broad one and a fine one): the word slides beneath them,
+          // so each bright band sweeps across every letter in turn, bending with the glass's curve; on the flat face
+          // it stays a thin line, so it reads as a reflection, not a film
+          float uDiag = sp.x - (sp.y - 632.0) * 0.35;
+          float bend = N.x * 130.0;
+          float sweep = exp(-pow((uDiag - 1140.0 - bend) / 36.0, 2.0)) + 0.75 * exp(-pow((uDiag - 1320.0 - bend) / 14.0, 2.0));
+          float onCurve = 0.3 + 0.9 * smoothstep(0.1, 0.6, 1.0 - N.z);
+          col += vec3(1.0, 0.97, 0.93) * sweep * onCurve * (1.0 - wet * 0.45) * 1.5;
+          // frost grain: fine, fixed to the glass surface
+          float grain = hash(floor(tp * texSize * 0.8)) - 0.5;
+          col += vec3(grain) * 0.035 * (1.0 - wet * 0.5);
+          col += vec3(0.008, 0.008, 0.009) * (1.0 - wet * 0.6);                    // a faint milky lift
+          col = col / (1.0 + col * 0.12);
+          gl_FragColor = vec4(mix(bg, col, a), 1.0);
+        }`;
+      const sh = (type, src) => { const o = gl.createShader(type); gl.shaderSource(o, src); gl.compileShader(o); return o; };
+      prog = gl.createProgram();
+      gl.attachShader(prog, sh(gl.VERTEX_SHADER, vs)); gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, fs));
+      gl.linkProgram(prog); gl.useProgram(prog);
+      const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+      const loc = gl.getAttribLocation(prog, "p"); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+      const tex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, tex);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, TEX.w, TEX.h, 0, gl.RGBA, gl.UNSIGNED_BYTE, px);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.uniform2f(gl.getUniformLocation(prog, "texSize"), TEX.w, TEX.h);
+      uOrigin = gl.getUniformLocation(prog, "origin");
+      uTime = gl.getUniformLocation(prog, "time");
+      uSurf = gl.getUniformLocation(prog, "surf");
+      uStrips = gl.getUniformLocation(prog, "strips");
+      uScl = gl.getUniformLocation(prog, "scl");
+      uPiv = gl.getUniformLocation(prog, "piv");
+      uSlp = gl.getUniformLocation(prog, "slp");
+      gl.viewport(0, 0, 1920, 1080);
+      glReady = true;
+    }
+
+    // tx: the word's left ink edge on screen, ts: its scale
+    function drawGlass(tx, ts, t) {
+      if (!glReady) return;
+      gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
+      const ox = tx - LSB * FS * ts, base = 632 + (1056 - 632) * ts;     // text origin on screen
+      gl.uniform2f(uOrigin, ox - TEX.ox * ts, base - TEX.base * ts);
+      gl.uniform1f(uScl, ts);
+      gl.uniform1f(uTime, t);
+      // the strip lights move against the word, so the light sweeps across the letters as it slides
+      // over this word's long travel the lights drift only a little against it, so each one stays in frame and its
+      // reflection runs across every letter in turn as the word passes beneath
+      const slid = 751 - tx;
+      // the horizontal strip sits just above the letters, so only their upper curves catch it (as in the opening)
+      gl.uniform3f(uStrips, 590, 1180 + 0.32 * slid, 1220 + 0.22 * slid);
+      // the liquid fills each letter about half way up its x-height
+      gl.uniform4f(uSurf, base - 0.5 * 0.526 * FS * ts, 0, simAt(SIM.wave, t), 0);
+      gl.uniform4f(uPiv, ...LET.cen.map((c) => ox + c * ts));
+      gl.uniform4f(uSlp, ...SIM.slope.map((a) => simAt(a, t)));
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    }
+
+    const place = (lt) => {
+      const t = lt + T0;
+      const [, wx] = lerpKeys(WHITE, t);
+      gsap.set(white, { x: wx - LSB * 466 });
+      if (t >= 19.2) { const [, tx, ts] = lerpKeys(TUBE, t); drawGlass(tx, ts, t); }
+    };
+    const clock = { t: 0 };
+    tl.fromTo(clock, { t: 0 }, { t: 19.95 - T0, duration: 19.95 - T0, ease: "none", immediateRender: false, onUpdate: () => place(clock.t) }, 0);
+    place(0);
+    tl.set(["#t-grid", white], { opacity: 1 }, 0);
+    tl.set(["#t-grid", white], { opacity: 0 }, at(19.233));
+    tl.set("#t-glass", { opacity: 1 }, at(19.233));
+    tl.set("#t-glass", { opacity: 0 }, at(19.867));
+
+    window.__hf = window.__hf || {};
+    window.__hf.buildReady = window.__hf.buildReady || {};
+    window.__hf.buildReady["moretype-glass"] = document.fonts.load('500 805px "Inter Display"').then(() => { buildGlass(); place(clock.t); });
+
+    window.__timelines["moretype"] = tl;
+  </script>
+</template>

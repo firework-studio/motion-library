@@ -1,0 +1,263 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Inter";
+      font-weight: 100 900;
+      src: url("assets/fonts/Inter-Variable.ttf") format("truetype");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: transparent;
+      font-family: "Inter", sans-serif;
+      color: #ffffff;
+    }
+    .abs {
+      position: absolute;
+    }
+    /* quick-action pills, measured on the reference: 200 px tall, fully round, an 84 px icon disc, 94 px label */
+    #c-row {
+      left: 0;
+      top: 440px;
+      height: 200px;
+      display: flex;
+      gap: 36px;
+      white-space: nowrap;
+    }
+    .c-pill {
+      position: relative;
+      height: 200px;
+      border-radius: 100px;
+      background: #302d33;
+      box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.05), inset 0 -2px 0 rgba(0, 0, 0, 0.25);
+      display: flex;
+      align-items: center;
+      padding: 0 84px 0 58px;
+      gap: 26px;
+      font-size: 94px;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+    }
+    .c-icon {
+      flex: none;
+      width: 84px;
+      height: 84px;
+    }
+    /* the chosen pill: its label rolls from another action to its own; then a progress fill sweeps it */
+    #c-pick {
+      overflow: hidden;
+    }
+    #c-label {
+      position: relative;
+      display: inline-block;
+      height: 120px;
+      line-height: 120px;
+      overflow: hidden;
+    }
+    #c-label span {
+      display: inline-block;
+    }
+    #c-labelOld {
+      position: absolute;
+      left: 0;
+      top: 0;
+    }
+    #c-fill {
+      left: 0;
+      top: 0;
+      height: 200px;
+      width: 100%;
+      opacity: 0;
+      background: linear-gradient(90deg, #a92e06 0%, #e2500f 38%, #ff6a1f 62%, #ffb07a 88%, #ffd6b8 100%);
+    }
+    #c-check {
+      left: 50%;
+      top: 50%;
+      width: 52px;
+      height: 52px;
+      margin: -26px 0 0 -26px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      opacity: 0;
+    }
+    #c-check svg {
+      width: 30px;
+      height: 30px;
+    }
+    #c-rings {
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+      overflow: visible;
+    }
+  </style>
+  <div id="root" data-composition-id="actions" data-width="1920" data-height="1080">
+    <div id="c-row" class="abs" data-layout-allow-overflow>
+      <div id="c-p1" class="c-pill">
+        <svg class="c-icon" viewBox="0 0 84 84"><circle cx="42" cy="42" r="40" fill="#c4c2cb" /><path d="M36 56 V28 L56 23 V50" fill="none" stroke="#302d33" stroke-width="5" stroke-linejoin="round" /><circle cx="31" cy="56" r="7" fill="#302d33" /><circle cx="51" cy="51" r="7" fill="#302d33" /></svg>
+        <span>Add music</span>
+      </div>
+      <div id="c-p2" class="c-pill">
+        <svg class="c-icon" viewBox="0 0 84 84"><circle cx="42" cy="42" r="40" fill="#c4c2cb" /><path d="M42 20 L46 36 L62 40 L46 44 L42 60 L38 44 L22 40 L38 36 Z" fill="#302d33" /></svg>
+        <span>Change style</span>
+      </div>
+      <div id="c-pick" class="c-pill">
+        <div id="c-fill" class="abs"></div>
+        <div id="c-content" style="display: flex; align-items: center; gap: 26px; position: relative">
+          <svg class="c-icon" viewBox="0 0 84 84"><circle cx="42" cy="42" r="40" fill="#c4c2cb" /><path d="M24 41 L60 26 L50 60 L41 46 Z M41 46 L60 26" fill="#302d33" stroke="#302d33" stroke-width="3" stroke-linejoin="round" /></svg>
+          <div id="c-label"><span id="c-labelNew">Publish to X</span><span id="c-labelOld">Change style</span></div>
+        </div>
+        <div id="c-check" class="abs"><svg viewBox="0 0 30 30"><path d="M8 15.5 L13 20.5 L22 10" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" /></svg></div>
+      </div>
+    </div>
+    <!-- the rings are light, not lines (measured cross-section: ~6.5 px flat core, soft 1-2 px edges, a faint halo):
+         dim deep orange on the left rising to a bright warm white on the right -->
+    <svg id="c-rings" class="abs" viewBox="0 0 1920 1080" data-layout-allow-overflow>
+      <defs>
+        <linearGradient id="c-ringG" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#7c2406" />
+          <stop offset="0.3" stop-color="#b8380a" />
+          <stop offset="0.62" stop-color="#ff7a2e" />
+          <stop offset="1" stop-color="#ffe2cc" />
+        </linearGradient>
+        <filter id="c-soft" x="-10%" y="-30%" width="120%" height="160%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="0.9" result="core" />
+          <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="halo" />
+          <feComponentTransfer in="halo" result="haloDim"><feFuncA type="linear" slope="0.4" /></feComponentTransfer>
+          <feMerge><feMergeNode in="haloDim" /><feMergeNode in="core" /></feMerge>
+        </filter>
+      </defs>
+      <rect id="c-ring1" fill="none" stroke="url(#c-ringG)" stroke-width="6.5" filter="url(#c-soft)" opacity="0" />
+      <rect id="c-ring2" fill="none" stroke="url(#c-ringG)" stroke-width="6.5" filter="url(#c-soft)" opacity="0" />
+    </svg>
+  </div>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+    const T0 = 19.9;   // this composition starts at 19.9 s on the root; times below are written as root seconds - T0
+    const at = (t) => t - T0;
+    const lerpKeys = (K, t) => {
+      let i = 0;
+      while (i < K.length - 2 && K[i + 1][0] <= t) i++;
+      const a = K[i], b = K[i + 1], u = Math.min(1, Math.max(0, (t - a[0]) / (b[0] - a[0])));
+      return a.map((v, j) => v + (b[j] - v) * u);
+    };
+
+    const row = document.getElementById("c-row");
+    const pick = document.getElementById("c-pick");
+    // pill widths come from layout once the font is in; the chosen pill ends centred at 960
+    let W1 = 0, W2 = 0, W3 = 0, fontsIn = false;
+    const GAP = 36;
+    const measure = () => {
+      W1 = document.getElementById("c-p1").offsetWidth;
+      W2 = document.getElementById("c-p2").offsetWidth;
+      W3 = pick.offsetWidth;
+    };
+
+    // ---------------------------------------------------------------- the row slides in (19.93-21.23 s)
+    // the chosen pill's left edge, measured each frame on the reference (relative to where it stops, 431),
+    // reconstructed before 20.23 s from the leading pill; it rushes in from the right and brakes to a stop
+    const ROLL = [[19.933, 3272], [19.967, 3031], [20.0, 2820], [20.033, 2631], [20.067, 2460], [20.1, 2303], [20.133, 2159], [20.167, 2026],
+                  [20.2, 1903], [20.233, 1789], [20.267, 1682], [20.3, 1582], [20.333, 1489], [20.367, 1402], [20.4, 1320], [20.433, 1244],
+                  [20.467, 1172], [20.5, 1105], [20.533, 1042], [20.567, 984], [20.6, 929], [20.633, 878], [20.667, 830], [20.7, 786],
+                  [20.733, 745], [20.767, 706], [20.8, 671], [20.833, 638], [20.867, 608], [20.9, 581], [20.933, 556], [20.967, 534],
+                  [21.0, 513], [21.033, 495], [21.067, 480], [21.1, 466], [21.133, 454], [21.167, 445], [21.2, 437], [21.233, 431]];
+    // ---------------------------------------------------------------- the chosen pill (21.27-22.67 s)
+    // its width as a share of its resting width (it tucks in when chosen, swells back as it fills, holds, then draws
+    // in to a small round badge), measured on the reference; from 22.43 s in px, since the badge has its own size
+    const PICKW = [[21.233, 1.0], [21.267, 1.0], [21.3, 0.978], [21.333, 0.953], [21.367, 0.931], [21.4, 0.921], [21.433, 0.924], [21.467, 0.935],
+                   [21.5, 0.947], [21.567, 0.959], [21.6, 0.97], [21.633, 0.983], [21.667, 0.998], [21.7, 1.012], [21.767, 1.009], [22.0, 1.009],
+                   [22.067, 1.006], [22.1, 1.0], [22.133, 0.994], [22.167, 0.983], [22.2, 0.969], [22.233, 0.95], [22.267, 0.924], [22.3, 0.888],
+                   [22.333, 0.838], [22.367, 0.744], [22.4, 0.569]];
+    const BADGE = [[22.4, 0], [22.433, 300], [22.467, 240], [22.5, 214], [22.533, 200], [22.567, 200], [22.6, 200]];
+
+    // chosen (21.33-21.85 s): the icon slides right across the pill, gathering speed, and the label is wiped away
+    // wherever it has passed; measured as a share of its travel
+    const SWEEP = [[21.333, 0], [21.4, 0.041], [21.467, 0.08], [21.533, 0.133], [21.6, 0.215], [21.667, 0.337], [21.733, 0.516], [21.8, 0.794], [21.84, 1]];
+    const icon = document.querySelector("#c-content .c-icon");
+    const label = document.getElementById("c-label");
+    // the rings, measured on the reference as each ring's left edge minus the resting pill's left edge, px:
+    // the first is the pill's own rim (inside, since the pill has tucked in) that lets go and drifts outward;
+    // the second leaves the pill at 21.73 s; both keep going at ~30 px a frame until they are out of frame
+    const RING1 = [[21.433, -44], [21.467, -38], [21.5, -28], [21.533, -14], [21.567, 6], [21.6, 30], [21.633, 56], [21.667, 86], [21.7, 116],
+                   [21.733, 148], [21.767, 178], [21.8, 210], [21.833, 243], [21.867, 278], [21.9, 313], [21.933, 348], [21.967, 384], [22.0, 420], [22.033, 457], [22.067, 495], [22.1, 534]];
+    const RING2 = [[21.733, 18], [21.767, 28], [21.8, 45], [21.833, 66], [21.867, 89], [21.9, 115], [21.933, 143], [21.967, 173], [22.0, 205],
+                   [22.033, 238], [22.067, 272], [22.1, 307], [22.133, 343], [22.167, 380], [22.2, 420], [22.233, 458], [22.267, 497], [22.3, 536]];
+    const ringAt = (id, K, t, w, h) => {
+      const el = document.getElementById(id);
+      if (t < K[0][0] || t > K[K.length - 1][0]) { el.setAttribute("opacity", 0); return; }
+      const o = lerpKeys(K, t)[1];
+      // it starts as the pill's own rim and lets go once its measured path passes the pill's live edge
+      // sideways the travel is scaled to this pill (narrower than the reference's), so each ring reaches the frame
+      // edge on the same frame it does there; up and down it keeps the measured distance
+      const ex = Math.max(0, o * ((960 - W3 / 2) / 394) + (W3 - w) / 2);
+      const ey = Math.max(0, o + (W3 - w) / 2 * (200 / W3));
+      const rw = w + 2 * ex, rh = h + 2 * ey;
+      el.setAttribute("x", 960 - rw / 2); el.setAttribute("y", 540 - rh / 2);
+      el.setAttribute("width", rw); el.setAttribute("height", rh); el.setAttribute("rx", rh / 2);
+      // it lights up over two frames and dims a little as it travels out
+      // it lights up over two frames, then fades away as it travels out and leaves the frame
+      el.setAttribute("opacity", Math.min(1, (t - K[0][0]) / 0.066) * (1 - Math.min(1, Math.max(0, o - 120) / 420)));
+    };
+    const place = (lt) => {
+      const t = lt + T0;
+      if (!fontsIn) measure();   // until the font is in, widths are re-read each frame
+      const [, l3] = lerpKeys(ROLL, t);
+      const left3 = 960 - W3 / 2 + (l3 - 431);
+      gsap.set(row, { x: left3 - (W1 + GAP + W2 + GAP) });
+      // the chosen pill reshapes about its own centre
+      // pressed (21.27-22.1 s): the whole pill, label and icon too, dips to 92 % and springs back, like a tap;
+      // after that it draws in sideways to the badge
+      const k = t > 21.233 && t < 22.1 ? lerpKeys(PICKW, t)[1] : 1;
+      let lw = W3;
+      if (t >= 22.1) lw = W3 * lerpKeys(PICKW, Math.min(t, 22.4))[1];
+      if (t > 22.4) { const b = lerpKeys(BADGE, t)[1]; lw = Math.max(b, W3 * lerpKeys(PICKW, 22.4)[1] * (1 - Math.min(1, (t - 22.4) / 0.033))); }
+      const lh = t < 22.4 ? 200 : 200 - 16 * Math.min(1, (t - 22.4) / 0.1);
+      const dx = (W3 - 58 - 84 - 84) * lerpKeys(SWEEP, t)[1];
+      gsap.set(icon, { x: dx });
+      gsap.set(label, { clipPath: `inset(0 0 0 ${Math.max(0, dx + 84 - 110)}px)` });
+      gsap.set(pick, { width: lw, height: lh, marginLeft: (W3 - lw) / 2, marginRight: (W3 - lw) / 2, marginTop: (200 - lh) / 2, borderRadius: lh / 2,
+        scale: k, transformOrigin: "50% 50%" });
+      const w = lw * k, h = lh * k;   // the pill as seen, for the rings
+      ringAt("c-ring1", RING1, t, w, h);
+      ringAt("c-ring2", RING2, t, w, h);
+    };
+    const clock = { t: 0 };
+    tl.fromTo(clock, { t: 0 }, { t: 22.7 - T0, duration: 22.7 - T0, ease: "none", immediateRender: false, onUpdate: () => place(clock.t) }, 0);
+
+    // the pills to the left of the chosen one fade as it arrives, and are gone when it is chosen
+    tl.fromTo(["#c-p1", "#c-p2"], { opacity: 1 }, { opacity: 0.3, duration: 0.93, ease: "sine.in", immediateRender: false }, at(20.4));
+    tl.set(["#c-p1", "#c-p2"], { opacity: 0 }, at(21.4));
+    // the chosen pill's label rolls over from the neighbouring action to its own, blurred by the speed (20.30-20.70 s)
+    tl.fromTo("#c-labelOld", { x: 0, filter: "blur(0px)", opacity: 1 }, { x: -420, filter: "blur(10px)", opacity: 0, duration: 0.3, ease: "power2.in", immediateRender: false }, at(20.3));
+    tl.fromTo("#c-labelNew", { x: 520, filter: "blur(12px)", opacity: 0 }, { x: 0, filter: "blur(0px)", opacity: 1, duration: 0.4, ease: "power3.out", immediateRender: false }, at(20.42));
+    // chosen: the rim lights (21.43 s), then the fill sweeps across from the left, covering the label as it eases right
+    // the whole pill warms into the gradient as the icon crosses it, darkest at first on the left
+    tl.fromTo("#c-fill", { opacity: 0 }, { opacity: 1, duration: 0.42, ease: "power2.in", immediateRender: false }, at(21.4));
+    // the icon goes once it reaches the far end
+    tl.to(icon, { opacity: 0, duration: 0.05, ease: "none" }, at(21.81));
+    tl.set("#c-label", { opacity: 0 }, at(21.84));
+    // a check settles in the middle, the bar darkens, then draws in to a round badge
+    tl.fromTo("#c-check", { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.15, ease: "back.out(2)", immediateRender: false }, at(21.97));
+    tl.fromTo("#c-fill", { filter: "brightness(1) saturate(1)" }, { filter: "brightness(0.5) saturate(0.7)", duration: 0.33, ease: "sine.inOut", immediateRender: false }, at(21.97));
+    tl.to("#c-check", { backgroundColor: "rgba(247,242,239,1)", scale: 2.08, duration: 0.3, ease: "power2.out" }, at(22.27));
+    // as it draws in, the colour drains to the dark round the next shot grows out of
+    tl.to("#c-fill", { opacity: 0, duration: 0.25, ease: "sine.inOut" }, at(22.2));
+    tl.fromTo(pick, { backgroundColor: "#302d33" }, { backgroundColor: "#2e2326", duration: 0.25, ease: "none", immediateRender: false }, at(22.2));
+    tl.fromTo("#c-check", { color: "#ffffff" }, { color: "#2e2326", duration: 0.2, ease: "none", immediateRender: false }, at(22.27));
+
+    const ready = document.fonts.load('500 94px "Inter"').then(() => { gsap.set(pick, { clearProps: "width,height,marginLeft,marginRight,marginTop" }); measure(); fontsIn = true; place(clock.t); });
+    window.__hf = window.__hf || {};
+    window.__hf.buildReady = window.__hf.buildReady || {};
+    window.__hf.buildReady["actions-layout"] = ready;
+    place(0);
+
+    window.__timelines["actions"] = tl;
+  </script>
+</template>

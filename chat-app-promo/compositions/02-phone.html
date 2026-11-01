@@ -1,0 +1,907 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: #050306;
+    }
+    .abs {
+      position: absolute;
+    }
+    /* everything is laid out at the settled framing (about 4.1 s in the film) and scaled from the top right */
+    #p-rig {
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+      transform-origin: 1700px 0px;
+    }
+    #p-iconLayer {
+      overflow: visible;
+    }
+    #p-moon,
+    #p-lines,
+    #p-iconLayer,
+    #p-glass {
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+    }
+    #p-moon {
+      opacity: 0;
+    }
+    #p-halo {
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+      opacity: 0;
+      background: radial-gradient(ellipse 34% 46% at 865px 468px, rgba(255, 120, 40, 0.85) 0%, rgba(255, 106, 31, 0.55) 45%, rgba(255, 106, 31, 0) 100%);
+    }
+    /* halftone dots that ride on the bloom */
+    #p-dots {
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+      opacity: 0;
+      background-image: radial-gradient(circle, rgba(255, 214, 170, 0.9) 1.6px, rgba(255, 214, 170, 0) 2.2px);
+      background-size: 9px 9px;
+      -webkit-mask-image: radial-gradient(ellipse 30% 40% at 865px 468px, #000 0%, rgba(0, 0, 0, 0.6) 55%, transparent 100%);
+      mask-image: radial-gradient(ellipse 30% 40% at 865px 468px, #000 0%, rgba(0, 0, 0, 0.6) 55%, transparent 100%);
+    }
+    #p-wash {
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+      opacity: 0;
+      background: linear-gradient(180deg, rgba(255, 196, 150, 0.0) 0%, rgba(255, 170, 110, 0.55) 60%, rgba(255, 150, 90, 0.75) 100%);
+      -webkit-mask-image: radial-gradient(ellipse 60% 75% at 900px 520px, #000 30%, transparent 80%);
+      mask-image: radial-gradient(ellipse 60% 75% at 900px 520px, #000 30%, transparent 80%);
+    }
+    /* a dark ring right around the icon keeps it legible while the light floods the module */
+    #p-shade {
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+      opacity: 0;
+      background: radial-gradient(circle at 865px 468px, transparent 205px, rgba(20, 8, 4, 0.55) 235px, rgba(20, 8, 4, 0) 330px);
+    }
+  </style>
+  <div id="root" data-composition-id="phone" data-width="1920" data-height="1080">
+    <div id="p-rig" class="abs" data-layout-allow-overflow>
+      <canvas id="p-moon" class="abs" width="1920" height="1080"></canvas>
+      <svg id="p-lines" class="abs" width="1920" height="1080" viewBox="0 0 1920 1080" data-layout-allow-overflow>
+        <defs>
+          <linearGradient id="p-rimG" gradientUnits="userSpaceOnUse" x1="375" y1="0" x2="1900" y2="0">
+            <stop offset="0" stop-color="#5f5c64" />
+            <stop offset="0.6" stop-color="#535058" />
+            <stop offset="1" stop-color="#535058" stop-opacity="0" />
+          </linearGradient>
+          <linearGradient id="p-bandG" gradientUnits="userSpaceOnUse" x1="455" y1="0" x2="1800" y2="0">
+            <stop offset="0" stop-color="#8d8992" stop-opacity="0.55" />
+            <stop offset="0.55" stop-color="#77737c" stop-opacity="0.45" />
+            <stop offset="1" stop-color="#77737c" stop-opacity="0" />
+          </linearGradient>
+          <filter id="p-soft" x="-2%" y="-2%" width="104%" height="104%"><feGaussianBlur stdDeviation="0.9" /></filter>
+          <linearGradient id="p-slopeG" gradientUnits="userSpaceOnUse" x1="455" y1="884" x2="700" y2="640">
+            <stop offset="0" stop-color="#36343b" />
+            <stop offset="1" stop-color="#26242a" />
+          </linearGradient>
+          <linearGradient id="p-slopeFadeX" gradientUnits="userSpaceOnUse" x1="455" y1="0" x2="1850" y2="0">
+            <stop offset="0" stop-color="#fff" />
+            <stop offset="0.55" stop-color="#fff" stop-opacity="0.85" />
+            <stop offset="1" stop-color="#fff" stop-opacity="0" />
+          </linearGradient>
+          <linearGradient id="p-slopeFadeY" gradientUnits="userSpaceOnUse" x1="0" y1="884" x2="0" y2="60">
+            <stop offset="0" stop-color="#fff" />
+            <stop offset="0.6" stop-color="#fff" stop-opacity="0.7" />
+            <stop offset="1" stop-color="#fff" stop-opacity="0" />
+          </linearGradient>
+          <radialGradient id="p-slopeFade" gradientUnits="userSpaceOnUse" cx="900" cy="960" r="1150">
+            <stop offset="0" stop-color="#fff" />
+            <stop offset="0.35" stop-color="#fff" stop-opacity="0.7" />
+            <stop offset="1" stop-color="#fff" stop-opacity="0" />
+          </radialGradient>
+          <mask id="p-slopeMask" maskUnits="userSpaceOnUse" x="0" y="-100" width="2200" height="1200">
+            <rect x="0" y="-100" width="2200" height="1200" fill="url(#p-slopeFade)" />
+          </mask>
+          <linearGradient id="p-wipeG1" gradientUnits="userSpaceOnUse" x1="200" y1="0" x2="460" y2="0">
+            <stop offset="0" stop-color="#fff" /><stop offset="1" stop-color="#fff" stop-opacity="0" />
+          </linearGradient>
+          <linearGradient id="p-wipeG2" gradientUnits="userSpaceOnUse" x1="900" y1="0" x2="1100" y2="0">
+            <stop offset="0" stop-color="#fff" /><stop offset="1" stop-color="#fff" stop-opacity="0" />
+          </linearGradient>
+          <linearGradient id="p-wipeG3" gradientUnits="userSpaceOnUse" x1="1450" y1="0" x2="1710" y2="0">
+            <stop offset="0" stop-color="#fff" /><stop offset="1" stop-color="#fff" stop-opacity="0" />
+          </linearGradient>
+          <linearGradient id="p-wipeTop" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="800" y2="0">
+            <stop offset="0" stop-color="#fff" /><stop offset="1" stop-color="#fff" stop-opacity="0" />
+          </linearGradient>
+          <mask id="p-wipeTopM" maskUnits="userSpaceOnUse" x="0" y="-300" width="2400" height="1500"><rect x="0" y="-300" width="2400" height="1500" fill="url(#p-wipeTop)" /></mask>
+          <mask id="p-wipe1" maskUnits="userSpaceOnUse" x="0" y="-300" width="2400" height="1500"><rect x="0" y="-300" width="2400" height="1500" fill="url(#p-wipeG1)" /></mask>
+          <mask id="p-wipe2" maskUnits="userSpaceOnUse" x="0" y="-300" width="2400" height="1500"><rect x="0" y="-300" width="2400" height="1500" fill="url(#p-wipeG2)" /></mask>
+          <mask id="p-wipe3" maskUnits="userSpaceOnUse" x="0" y="-300" width="2400" height="1500"><rect x="0" y="-300" width="2400" height="1500" fill="url(#p-wipeG3)" /></mask>
+          <!-- a bevel lit from the upper left: bright along the top-left arc, gone by the lower right -->
+          <linearGradient id="p-bevel" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#ffffff" stop-opacity="0.75" />
+            <stop offset="0.32" stop-color="#ffffff" stop-opacity="0.5" />
+            <stop offset="0.58" stop-color="#ffffff" stop-opacity="0" />
+          </linearGradient>
+          <filter id="p-glowLine" x="-5%" y="-5%" width="110%" height="110%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="2.2" result="b" />
+            <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
+          <linearGradient id="p-modG" gradientUnits="userSpaceOnUse" x1="562" y1="0" x2="1500" y2="0">
+            <stop offset="0" stop-color="#ffffff" />
+            <stop offset="0.6" stop-color="#e7e3ea" stop-opacity="0.8" />
+            <stop offset="1" stop-color="#e7e3ea" stop-opacity="0" />
+          </linearGradient>
+          <!-- icon plate: warm white in the lower left, our orange, deep red-orange in the upper right -->
+          <radialGradient id="p-iconG-unused" gradientUnits="userSpaceOnUse" cx="-215" cy="215" r="1">
+            <stop offset="0" stop-color="#fff3e6" />
+            <stop offset="0.28" stop-color="#ffb066" />
+            <stop offset="0.55" stop-color="#ff6a1f" />
+            <stop offset="0.86" stop-color="#9e2d06" />
+            <stop offset="1" stop-color="#9e2d06" stop-opacity="0" />
+          </radialGradient>
+          <linearGradient id="p-bubG-unused" x1="0" y1="1" x2="1" y2="0">
+            <stop offset="0" stop-color="#fff8f1" />
+            <stop offset="0.55" stop-color="#ffe7d2" />
+            <stop offset="1" stop-color="#f2b48a" />
+          </linearGradient>
+          <linearGradient id="p-sheenG-unused" x1="0" y1="1" x2="1" y2="0">
+            <stop offset="0" stop-color="#ffffff" stop-opacity="0" />
+            <stop offset="0.45" stop-color="#ffffff" stop-opacity="0.95" />
+            <stop offset="0.6" stop-color="#ffffff" stop-opacity="0" />
+          </linearGradient>
+          <clipPath id="p-plateClip-unused"><rect x="-215" y="-220" width="430" height="440" rx="107" /></clipPath>
+          <clipPath id="p-bubClip-unused"><circle id="p-bubClipC" cx="0" cy="0" r="128" /></clipPath>
+          <pattern id="p-pix-unused" width="8" height="8" patternUnits="userSpaceOnUse">
+            <rect width="8" height="8" fill="none" />
+            <circle cx="4" cy="4" r="1.7" fill="#ffffff" fill-opacity="0.55" />
+          </pattern>
+        </defs>
+        <!-- the phone's dark back hides the moon behind it -->
+        <path d="M375,-80 L375,734 A230,230 0 0 0 605,964 L2100,964 L2100,-80 Z" fill="#050306" />
+        <!-- metal rim, then a soft bevel band inside it -->
+        <!-- metal rim: a bright outer face and a darker inner face, edges softened a touch -->
+        <g id="p-rim" filter="url(#p-soft)">
+          <path d="M386,-80 L386,734 A219,219 0 0 0 605,953 L2100,953" fill="none" stroke="#28262b" stroke-width="14" />
+          <path d="M375,-80 L375,734 A230,230 0 0 0 605,964 L2100,964" fill="none" stroke="url(#p-rimG)" stroke-width="9" />
+        </g>
+        <!-- the camera plateau's sloped side: a solid shape, lit from the lower left, falling off up and to the right -->
+        <path id="p-band" fill="url(#p-slopeG)" mask="url(#p-slopeMask)" opacity="0"
+          d="M455,-80 L455,674 A210,210 0 0 0 665,884 L2100,884 L2100,-80 Z" />
+        <!-- camera module and its neighbours -->
+        <!-- the module top: dark, covering the slope inside its edge and above it; grows in with its edge line -->
+        <g id="p-mod" opacity="0">
+          <rect id="p-modTop" mask="url(#p-wipeTopM)" x="562" y="140" width="1500" height="640" rx="135" fill="#060407" />
+          <!-- the same frame turning 3D: a soft lit bevel on the upper left and a dark lip just inside -->
+          <g id="p-mod3d" opacity="0" mask="url(#p-wipe1)">
+            <rect x="566" y="144" width="1492" height="632" rx="131" fill="none" stroke="#000000" stroke-opacity="0.7" stroke-width="8" filter="url(#p-glowLine)" />
+            <rect x="562" y="140" width="1500" height="640" rx="135" fill="none" stroke="url(#p-bevel)" stroke-width="6" filter="url(#p-glowLine)" />
+          </g>
+          <rect id="p-modLine" mask="url(#p-wipe1)" x="562" y="140" width="1500" height="640" rx="135" fill="none" stroke="url(#p-modG)" stroke-width="2.6" filter="url(#p-glowLine)" opacity="0.1" />
+        </g>
+        <rect id="p-mod2" mask="url(#p-wipe2)" x="1168" y="245" width="420" height="410" rx="105" fill="none" stroke="url(#p-bevel)" stroke-width="2" opacity="0" />
+        <rect id="p-mod3" mask="url(#p-wipe3)" x="1690" y="245" width="420" height="410" rx="105" fill="none" stroke="url(#p-bevel)" stroke-width="1.6" opacity="0" />
+        <!-- the surroundings catching the halo as it passes: the slope, the module's edge and the phone's rim -->
+        <g id="p-envLit" opacity="0" mask="url(#p-ledMask)">
+          <path d="M455,-80 L455,674 A210,210 0 0 0 665,884 L2100,884 L2100,-80 Z" fill="#ff8a46" fill-opacity="0.1" />
+          <rect x="562" y="140" width="1500" height="640" rx="135" fill="none" stroke="#ffb98a" stroke-opacity="0.75" stroke-width="3" filter="url(#p-glowLine)" />
+          <rect x="1168" y="245" width="420" height="410" rx="105" fill="none" stroke="#ffb98a" stroke-opacity="0.35" stroke-width="2" />
+          <path d="M375,-80 L375,734 A230,230 0 0 0 605,964 L2100,964" fill="none" stroke="#ffc9a3" stroke-opacity="0.6" stroke-width="7" filter="url(#p-glowLine)" />
+        </g>
+      </svg>
+      <div id="p-wash" class="abs"></div>
+      <div id="p-shade" class="abs"></div>
+      <!-- the icon rides above the light so it stays crisp while the bloom spreads behind it -->
+      <svg id="p-iconLayer" class="abs" width="1920" height="1080" viewBox="0 0 1920 1080" data-layout-allow-overflow>
+        <defs>
+          <linearGradient id="p-rimG" gradientUnits="userSpaceOnUse" x1="375" y1="0" x2="1900" y2="0">
+            <stop offset="0" stop-color="#5f5c64" />
+            <stop offset="0.6" stop-color="#535058" />
+            <stop offset="1" stop-color="#535058" stop-opacity="0" />
+          </linearGradient>
+          <linearGradient id="p-bandG" gradientUnits="userSpaceOnUse" x1="455" y1="0" x2="1800" y2="0">
+            <stop offset="0" stop-color="#8d8992" stop-opacity="0.55" />
+            <stop offset="0.55" stop-color="#77737c" stop-opacity="0.45" />
+            <stop offset="1" stop-color="#77737c" stop-opacity="0" />
+          </linearGradient>
+          <filter id="p-soft" x="-2%" y="-2%" width="104%" height="104%"><feGaussianBlur stdDeviation="0.9" /></filter>
+          <linearGradient id="p-slopeG" gradientUnits="userSpaceOnUse" x1="455" y1="884" x2="700" y2="640">
+            <stop offset="0" stop-color="#36343b" />
+            <stop offset="1" stop-color="#26242a" />
+          </linearGradient>
+          <linearGradient id="p-slopeFadeX" gradientUnits="userSpaceOnUse" x1="455" y1="0" x2="1850" y2="0">
+            <stop offset="0" stop-color="#fff" />
+            <stop offset="0.55" stop-color="#fff" stop-opacity="0.85" />
+            <stop offset="1" stop-color="#fff" stop-opacity="0" />
+          </linearGradient>
+          <linearGradient id="p-slopeFadeY" gradientUnits="userSpaceOnUse" x1="0" y1="884" x2="0" y2="60">
+            <stop offset="0" stop-color="#fff" />
+            <stop offset="0.6" stop-color="#fff" stop-opacity="0.7" />
+            <stop offset="1" stop-color="#fff" stop-opacity="0" />
+          </linearGradient>
+          <radialGradient id="p-slopeFade" gradientUnits="userSpaceOnUse" cx="900" cy="960" r="1150">
+            <stop offset="0" stop-color="#fff" />
+            <stop offset="0.35" stop-color="#fff" stop-opacity="0.7" />
+            <stop offset="1" stop-color="#fff" stop-opacity="0" />
+          </radialGradient>
+          <mask id="p-slopeMask" maskUnits="userSpaceOnUse" x="0" y="-100" width="2200" height="1200">
+            <rect x="0" y="-100" width="2200" height="1200" fill="url(#p-slopeFade)" />
+          </mask>
+          <linearGradient id="p-modG" gradientUnits="userSpaceOnUse" x1="562" y1="0" x2="1500" y2="0">
+            <stop offset="0" stop-color="#ffffff" />
+            <stop offset="0.6" stop-color="#e7e3ea" stop-opacity="0.8" />
+            <stop offset="1" stop-color="#e7e3ea" stop-opacity="0" />
+          </linearGradient>
+          <!-- icon plate: warm white in the lower left, our orange, deep red-orange in the upper right -->
+          <radialGradient id="p-iconG" gradientUnits="userSpaceOnUse" cx="-215" cy="215" r="1">
+            <stop offset="0" stop-color="#fff4ea" />
+            <stop offset="0.1" stop-color="#ffc08e" />
+            <stop offset="0.28" stop-color="#ff7a2a" />
+            <stop offset="0.48" stop-color="#ff4d1a" stop-opacity="0.85" />
+            <stop offset="0.66" stop-color="#b8243a" stop-opacity="0.55" />
+            <stop offset="0.84" stop-color="#5a1430" stop-opacity="0.3" />
+            <stop offset="1" stop-color="#5a1430" stop-opacity="0" />
+          </radialGradient>
+          <linearGradient id="p-bubG" x1="0" y1="1" x2="0" y2="0">
+            <stop offset="0" stop-color="#ffd2bd" />
+            <stop offset="0.45" stop-color="#fff1ea" />
+            <stop offset="1" stop-color="#ffffff" />
+          </linearGradient>
+          <linearGradient id="p-sheenG" x1="0" y1="1" x2="1" y2="0">
+            <stop offset="0" stop-color="#ffffff" stop-opacity="0" />
+            <stop offset="0.45" stop-color="#ffffff" stop-opacity="0.95" />
+            <stop offset="0.6" stop-color="#ffffff" stop-opacity="0" />
+          </linearGradient>
+          <clipPath id="p-plateClip"><rect x="-215" y="-220" width="430" height="440" rx="107" /></clipPath>
+          <clipPath id="p-bubClip"><circle id="p-bubClipC" cx="0" cy="0" r="128" /></clipPath>
+          <linearGradient id="p-plateBevel" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#ffffff" stop-opacity="0.95" />
+            <stop offset="0.45" stop-color="#ffffff" stop-opacity="0.4" />
+            <stop offset="0.75" stop-color="#ffffff" stop-opacity="0.12" />
+          </linearGradient>
+          <filter id="p-drop" x="-30%" y="-30%" width="160%" height="170%">
+            <feGaussianBlur in="SourceAlpha" stdDeviation="18" result="b" />
+            <feOffset in="b" dx="10" dy="22" result="o" />
+            <feFlood flood-color="#000000" flood-opacity="0.75" />
+            <feComposite in2="o" operator="in" />
+          </filter>
+          <filter id="p-bubDrop" x="-30%" y="-30%" width="160%" height="170%">
+            <feGaussianBlur in="SourceAlpha" stdDeviation="9" result="b" />
+            <feOffset in="b" dx="6" dy="12" result="o" />
+            <feFlood flood-color="#5a1408" flood-opacity="0.55" />
+            <feComposite in2="o" operator="in" />
+          </filter>
+          <linearGradient id="p-plateShade" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#ffffff" stop-opacity="0.06" />
+            <stop offset="0.3" stop-color="#ffffff" stop-opacity="0" />
+            <stop offset="1" stop-color="#000000" stop-opacity="0" />
+          </linearGradient>
+          <linearGradient id="p-gloss" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffffff" stop-opacity="0.1" />
+            <stop offset="0.42" stop-color="#ffffff" stop-opacity="0.02" />
+            <stop offset="0.43" stop-color="#ffffff" stop-opacity="0" />
+          </linearGradient>
+          <radialGradient id="p-bubShade" cx="0.38" cy="0.3" r="0.8">
+            <stop offset="0" stop-color="#ffffff" stop-opacity="0" />
+            <stop offset="0.7" stop-color="#ffffff" stop-opacity="0" />
+            <stop offset="1" stop-color="#b8432a" stop-opacity="0.45" />
+          </radialGradient>
+          <!-- lit rims: left and bottom catch the light, right and top barely -->
+          <linearGradient id="p-rimL" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#ffffff" stop-opacity="1" />
+            <stop offset="0.03" stop-color="#fff0e6" stop-opacity="0.95" />
+            <stop offset="0.07" stop-color="#ffcfb0" stop-opacity="0.55" />
+            <stop offset="0.16" stop-color="#ffb48a" stop-opacity="0" />
+          </linearGradient>
+          <linearGradient id="p-rimB" x1="0" y1="1" x2="0" y2="0">
+            <stop offset="0" stop-color="#ffffff" stop-opacity="1" />
+            <stop offset="0.035" stop-color="#ffe2cc" stop-opacity="0.85" />
+            <stop offset="0.12" stop-color="#ffb07c" stop-opacity="0.35" />
+            <stop offset="0.3" stop-color="#ff9a60" stop-opacity="0" />
+          </linearGradient>
+          <linearGradient id="p-rimFade" x1="0" y1="1" x2="1" y2="0">
+            <stop offset="0" stop-color="#fff" />
+            <stop offset="0.55" stop-color="#fff" stop-opacity="0.7" />
+            <stop offset="0.85" stop-color="#fff" stop-opacity="0" />
+          </linearGradient>
+          <mask id="p-rimMask" maskContentUnits="objectBoundingBox"><rect width="1" height="1" fill="url(#p-rimFade)" /></mask>
+          <!-- the bubble: near white at the top, our orange underneath, a dark line where it sits -->
+          <linearGradient id="p-bubMetal" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#fff8f4" />
+            <stop offset="0.2" stop-color="#ffe6da" stop-opacity="0.97" />
+            <stop offset="0.55" stop-color="#ffa576" stop-opacity="0.85" />
+            <stop offset="0.85" stop-color="#ff6a2a" stop-opacity="0.8" />
+            <stop offset="1" stop-color="#b8361a" stop-opacity="0.85" />
+          </linearGradient>
+          <!-- the metallic streak that crosses the bubble at the bottom of the squeeze -->
+          <linearGradient id="p-streak" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffffff" stop-opacity="0" />
+            <stop offset="0.42" stop-color="#ffe2ef" stop-opacity="0.0" />
+            <stop offset="0.48" stop-color="#ffffff" stop-opacity="1" />
+            <stop offset="0.55" stop-color="#ffb3c9" stop-opacity="0.85" />
+            <stop offset="0.64" stop-color="#ffffff" stop-opacity="0" />
+          </linearGradient>
+          <!-- LED-style pixel cell: 12 px, a light square with two dark dots -->
+          <pattern id="p-led" width="12" height="12" patternUnits="userSpaceOnUse">
+            <rect x="2" y="2" width="8" height="8" rx="1" fill="#ffd2b0" fill-opacity="0.5" />
+            <rect x="3.5" y="5" width="1.6" height="1.6" fill="#1a0a06" fill-opacity="0.8" />
+            <rect x="6.9" y="5" width="1.6" height="1.6" fill="#1a0a06" fill-opacity="0.8" />
+          </pattern>
+          <pattern id="p-pix" width="8" height="8" patternUnits="userSpaceOnUse">
+            <rect width="8" height="8" fill="none" />
+            <circle cx="4" cy="4" r="1.7" fill="#ffffff" fill-opacity="0.55" />
+          </pattern>
+        </defs>
+        <!-- the lens that becomes the app icon, centred on (865, 468) -->
+        <!-- LED-pixel light spreading out from the icon: a warm glow under a grid of pixel cells -->
+        <defs>
+          <radialGradient id="p-ledGlow" gradientUnits="userSpaceOnUse" cx="865" cy="468" r="300">
+            <stop offset="0" stop-color="#ff6a1f" stop-opacity="0" />
+            <stop offset="0.42" stop-color="#ff6a1f" stop-opacity="0.06" />
+            <stop offset="0.72" stop-color="#ff6a1f" stop-opacity="0.4" />
+            <stop offset="0.92" stop-color="#ff8a3d" stop-opacity="0.6" />
+            <stop offset="1" stop-color="#ff7a2a" stop-opacity="0" />
+          </radialGradient>
+          <radialGradient id="p-ledReach" gradientUnits="userSpaceOnUse" cx="865" cy="468" r="300">
+            <stop offset="0" stop-color="#fff" />
+            <stop offset="0.82" stop-color="#fff" stop-opacity="0.85" />
+            <stop offset="1" stop-color="#fff" stop-opacity="0" />
+          </radialGradient>
+          <!-- cells are dim right at the icon and brighten outward -->
+          <radialGradient id="p-ledCells" gradientUnits="userSpaceOnUse" cx="865" cy="468" r="520">
+            <stop offset="0" stop-color="#fff" stop-opacity="0.25" />
+            <stop offset="0.45" stop-color="#fff" stop-opacity="0.45" />
+            <stop offset="1" stop-color="#fff" stop-opacity="1" />
+          </radialGradient>
+          <mask id="p-ledCellMask" maskUnits="userSpaceOnUse" x="-2600" y="-800" width="6000" height="2800"><rect x="-2600" y="-800" width="6000" height="2800" fill="url(#p-ledCells)" /></mask>
+          <mask id="p-ledMask" maskUnits="userSpaceOnUse" x="-2600" y="-800" width="6000" height="2800"><rect x="-2600" y="-800" width="6000" height="2800" fill="url(#p-ledReach)" /></mask>
+        </defs>
+        <g id="p-ledLayer" opacity="0" mask="url(#p-ledMask)" visibility="hidden">
+          <rect x="-2600" y="-800" width="6000" height="2800" fill="url(#p-ledGlow)" />
+          <rect x="-2600" y="-800" width="6000" height="2800" fill="url(#p-led)" mask="url(#p-ledCellMask)" style="mix-blend-mode: screen" />
+        </g>
+        <defs>
+          <filter id="p-defocus" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="9" /></filter>
+          <radialGradient id="p-focusG" gradientUnits="userSpaceOnUse" cx="-250" cy="-260" r="330">
+            <stop offset="0" stop-color="#fff" />
+            <stop offset="0.45" stop-color="#fff" stop-opacity="0.85" />
+            <stop offset="1" stop-color="#fff" stop-opacity="0" />
+          </radialGradient>
+          <radialGradient id="p-focusInv" gradientUnits="userSpaceOnUse" cx="-250" cy="-260" r="330">
+            <stop offset="0" stop-color="#fff" stop-opacity="0.15" />
+            <stop offset="0.45" stop-color="#fff" stop-opacity="0.3" />
+            <stop offset="1" stop-color="#fff" stop-opacity="1" />
+          </radialGradient>
+          <mask id="p-blurM" maskUnits="userSpaceOnUse" x="-700" y="-700" width="1400" height="1400"><rect x="-700" y="-700" width="1400" height="1400" fill="url(#p-focusG)" /></mask>
+          <mask id="p-sharpM" maskUnits="userSpaceOnUse" x="-700" y="-700" width="1400" height="1400"><rect x="-700" y="-700" width="1400" height="1400" fill="url(#p-focusInv)" /></mask>
+        </defs>
+        <g transform="translate(865 468)">
+        <use href="#p-icon" filter="url(#p-defocus)" mask="url(#p-blurM)" visibility="hidden" />
+        <g mask="url(#p-sharpM)" visibility="hidden">
+        <g id="p-icon">
+          <g id="p-plate" opacity="0">
+            <rect id="p-plateShadow" x="-215" y="-220" width="430" height="440" rx="107" fill="#000" filter="url(#p-drop)" opacity="0" />
+            <rect id="p-plateBase" x="-215" y="-220" width="430" height="440" rx="107" fill="#1c0a12" fill-opacity="0" stroke="#ffffff" stroke-opacity="0.32" stroke-width="2" />
+            <rect class="p-edge3d" x="-215" y="-220" width="430" height="440" rx="107" fill="none" stroke="url(#p-plateBevel)" stroke-width="3.5" opacity="0" />
+            <rect id="p-plateFill" x="-215" y="-220" width="430" height="440" rx="107" fill="url(#p-iconG)" clip-path="url(#p-plateClip)" opacity="0" />
+            <g class="p-edge3d" opacity="0" mask="url(#p-rimMask)">
+              <rect x="-215" y="-220" width="430" height="440" rx="107" fill="url(#p-rimL)" clip-path="url(#p-plateClip)" />
+              <rect x="-215" y="-220" width="430" height="440" rx="107" fill="url(#p-rimB)" clip-path="url(#p-plateClip)" />
+            </g>
+            <rect class="p-edge3d" x="-197" y="-202" width="394" height="404" rx="92" fill="none" stroke="#ffffff" stroke-opacity="0.16" stroke-width="1.5" opacity="0" />
+            <rect id="p-plateLit" x="-215" y="-220" width="430" height="440" rx="107" fill="url(#p-plateShade)" opacity="0" />
+            <rect id="p-plateGloss" x="-205" y="-212" width="410" height="424" rx="100" fill="url(#p-gloss)" opacity="0" />
+            <rect class="p-edge3d" x="-212" y="-217" width="424" height="434" rx="104" fill="none" stroke="url(#p-plateBevel)" stroke-width="5" opacity="0" />
+            <rect id="p-pixel" x="-215" y="-220" width="430" height="440" rx="107" fill="url(#p-led)" opacity="0" style="mix-blend-mode: screen" />
+          </g>
+          <circle id="p-lensRing" cx="0" cy="0" r="43" fill="#07060a" stroke="#d9d4de" stroke-width="2.5" opacity="0" />
+          <circle id="p-lens" cx="0" cy="0" r="0" fill="#140f18" fill-opacity="0" stroke="#ffffff" stroke-opacity="0.22" stroke-width="2" />
+          <circle id="p-ring2" cx="0" cy="0" r="196" fill="none" stroke="#ffffff" stroke-opacity="0.16" stroke-width="2" opacity="0" />
+          <g id="p-bubble" opacity="0">
+            <circle id="p-bubDropC" cx="0" cy="0" r="29" fill="#000" filter="url(#p-bubDrop)" />
+            <path id="p-tail" d="M-0.62,0.55 L-0.98,1.0 L-0.3,0.86 Z" transform="scale(29)" fill="#ff9a66" fill-opacity="0.9" />
+            <circle id="p-bubC" cx="0" cy="0" r="29" fill="url(#p-bubMetal)" />
+            <circle id="p-bubShadeC" cx="0" cy="0" r="29" fill="url(#p-bubShade)" />
+            <g clip-path="url(#p-bubClip)"><rect id="p-streak" x="-260" y="-260" width="520" height="520" fill="url(#p-streak)" opacity="0" /></g>
+            <g clip-path="url(#p-bubClip)"><rect id="p-sheen" x="-260" y="-260" width="520" height="520" fill="url(#p-sheenG)" opacity="0" /></g>
+          </g>
+        </g>
+        </g>
+        </g>
+      </svg>
+      <canvas id="p-glass" class="abs" width="1920" height="1080"></canvas>
+    </div>
+  </div>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+    // local time: this scene starts at 2.55 s in the film
+
+    // ---------------------------------------------------------------- the push-in from the top right, then a hold
+    // curve fitted to the reference: about 85 % of the move in the first 0.45 s, settled by 1.55 s, then a slow creep
+    // The rim's corner in the reference, measured every frame (film time, x of the vertical edge, y of the bottom edge).
+    // The rig is scaled about (1700, 0) so the bottom edge lands on y, then shifted so the side lands on x.
+    const CAM = [
+      [2.55, 560, 700], [2.567, 551, 713], [2.6, 536, 752], [2.633, 523, 793], [2.667, 513, 812], [2.7, 505, 834],
+      [2.733, 498, 858], [2.767, 491, 871], [2.8, 485, 885], [2.833, 480, 898], [2.867, 475, 910], [2.9, 470, 920],
+      [2.933, 465, 929], [2.967, 460, 937], [3.0, 455, 943], [3.033, 451, 949], [3.067, 447, 954], [3.1, 443, 958],
+      [3.133, 439, 962], [3.167, 436, 965], [3.2, 432, 968], [3.233, 430, 970], [3.267, 427, 971], [3.3, 424, 971],
+      [3.4, 418, 972], [3.5, 410, 971], [3.6, 404, 970], [3.7, 397, 968], [3.8, 391, 967], [3.9, 385, 966],
+      [4.0, 379, 965], [4.1, 375, 964], [4.25, 371, 964], [4.45, 369, 964], [6.5, 369, 964],
+    ];
+    const camAt = (ft) => {
+      let i = 0;
+      while (i < CAM.length - 2 && CAM[i + 1][0] < ft) i++;
+      const [t0, x0, y0] = CAM[i], [t1, x1, y1] = CAM[i + 1];
+      const u = Math.min(1, Math.max(0, (ft - t0) / (t1 - t0)));
+      return [x0 + (x1 - x0) * u, y0 + (y1 - y0) * u];
+    };
+    const rig = document.getElementById("p-rig");
+    const placeCam = (lt) => {
+      const [x, y] = camAt(lt + 2.55);
+      const sc = y / 964;
+      const tx = x - (1700 + sc * (375 - 1700));
+      rig.style.transform = `translate(${tx}px, 0px) scale(${sc})`;
+    };
+    tl.fromTo("#p-rim", { opacity: 0.1 }, { opacity: 1, duration: 0.55, ease: "none", immediateRender: false }, 0);
+    tl.fromTo("#p-band", { opacity: 0 }, { opacity: 1, duration: 0.8, ease: "sine.inOut", immediateRender: false }, 0.45);
+    // each frame grows from its lower-right corner, so its left and top edges sweep out while the bottom stays put
+    gsap.set("#p-mod", { svgOrigin: "2062 780" });
+    gsap.set("#p-mod2", { svgOrigin: "1588 655" });
+    gsap.set("#p-mod3", { svgOrigin: "2110 655" });
+    // module: left edge from x 941 at 3.5 s to 562 over 0.8 s on power2.out (measured); its line brightens as light reaches it
+    tl.fromTo("#p-mod", { opacity: 0, scale: 0.747 }, { opacity: 1, duration: 0.35, ease: "sine.inOut", immediateRender: false }, 0.85);
+    tl.to("#p-mod", { scale: 1, duration: 0.8, ease: "power2.out" }, 0.95);
+    tl.to("#p-modLine", { opacity: 0.42, duration: 0.95, ease: "sine.inOut" }, 0.95);
+    tl.to("#p-modLine", { opacity: 0.95, duration: 0.95, ease: "sine.inOut" }, 1.9);
+    // second and third frames follow, a beat apart, on the same kind of curve
+    // each frame is revealed by a soft edge sweeping left to right, one after another
+    const wipe = (id, x0, x1, at, dur) => tl.fromTo(id, { attr: { x1: x0, x2: x0 + 260 } }, { attr: { x1: x1, x2: x1 + 260 }, duration: dur, ease: "power1.inOut", immediateRender: false }, at);
+    wipe("#p-wipeG1", 300, 2200, 0.92, 0.95);
+    // the dark module top darkens in the same direction, on a much wider, softer edge, a little ahead and slower
+    tl.fromTo("#p-wipeTop", { attr: { x1: -300, x2: 500 } }, { attr: { x1: 1700, x2: 2500 }, duration: 1.3, ease: "power1.inOut", immediateRender: false }, 0.85);
+    wipe("#p-wipeG2", 950, 1700, 1.3, 0.6);
+    wipe("#p-wipeG3", 1480, 1740, 1.4, 0.6);                              // stops part way: only its left half shows
+    tl.fromTo("#p-mod2", { opacity: 0, scale: 0.64 }, { opacity: 0.5, duration: 0.25, ease: "sine.out", immediateRender: false }, 1.3);
+    tl.to("#p-mod2", { scale: 1, duration: 0.7, ease: "power2.out" }, 1.3);
+    tl.fromTo("#p-mod3", { opacity: 0, scale: 0.64 }, { opacity: 0.18, duration: 0.25, ease: "sine.out", immediateRender: false }, 1.4);
+    tl.to("#p-mod3", { scale: 1, duration: 0.7, ease: "power2.out" }, 1.4);
+    tl.fromTo("#p-moon", { opacity: 0 }, { opacity: 1, duration: 1.0, ease: "sine.inOut", immediateRender: false }, 0.7);
+
+
+    // ---------------------------------------------------------------- the lens opens and grows the icon
+    // Everything grows at once and without stops, each on one long ease-out (sizes fitted to the reference frame by frame)
+    gsap.set(["#p-plate", "#p-icon"], { svgOrigin: "0 0" });
+    // housing: from nothing at 4.0 s, edge only at first, widening continuously until about 4.85 s
+    tl.fromTo("#p-plate", { opacity: 0 }, { opacity: 1, duration: 0.35, ease: "sine.out", immediateRender: false }, 1.4);
+    tl.fromTo("#p-plate", { scale: 0.42 }, { scale: 1, duration: 1.45, ease: "power2.out", immediateRender: false }, 1.4);
+    tl.fromTo("#p-plateBase", { attr: { "fill-opacity": 0 } }, { attr: { "fill-opacity": 0.9 }, duration: 0.6, ease: "sine.inOut", immediateRender: false }, 1.6);
+    // lens: a small ring at 4.1 s that opens into the dark disk, r 30 -> 165 on one curve (ref: 93 at 4.2, 124 at 4.4, 160 at 4.8)
+    tl.fromTo("#p-lens", { attr: { r: 30, "fill-opacity": 0, "stroke-opacity": 0.7 } }, { attr: { r: 165 }, duration: 0.75, ease: "power2.out", immediateRender: false }, 1.85);
+    tl.to("#p-lens", { attr: { "fill-opacity": 1, "stroke-opacity": 0.22 }, duration: 0.3, ease: "sine.inOut" }, 1.92);
+    tl.to("#p-lens", { attr: { fill: "#ffd9c4", "fill-opacity": 0.05, "stroke-opacity": 0.4 }, duration: 0.45, ease: "sine.inOut" }, 2.35);
+    tl.to("#p-ring2", { opacity: 1, duration: 0.5, ease: "sine.inOut" }, 2.45);
+    // colour: from the lower-left corner at 4.4 s, spreading slowly until about 5.1 s
+    tl.fromTo("#p-iconG", { attr: { r: 1 } }, { attr: { r: 560 }, duration: 0.9, ease: "sine.inOut", immediateRender: false }, 2.0);
+    tl.fromTo("#p-plateFill", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "sine.out", immediateRender: false }, 2.0);
+    // the edges start flat and turn 3D together, the housing and the outer module frame in step:
+    // a lit bevel, a dark lip, the gloss, and a shadow that lifts the icon off the module
+    const EDGE3D = [1.85, 1.1];
+    tl.fromTo(["#p-mod3d", ".p-edge3d", "#p-plateLit", "#p-plateGloss", "#p-plateShadow"], { opacity: 0 }, { opacity: 1, duration: EDGE3D[1], ease: "sine.inOut", immediateRender: false }, EDGE3D[0]);
+    // a small dot in the lens grows into the chat bubble
+    const bubbleR = { r: 29 };
+    const fxB = { reveal: 0 };
+    const setBubble = () => {
+      document.getElementById("p-bubC").setAttribute("r", bubbleR.r);
+      document.getElementById("p-bubDropC").setAttribute("r", bubbleR.r);
+      document.getElementById("p-bubShadeC").setAttribute("r", bubbleR.r);
+      document.getElementById("p-bubClipC").setAttribute("r", bubbleR.r);
+      document.getElementById("p-tail").setAttribute("transform", `scale(${bubbleR.r})`);
+    };
+    // bubble: a dot at 4.47 s growing on one ease-out (ref r: 25, 66, 93, 103, 114, 120 every 0.1 s), dim at first
+    tl.fromTo("#p-bubble", { opacity: 0.45 }, { opacity: 1, duration: 0.5, ease: "sine.inOut", immediateRender: false }, 2.3);
+    // the bubble keeps its size and appears from its lower-left corner, sweeping up to the upper right
+    tl.set(bubbleR, { r: 112, onUpdate: setBubble }, 2.3);
+    tl.fromTo(fxB, { reveal: 0 }, { reveal: 1, duration: 0.6, ease: "power2.out", immediateRender: false }, 2.3);
+    // a white sheen sweeps up across it from the lower left as it fills out
+    tl.set("#p-sheen", { opacity: 0 }, 0);
+    
+
+    // ---------------------------------------------------------------- wind-up and bloom into the next shot
+    // squeeze (5.50-5.67 s), the metallic streak crosses the bubble at the bottom of it, then a rebound
+    tl.to("#p-icon", { scale: 0.82, duration: 0.17, ease: "power2.inOut" }, 2.95);
+    const fx = { streak: 0, streakY: -150 };
+    // the neon tube round the icon lights up as the icon settles (4.75 s) and swells with the squeeze into the halo
+    const fxNeon = { v: 0 };
+    tl.fromTo(fxNeon, { v: 0 }, { v: 0.75, duration: 0.45, ease: "sine.inOut", immediateRender: false }, 2.2);
+    tl.to(fxNeon, { v: 1.15, duration: 0.3, ease: "sine.in" }, 2.9);
+    tl.to(fxNeon, { v: 0, duration: 0.35, ease: "sine.inOut" }, 3.35);
+    tl.fromTo(fx, { streak: 0, streakY: 140 }, { streak: 1, streakY: 0, duration: 0.25, ease: "sine.out", immediateRender: false }, 3.15);
+    tl.to(fx, { streakY: -110, streak: 0.55, duration: 0.45, ease: "sine.inOut" }, 3.4);
+    tl.to("#p-pixel", { opacity: 0.35, duration: 0.05, ease: "none" }, 3.1);
+    tl.to("#p-pixel", { opacity: 0, duration: 0.25, ease: "sine.in" }, 3.3);
+    tl.to("#p-icon", { scale: 1.06, duration: 0.35, ease: "power2.out" }, 3.12);
+    // the LED halo lights at the icon's edge (5.70 s) and spreads: r 260 -> 620 by 5.97 s, then floods
+    // measured on the reference: the disc grows evenly from the icon's edge, slowly for the first 0.1 s, then at a steady
+    // ~2600 px/s (r 260 -> 390 by 5.80 s -> 1160 by 6.10 s), until it fills the phone
+    tl.fromTo(["#p-ledLayer", "#p-envLit"], { opacity: 0 }, { opacity: 1, duration: 0.08, ease: "sine.out", immediateRender: false }, 3.15);
+    tl.fromTo(["#p-ledGlow", "#p-ledReach"], { attr: { r: 260 } }, { attr: { r: 390 }, duration: 0.1, ease: "sine.in", immediateRender: false }, 3.15);
+    tl.to(["#p-ledGlow", "#p-ledReach"], { attr: { r: 1160 }, duration: 0.3, ease: "none" }, 3.25);
+    tl.to(["#p-ledGlow", "#p-ledReach"], { attr: { r: 1600 }, duration: 0.2, ease: "sine.out" }, 3.55);
+    // 6.0-6.15 s, as the reference: the flood pales from saturated colour to a milky wash before it goes
+    const fxMilk = { v: 0 };
+    tl.fromTo(fxMilk, { v: 0 }, { v: 1, duration: 0.16, ease: "sine.inOut", immediateRender: false }, 3.45);
+    tl.fromTo("#p-wash", { opacity: 0 }, { opacity: 0.4, duration: 0.2, ease: "power2.in", immediateRender: false }, 3.42);
+    // the light settles as the camera pans away, so the phone leaves clean, as in the reference
+    tl.to(["#p-ledLayer", "#p-envLit", "#p-wash", "#p-shade"], { opacity: 0, duration: 0.28, ease: "sine.inOut" }, 3.55);
+    tl.fromTo("#p-shade", { opacity: 0 }, { opacity: 1, duration: 0.2, ease: "none", immediateRender: false }, 3.35);
+
+
+    // ---------------------------------------------------------------- the moon, drawn and slowly turning (WebGL)
+    // a procedural moon behind the phone: lit from the upper right, craters and maria from noise, rotating
+    const mc = document.getElementById("p-moon");
+    const mgl = mc.getContext("webgl", { premultipliedAlpha: true, preserveDrawingBuffer: true, antialias: true });
+    let moonReady = false, mTime;
+    (function buildMoon() {
+      const vs = "attribute vec2 p; void main(){ gl_Position = vec4(p, 0.0, 1.0); }";
+      const fs = `
+        precision highp float;
+        uniform float time;
+        const vec2 C = vec2(480.0, 620.0);
+        const float R = 505.0;
+        mat3 tr3(mat3 m) { return mat3(m[0][0], m[1][0], m[2][0], m[0][1], m[1][1], m[2][1], m[0][2], m[1][2], m[2][2]); }
+        float h3(vec3 p) { p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
+        float n3(vec3 x) {
+          vec3 i = floor(x), f = fract(x); f = f * f * (3.0 - 2.0 * f);
+          return mix(mix(mix(h3(i), h3(i + vec3(1,0,0)), f.x), mix(h3(i + vec3(0,1,0)), h3(i + vec3(1,1,0)), f.x), f.y),
+                     mix(mix(h3(i + vec3(0,0,1)), h3(i + vec3(1,0,1)), f.x), mix(h3(i + vec3(0,1,1)), h3(i + vec3(1,1,1)), f.x), f.y), f.z);
+        }
+        float fbm(vec3 p) { float a = 0.5, s = 0.0; for (int i = 0; i < 6; i++) { s += a * n3(p); p *= 2.03; a *= 0.5; } return s; }
+        // craters: a jittered lattice of pits, each with a raised rim
+        float craters(vec3 p) {
+          vec3 i = floor(p), f = fract(p); float c = 0.0;
+          for (int z = -1; z <= 1; z++) for (int y = -1; y <= 1; y++) for (int x = -1; x <= 1; x++) {
+            vec3 o = vec3(float(x), float(y), float(z));
+            vec3 j = vec3(h3(i + o), h3(i + o + 7.1), h3(i + o + 13.7));
+            float r = 0.18 + 0.32 * h3(i + o + 3.3);
+            float d = length(o + j - f) / r;
+            if (d < 1.25) c += (smoothstep(1.0, 0.0, d) * -0.6 + smoothstep(0.85, 1.0, d) * smoothstep(1.25, 1.0, d) * 0.5) * step(0.45, h3(i + o + 5.5));
+          }
+          return c;
+        }
+        float surface(vec3 n) {
+          float m = smoothstep(0.42, 0.62, fbm(n * 2.2));              // dark maria
+          return -0.3 * m + 0.35 * fbm(n * 6.0) + 0.15 * fbm(n * 24.0) + 0.06 * craters(n * 5.0) + 0.03 * craters(n * 13.0);
+        }
+        void main() {
+          vec2 sp = vec2(gl_FragCoord.x, 1080.0 - gl_FragCoord.y);
+          vec2 d = (sp - C) / R;
+          float rr = dot(d, d);
+          if (rr > 1.0) discard;
+          vec3 n = vec3(d.x, -d.y, sqrt(1.0 - rr));                       // y up
+          float a = time * 0.11;                                           // slow spin about the vertical axis
+          mat3 rot = mat3(cos(a), 0.0, -sin(a), 0.0, 1.0, 0.0, sin(a), 0.0, cos(a));
+          vec3 q = rot * n;
+          float e = 0.004;
+          float h0 = surface(q);
+          vec3 g = tr3(rot) * (vec3(surface(q + vec3(e,0,0)), surface(q + vec3(0,e,0)), surface(q + vec3(0,0,e))) - h0) / e;
+          vec3 bn = normalize(n - (g - dot(g, n) * n) * 0.03);            // bump-mapped normal
+          vec3 L = normalize(vec3(-0.3, 0.55, -0.78));                       // grazing light from above and behind: only the upper limb catches it
+          float lit = max(dot(bn, L), 0.0);
+          float albedo = 0.55 + 0.45 * (h0 + 0.35);
+          vec3 col = vec3(0.86, 0.85, 0.88) * albedo * (pow(lit, 0.9) * 0.5);   // a dim crescent, as in the reference
+          float edge = smoothstep(1.0, 0.985, rr);                         // soft limb
+          gl_FragColor = vec4(col * edge, edge);
+        }`;
+      const sh = (type, src) => { const o = mgl.createShader(type); mgl.shaderSource(o, src); mgl.compileShader(o); if (!mgl.getShaderParameter(o, mgl.COMPILE_STATUS)) console.error(mgl.getShaderInfoLog(o)); return o; };
+      const prog = mgl.createProgram();
+      mgl.attachShader(prog, sh(mgl.VERTEX_SHADER, vs)); mgl.attachShader(prog, sh(mgl.FRAGMENT_SHADER, fs));
+      mgl.linkProgram(prog); mgl.useProgram(prog);
+      const buf = mgl.createBuffer(); mgl.bindBuffer(mgl.ARRAY_BUFFER, buf);
+      mgl.bufferData(mgl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), mgl.STATIC_DRAW);
+      const loc = mgl.getAttribLocation(prog, "p"); mgl.enableVertexAttribArray(loc); mgl.vertexAttribPointer(loc, 2, mgl.FLOAT, false, 0, 0);
+      mTime = mgl.getUniformLocation(prog, "time");
+      mgl.viewport(0, 0, 1920, 1080);
+      moonReady = true;
+    })();
+    function drawMoon(t) {
+      if (!moonReady) return;
+      mgl.clearColor(0, 0, 0, 0); mgl.clear(mgl.COLOR_BUFFER_BIT);
+      mgl.uniform1f(mTime, t);
+      mgl.drawArrays(mgl.TRIANGLE_STRIP, 0, 4);
+    }
+    // ---------------------------------------------------------------- the icon as a block of glass (WebGL)
+    // A rounded-square slab with a curved bevel, a domed bubble inside, colour living inside the glass and bent by
+    // the bevel, a key light from the lower left, and the LED halo lighting the curved edges when it comes on.
+    // Every value comes from the tweens above (scale, growth, colour spread, halo), so the timing is unchanged.
+    const gc = document.getElementById("p-glass");
+    const ggl = gc.getContext("webgl", { premultipliedAlpha: true, preserveDrawingBuffer: true, antialias: true });
+    const GU = {};
+    (function buildGlass() {
+      const vs = "attribute vec2 p; void main(){ gl_Position = vec4(p, 0.0, 1.0); }";
+      const fs = `
+        precision highp float;
+        uniform vec2 C; uniform float reveal, S, op, depth, colorR, lensR, lensFill, bubR, bubOp, halo, haloOp, milk, neon, pix, streak, streakY, sheen, t;
+        float sdRR(vec2 p, vec2 b, float r) { vec2 q = abs(p) - b + r; return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r; }
+        float slab(vec2 p) { return sdRR(p, vec2(215.0, 220.0), 128.0); }
+        vec3 ramp(float x) {
+          x = clamp(x, 0.0, 1.0);
+          vec3 c0 = vec3(1.0, 0.8, 0.66), c1 = vec3(1.0, 0.66, 0.44), c2 = vec3(1.0, 0.48, 0.17), c3 = vec3(0.98, 0.3, 0.1);
+          vec3 c4 = vec3(0.95, 0.3, 0.32), c5 = vec3(0.62, 0.16, 0.3), c6 = vec3(0.36, 0.1, 0.24);
+          if (x < 0.12) return mix(c0, c1, x / 0.12);
+          if (x < 0.3) return mix(c1, c2, (x - 0.12) / 0.18);
+          if (x < 0.5) return mix(c2, c3, (x - 0.3) / 0.2);
+          if (x < 0.68) return mix(c3, c4, (x - 0.5) / 0.18);
+          if (x < 0.85) return mix(c4, c5, (x - 0.68) / 0.17);
+          return mix(c5, c6, (x - 0.85) / 0.15);
+        }
+        // colour inside the glass: light poured in from the lower-left corner, spreading as colorR grows
+        vec3 inside(vec2 q) {
+          float k = length(q - vec2(-215.0, 220.0)) / max(colorR, 1.0);
+          vec3 c = ramp(k);
+          float lit = 1.0 - smoothstep(0.6, 1.05, k);
+          c = mix(vec3(0.045, 0.04, 0.05), c, lit);                               // no colour until the light reaches it
+          // a soft internal highlight band running across the slab
+          float band = exp(-pow((q.x + q.y * 0.9 + 60.0) / 220.0, 2.0)) * 0.08 * lit;
+          c += vec3(1.0, 0.85, 0.75) * band;
+          // the lens: a darker disk early on, then pale concentric rings floating in the glass
+          float r = length(q);
+          c = mix(c, c * 0.5, lensFill * smoothstep(lensR + 1.5, lensR - 1.5, r));
+          c += vec3(1.0, 0.92, 0.88) * (exp(-pow((r - lensR) / 2.4, 2.0)) * 0.4) * step(1.0, lensR);
+          return c;
+        }
+        void main() {
+          vec2 sp = vec2(gl_FragCoord.x, 1080.0 - gl_FragCoord.y);
+          vec2 p = (sp - C) / S;
+          float d = slab(p);
+          if (op < 0.001) discard;
+          if (d > 2.0) {
+            // ---- the light the glass sends out, drawn in the same shader so the two share one light.
+            // The glass's own soft glow, plus the halo: light pouring out of the slab's edge as a wave that travels
+            // outward (its front at the "halo" radius), strongest off the lit lower-left corner, warm white at the
+            // edge cooling to our orange and then deep red, broken into small LED cells that twinkle as the front passes.
+            float ds = d * S;                                                       // screen px from the glass edge
+            vec2 q = p / vec2(215.0, 220.0);
+            float warm = clamp(0.5 - 0.35 * (q.x - q.y), 0.0, 1.0);                  // 1 toward the lower left
+            float glowW = exp(-ds / 38.0) * (0.10 + 0.18 * haloOp) * (0.4 + 0.6 * warm) * op * depth;
+            vec3 col = mix(vec3(0.9, 0.55, 0.45), vec3(1.0, 0.55, 0.22), warm) * glowW;
+            float A = glowW;
+            // a neon tube traced just outside the glass: a hot thin core, a tighter glow and a wide misty haze,
+            // warm white-orange on the lit lower left, deepening to red-orange round the far side; it breathes a little
+            if (neon > 0.001) {
+              float breathe = 0.9 + 0.1 * sin(t * 7.0);
+              float core = exp(-pow((ds - 7.0) / 2.2, 2.0));
+              float glowN = exp(-pow((ds - 7.0) / 9.0, 2.0));
+              float haze = exp(-ds / 46.0);
+              float side = 0.45 + 0.55 * warm;
+              vec3 tube = mix(vec3(1.0, 0.32, 0.08), vec3(1.0, 0.72, 0.48), warm);
+              float I = neon * op * breathe * side;
+              col += vec3(1.0, 0.9, 0.82) * core * I * 0.9 + tube * (glowN * 0.55 + haze * 0.28) * I;
+              A += (core * 0.9 + glowN * 0.55 + haze * 0.28) * I;
+            }
+            if (haloOp > 0.001) {
+              // a disc of light centred on the icon that grows evenly outward (its rim at the "halo" radius),
+              // soft-edged, fullest near the glass, and bounded by the phone's outer edge (rig coords: x >= 375,
+              // y <= 964, corner 230), so it lights the module, the slope and the rim but never spills off the phone
+              float r = length(sp - C);
+              float R = max(halo, 1.0);
+              float feather = max(0.28 * R, 70.0);
+              float k = clamp((r - 215.0 * S) / max(R - 215.0 * S, 1.0), 0.0, 1.0);
+              float disc = smoothstep(R, R - feather, r);
+              float body = disc * (0.62 + 0.38 * exp(-ds / 160.0)) * smoothstep(0.0, 24.0, ds);
+              float front = exp(-pow((r - (R - feather * 0.55)) / (feather * 0.45), 2.0)) * 0.22;
+              vec2 pq = abs(sp - vec2(2187.5, -1018.0)) - vec2(1812.5, 1982.0) + 230.0;
+              float dPh = length(max(pq, 0.0)) + min(max(pq.x, pq.y), 0.0) - 230.0;
+              float inPh = smoothstep(4.0, -40.0, dPh);
+              float I = (body * 0.78 + front) * haloOp * op * inPh;
+              vec3 hc = mix(vec3(1.0, 0.74, 0.52), vec3(1.0, 0.5, 0.18), smoothstep(0.0, 0.5, k));   // one hue: warm white at the glass, our orange outward
+              // once it fills the phone the light washes out to a pale, milky peach and the LED cells melt into it
+              hc = mix(hc, vec3(1.0, 0.86, 0.76), milk * 0.75);
+              // LED cells: 12 px squares with a dark gap, each flickering a little, lit by the light under them
+              vec2 cp = floor(sp / 12.0);
+              vec2 cf = fract(sp / 12.0) - 0.5;
+              float cell = (1.0 - smoothstep(0.26, 0.42, max(abs(cf.x), abs(cf.y))));
+              float tw = 0.88 + 0.24 * fract(sin(dot(cp + floor(t * 18.0), vec2(12.9898, 78.233))) * 43758.5453);
+              float cellI = I * cell * mix(1.0, tw, front) * (1.0 - 0.7 * milk);
+              col += hc * (I * 0.5 + cellI * 0.45);
+              A += I * 0.5 + cellI * 0.45;
+            }
+            if (A < 0.002) discard;
+            gl_FragColor = vec4(col, min(A, 1.0));
+            return;
+          }
+          float a = clamp(0.5 - d * S, 0.0, 1.0);
+          // curved bevel: a quarter-circle profile over the outer 64 px
+          float B = 92.0;
+          float x = clamp(-d / B, 0.0, 1.0);
+          float e = 1.0 - smoothstep(0.0, 1.0, x); float slope = e * e * 2.2;
+          vec2 g = normalize(vec2(slab(p + vec2(1.0, 0.0)) - slab(p - vec2(1.0, 0.0)), slab(p + vec2(0.0, 1.0)) - slab(p - vec2(0.0, 1.0))) + 1e-5);
+          vec3 N = normalize(vec3(g * slope * 0.55 * depth + p / 220.0 * 0.22 * depth, 1.0));   // bevel plus a gentle convex dome
+          // the bubble: a dome rising inside the glass
+          vec2 bc = p - vec2(0.0, -4.0);
+          float rb = length(bc) / max(bubR, 1.0);
+          // bubble shape: a circle smoothly joined to a short capsule tail toward the lower left
+          vec2 u = bc / max(bubR, 1.0);
+          vec2 ta = vec2(-0.62, 0.62), tb = vec2(-0.98, 1.0);
+          vec2 pa = u - ta, ba = tb - ta;
+          float hh = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);
+          float dCap = length(pa - ba * hh) - mix(0.2, 0.05, hh);
+          float dCir = length(u) - 1.0;
+          float kk = 0.12; float hm = clamp(0.5 + 0.5 * (dCap - dCir) / kk, 0.0, 1.0);
+          float dBub = mix(dCap, dCir, hm) - kk * hm * (1.0 - hm);
+          bool inBub = dBub < 0.01 && bubR > 2.0;
+          vec3 Nb = inBub && rb < 0.995 ? normalize(vec3(bc / max(bubR, 1.0) * 0.9, sqrt(max(1.0 - rb * rb, 0.0)) + 0.15)) : N;
+          // refraction: the colour seen through a curved surface shifts, most at the rim
+          vec3 body = inside(p + N.xy * 34.0);
+          // the second surface: a faint line inside the edge where the glass turns
+          body += vec3(1.0, 0.9, 0.85) * exp(-pow((d + 24.0) / 7.0, 2.0)) * 0.05 * depth;
+          vec3 col = body;
+          if (inBub) {
+            // the bubble: milky glass, white at the top, our orange underneath, the plate showing through low down
+            // frosted glass bubble: solid milky white at the top, clearing toward the lower left where the plate shows through
+            float g = clamp(dot(u, normalize(vec2(-1.0, 1.0))) * 0.5 + 0.5, 0.0, 1.0);   // 1 at the lower left
+            float v = clamp(u.y * 0.5 + 0.5, 0.0, 1.0);                                  // 1 at the bottom
+            float clear = smoothstep(0.25, 0.95, 0.55 * v + 0.45 * g);                   // how see-through
+            vec3 behind = inside(p + vec2(-8.0, 8.0)) * 1.15 + 0.04;                    // the plate, barely refracted
+            vec3 bub = mix(vec3(0.93, 0.87, 0.86), mix(behind, vec3(1.0, 0.85, 0.78), 0.2), clear * 0.9);
+            bub = mix(bub, bub * vec3(0.95, 0.86, 0.84), smoothstep(0.4, 1.0, dot(u, normalize(vec2(1.0, 1.0))) * 0.5 + 0.5) * 0.6);
+            bub += (fract(sin(dot(floor(sp), vec2(12.9898, 78.233))) * 43758.5453) - 0.5) * 0.02 * (1.0 - clear);  // frost grain
+            // the edge has thickness: a bright lip catching light on the upper left, a soft shade on the lower right
+            float lip = smoothstep(-0.18, 0.0, dBub);
+            vec2 un = normalize(u + 1e-5);
+            float up = clamp(dot(un, normalize(vec2(-0.6, -1.0))) * 0.5 + 0.5, 0.0, 1.0);
+            // the edge continues the inner gradient: only a faint lift on the upper left, no white outline
+            bub += vec3(1.0, 0.97, 0.96) * lip * pow(up, 3.0) * (0.06 + 0.14 * haloOp);
+            // white gradient stroke: strong along the upper left, fading out by the right and the bottom;
+            // the lower left stays a clear gradient with no stroke
+            float tl = clamp(dot(un, normalize(vec2(-1.0, -1.0))) * 0.5 + 0.5, 0.0, 1.0);   // 1 at the upper left
+            float strokeDir = smoothstep(0.3, 0.95, tl);
+            float stroke = exp(-pow((dBub + 0.04) / 0.04, 2.0));
+            float glow = exp(-pow((dBub + 0.1) / 0.09, 2.0));
+            bub = mix(bub, vec3(1.0, 0.99, 0.985), clamp((stroke * 0.95 + glow * 0.35) * strokeDir * (0.85 + 0.15 * haloOp), 0.0, 0.95));
+            // a broad soft highlight on the upper-left of the face
+            float hl = exp(-dot(u - vec2(-0.38, -0.42), u - vec2(-0.38, -0.42)) / 0.18);
+            bub = mix(bub, vec3(1.0, 0.99, 0.985), hl * 0.45);
+            bub *= 0.6 + 0.4 * bubOp;                                                   // dim while it is still growing
+            // a metallic streak sweeps across it at the bottom of the squeeze
+            bub += vec3(1.0, 0.86, 0.84) * streak * exp(-pow(((bc.x + bc.y) * 0.7071 - streakY) / 34.0, 2.0)) * 0.5;   // a soft diagonal sheen
+            bub += vec3(1.0) * sheen * exp(-pow((bc.x + bc.y - 40.0) / 90.0, 2.0)) * 0.08;
+            // reveal: a soft front sweeping from the lower-left corner to the upper right
+            float c = clamp(dot(u, normalize(vec2(1.0, -1.0))) * 0.5 + 0.5, 0.0, 1.0);   // 0 at the lower left
+            float shown = 1.0 - smoothstep(reveal * 1.35 - 0.35, reveal * 1.35, c);
+            shown *= smoothstep(0.0, -0.025, dBub);                                      // soft, natural edge
+            col = mix(col, bub, shown);
+            N = normalize(vec3(mix(N.xy, N.xy * 0.3, shown), 1.0));
+          }
+          // light: key from the lower left on the curved rims (bright), a faint back rim on the top and right
+          vec2 n2 = normalize(N.xy + 1e-5);
+          float edge = 1.0 - N.z;
+          float key = pow(max(dot(n2, normalize(vec2(-1.0, 0.85))), 0.0), 1.4) * smoothstep(0.02, 0.4, edge);
+          float back = pow(max(dot(n2, normalize(vec2(1.0, -0.9))), 0.0), 2.0) * smoothstep(0.05, 0.45, edge);
+          float boost = 0.5 + 0.55 * haloOp;                                        // highlights peak with the halo
+          col += vec3(1.0, 0.93, 0.88) * key * 0.65 * depth * boost + vec3(1.0, 0.85, 0.8) * back * 0.35 * depth * boost;
+          // corner hot spots: the curved corners concentrate the light into a few intense, uneven glints
+          // (strongest bottom left, then top left, a warm one bottom right), the straight edges between stay darker
+          float onRim = smoothstep(0.15, 0.7, edge) * (1.0 - float(inBub));
+          float hBL = exp(-dot(p - vec2(-180.0, 185.0), p - vec2(-180.0, 185.0)) / (2.0 * 60.0 * 60.0));
+          float hTL = exp(-dot(p - vec2(-178.0, -182.0), p - vec2(-178.0, -182.0)) / (2.0 * 50.0 * 50.0));
+          float hBR = exp(-dot(p - vec2(176.0, 182.0), p - vec2(176.0, 182.0)) / (2.0 * 48.0 * 48.0));
+          float hotK = (0.3 + 1.2 * haloOp) * depth * onRim;
+          vec3 hot = (vec3(1.0, 0.98, 0.95) * hBL * 0.9 + vec3(1.0, 0.96, 0.94) * hTL * 0.6 + vec3(1.0, 0.62, 0.6) * hBR * 0.5) * hotK;
+          // and the long edges between them are pulled down a little, so the glints read against them
+          col *= 1.0 - onRim * (1.0 - clamp(hBL + hTL + hBR, 0.0, 1.0)) * 0.18;
+          // convex sheen: a curved band of reflected light following the dome across the upper left
+          vec2 q2 = p / vec2(215.0, 220.0);
+          float arc = exp(-pow((length(q2 - vec2(0.55, 0.6)) - 1.15) / 0.12, 2.0)) * smoothstep(0.3, -0.6, q2.x + q2.y);
+          col += vec3(1.0, 0.97, 0.95) * arc * 0.22 * depth * (0.7 + 0.6 * haloOp) * (1.0 - float(inBub));
+          // a broad soft specular on the flat face, lit from the upper left
+          col += vec3(1.0) * pow(max(dot(N, normalize(vec3(-0.35, -0.4, 1.0))), 0.0), 40.0) * 0.12 * depth * boost;
+          // the halo lights the glass from all around: every curved edge catches it, and the LED cells reflect in it
+          float fres = pow(edge, 1.6);
+          float near = smoothstep(halo * 0.35, halo * 0.9, 300.0 * S);
+          vec2 cell = abs(fract(sp / 12.0) - 0.5);
+          float led = mix(1.0, step(max(cell.x, cell.y), 0.33) * 1.4, pix * 0.4);
+          col += vec3(1.0, 0.68, 0.4) * fres * haloOp * 1.2 * led;
+          float leave = exp(-pow((halo - 215.0 * S - 60.0) / 90.0, 2.0)) * haloOp;   // the wave leaving the glass lights its rim
+          col += vec3(1.0, 0.85, 0.7) * smoothstep(0.2, 0.9, edge) * leave * 0.9;
+          col += vec3(1.0, 0.62, 0.3) * haloOp * 0.12 * N.z;                      // a wash of its light across the face
+          col = mix(col, col * (0.85 + 0.3 * step(max(cell.x, cell.y), 0.33)), pix * 0.25 * (1.0 - float(inBub)));
+          // see-through: the glass only "has a colour" where light passes; elsewhere it is clear
+          float lumC = dot(col, vec3(0.3, 0.55, 0.15));
+          float solid = inBub ? 1.0 : clamp(0.12 + lumC * 1.25 + fres * 0.9, 0.0, 1.0);
+          a *= solid;
+          col /= max(solid, 0.001);                                                // premultiplied below; keep the colour
+          col *= solid;
+          // the glass catches light all round its rim: a thin clean edge, brighter at the top and left
+          // a crisp outline just inside the edge, brightest along the top and left, the way thick glass catches light
+          float outline = exp(-pow((d + 3.0) / 2.2, 2.0));
+          float side = 0.35 + 0.65 * clamp(dot(n2, normalize(vec2(-0.7, -1.0))) * 0.5 + 0.5, 0.0, 1.0);
+          float rimAll = outline * side;
+          col += vec3(1.0, 0.97, 0.95) * rimAll * 0.5 * depth;
+          a = max(a, rimAll * 0.5 * depth);
+          // thickness: the far face of the slab seen through the near one, a soft line about 26 px in
+          float far = exp(-pow((d + 26.0) / 4.0, 2.0)) * (1.0 - float(inBub));
+          col += vec3(1.0, 0.95, 0.92) * far * 0.22 * depth;
+          a = max(a, far * 0.22 * depth);
+          // a broad window reflection sliding across the upper left of the face
+          float win = exp(-pow((p.x * 0.8 + p.y + 150.0) / 55.0, 2.0)) * smoothstep(120.0, -120.0, p.x + p.y * 0.2) * (1.0 - float(inBub));
+          col += vec3(1.0, 0.98, 0.96) * win * 0.16 * depth;
+          a = max(a, win * 0.16 * depth);
+          col *= 0.95;
+          col = col / (1.0 + col * 0.14);                                         // softer roll-off, no glare
+          col += hot;                                                              // the corner glints sit on top, unflattened
+          // the upper-right corner falls away into the dark, as in the reference
+          float corner = 1.0 - smoothstep(40.0, 320.0, length(p - vec2(215.0, -220.0)));
+          float keepBub = inBub ? 0.15 : 1.0;                                      // the bubble stays whole
+          col *= 1.0 - 0.9 * corner * keepBub;
+          a *= 1.0 - 0.75 * corner * keepBub;
+          gl_FragColor = vec4(col * a * op, a * op);
+        }`;
+      const sh = (type, src) => { const o = ggl.createShader(type); ggl.shaderSource(o, src); ggl.compileShader(o); if (!ggl.getShaderParameter(o, ggl.COMPILE_STATUS)) console.error(ggl.getShaderInfoLog(o)); return o; };
+      const prog = ggl.createProgram();
+      ggl.attachShader(prog, sh(ggl.VERTEX_SHADER, vs)); ggl.attachShader(prog, sh(ggl.FRAGMENT_SHADER, fs));
+      ggl.linkProgram(prog); ggl.useProgram(prog);
+      const buf = ggl.createBuffer(); ggl.bindBuffer(ggl.ARRAY_BUFFER, buf);
+      ggl.bufferData(ggl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), ggl.STATIC_DRAW);
+      const loc = ggl.getAttribLocation(prog, "p"); ggl.enableVertexAttribArray(loc); ggl.vertexAttribPointer(loc, 2, ggl.FLOAT, false, 0, 0);
+      for (const n of ["C", "reveal", "S", "op", "depth", "colorR", "lensR", "lensFill", "bubR", "bubOp", "halo", "haloOp", "milk", "neon", "pix", "streak", "streakY", "sheen", "t"]) GU[n] = ggl.getUniformLocation(prog, n);
+      ggl.viewport(0, 0, 1920, 1080);
+    })();
+    const attr = (sel, a, d = 0) => { const v = parseFloat(document.querySelector(sel).getAttribute(a)); return isNaN(v) ? d : v; };
+    const prop = (sel, k) => Number(gsap.getProperty(sel, k)) || 0;
+    function drawGlass(lt) {
+      ggl.clearColor(0, 0, 0, 0); ggl.clear(ggl.COLOR_BUFFER_BIT);
+      const plateScale = prop("#p-plate", "scale"), iconScale = prop("#p-icon", "scale") || 1;
+      ggl.uniform2f(GU.C, 865, 468);
+      ggl.uniform1f(GU.S, Math.max(0.01, plateScale * iconScale));
+      ggl.uniform1f(GU.op, prop("#p-plate", "opacity"));
+      ggl.uniform1f(GU.depth, 0.25 + 0.75 * prop("#p-plateLit", "opacity"));
+      ggl.uniform1f(GU.colorR, attr("#p-iconG", "r", 1) * prop("#p-plateFill", "opacity") + 1);
+      // the lens and bubble are drawn inside the plate's own scaling, so undo it for their radii
+      ggl.uniform1f(GU.lensR, attr("#p-lens", "r") / Math.max(0.01, plateScale));
+      ggl.uniform1f(GU.lensFill, attr("#p-lens", "fill-opacity"));
+      ggl.uniform1f(GU.bubR, prop("#p-bubble", "opacity") > 0 ? bubbleR.r / Math.max(0.01, plateScale) : 0);
+      ggl.uniform1f(GU.bubOp, prop("#p-bubble", "opacity"));
+      ggl.uniform1f(GU.reveal, fxB.reveal);
+      ggl.uniform1f(GU.halo, attr("#p-ledReach", "r", 300));
+      ggl.uniform1f(GU.haloOp, prop("#p-ledLayer", "opacity"));
+      ggl.uniform1f(GU.milk, fxMilk.v);
+      ggl.uniform1f(GU.pix, prop("#p-pixel", "opacity") * 2);
+      ggl.uniform1f(GU.streak, fx.streak);
+      ggl.uniform1f(GU.neon, fxNeon.v);
+      ggl.uniform1f(GU.streakY, fx.streakY);
+      ggl.uniform1f(GU.sheen, prop("#p-sheen", "opacity"));
+      ggl.uniform1f(GU.t, lt);
+      ggl.drawArrays(ggl.TRIANGLE_STRIP, 0, 4);
+    }
+
+    const clock = { t: 0 };
+    const push = (lt) => { const u = Math.min(1, Math.max(0, (lt - 3.0) / 0.6)); return u * u; }; // the push into the bloom
+    const frame = (lt) => {
+      placeCam(lt);
+      const back = Math.min(1, Math.max(0, (lt + 2.55 - 6.1) / 0.45));
+      const k = push(lt) * (1 - back * back * (3 - 2 * back)) - 0.18 * back * back * (3 - 2 * back);
+      if (k !== 0) rig.style.transform += ` translate(${60 * k}px, ${30 * k}px) scale(${1 + 0.12 * k})`;
+      // exit: one continuous camera pan with the next shot — the phone slides right exactly as "smart" slides in
+      const panU = Math.min(1, Math.max(0, (lt + 2.55 - 6.15) / 0.7));
+      const push2 = Math.min(1, Math.max(0, (lt + 2.55 - 6.48) / 0.22));
+      const shift = 1500 * (1 - Math.pow(1 - panU, 3)) + 1400 * push2 * push2;
+      if (shift > 0) rig.style.transform = `translate(${shift}px, 0px) ` + rig.style.transform;
+      drawMoon(lt);
+      drawGlass(lt);
+    };
+    tl.fromTo(clock, { t: 0 }, { t: 4.35, duration: 4.35, ease: "none", immediateRender: false, onUpdate: () => frame(clock.t) }, 0);
+    frame(0);
+
+    window.__timelines["phone"] = tl;
+  </script>
+</template>

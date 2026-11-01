@@ -1,0 +1,211 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Inter";
+      font-weight: 100 900;
+      src: url("assets/fonts/Inter-Variable.ttf") format("truetype");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: transparent;
+      font-family: "Inter", sans-serif;
+      color: #ffffff;
+    }
+    .abs {
+      position: absolute;
+    }
+    #o-bg {
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+    }
+    #o-rings {
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+      overflow: visible;
+    }
+    /* the dark round the last action drew into (r 98, measured) stays put; the field grows out from behind it */
+    #o-badge {
+      left: 862px;
+      top: 442px;
+      width: 196px;
+      height: 196px;
+      border-radius: 50%;
+      background: #2e2326;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #o-dot {
+      width: 108px;
+      height: 108px;
+      border-radius: 50%;
+      background: #f7f2ef;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #o-dot svg {
+      width: 56px;
+      height: 56px;
+    }
+    .o-word {
+      left: 0;
+      top: 432px;
+      width: 1920px;
+      height: 216px;
+      font-size: 216px;
+      line-height: 216px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      text-align: center;
+      white-space: nowrap;
+      transform-origin: 960px 108px;
+      opacity: 0;
+    }
+  </style>
+  <div id="root" data-composition-id="onetap" data-width="1920" data-height="1080">
+    <canvas id="o-bg" class="abs" width="1920" height="1080"></canvas>
+    <svg id="o-rings" class="abs" viewBox="0 0 1920 1080" data-layout-allow-overflow>
+      <defs>
+        <filter id="o-soft" x="-10%" y="-10%" width="120%" height="120%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="0.7" result="core" />
+          <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="halo" />
+          <feComponentTransfer in="halo" result="haloDim"><feFuncA type="linear" slope="0.7" /></feComponentTransfer>
+          <feMerge><feMergeNode in="haloDim" /><feMergeNode in="core" /></feMerge>
+        </filter>
+      </defs>
+      <circle id="o-ringA" cx="960" cy="540" r="0" fill="none" stroke="#ffffff" stroke-width="3.2" filter="url(#o-soft)" opacity="0" />
+      <circle id="o-ringB" cx="960" cy="540" r="0" fill="none" stroke="#ffffff" stroke-width="3.2" filter="url(#o-soft)" opacity="0" />
+      <circle id="o-ringC" cx="960" cy="540" r="0" fill="none" stroke="#ffffff" stroke-width="3" filter="url(#o-soft)" opacity="0" />
+      <circle id="o-ringD" cx="960" cy="540" r="0" fill="none" stroke="#ffffff" stroke-width="3" filter="url(#o-soft)" opacity="0" />
+    </svg>
+    <div id="o-badge" class="abs"><div id="o-dot"><svg viewBox="0 0 36 36"><path d="M10 18.5 L15.5 24 L26 12.5" fill="none" stroke="#2e2326" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round" /></svg></div></div>
+    <div id="o-word" class="abs o-word">one tap</div>
+    <div id="o-c1" class="abs o-word">one tap</div>
+    <div id="o-c2" class="abs o-word">one tap</div>
+    <div id="o-c3" class="abs o-word">one tap</div>
+    <div id="o-c4" class="abs o-word">one tap</div>
+    <div id="o-c5" class="abs o-word">one tap</div>
+    <div id="o-c6" class="abs o-word">one tap</div>
+  </div>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+    const T0 = 22.5;   // this composition starts at 22.5 s on the root; times below are written as root seconds - T0
+    const at = (t) => t - T0;
+    const lerpKeys = (K, t) => {
+      let i = 0;
+      while (i < K.length - 2 && K[i + 1][0] <= t) i++;
+      const a = K[i], b = K[i + 1], u = Math.min(1, Math.max(0, (t - a[0]) / (b[0] - a[0])));
+      return a.map((v, j) => v + (b[j] - v) * u);
+    };
+    // the same keys through a monotone cubic (Fritsch-Carlson): the speed changes smoothly from key to key, so the
+    // motion has no kinks where straight segments meet, and it never overshoots a key
+    const smoothKeys = (K) => {
+      const n = K.length, d = [], m = [];
+      for (let i = 0; i < n - 1; i++) d.push((K[i + 1][1] - K[i][1]) / (K[i + 1][0] - K[i][0]));
+      m.push(d[0]);
+      for (let i = 1; i < n - 1; i++) m.push(d[i - 1] * d[i] <= 0 ? 0 : (2 * d[i - 1] * d[i]) / (d[i - 1] + d[i]));
+      m.push(d[n - 2]);
+      return (t) => {
+        if (t <= K[0][0]) return K[0][1];
+        if (t >= K[n - 1][0]) return K[n - 1][1];
+        let i = 0;
+        while (K[i + 1][0] < t) i++;
+        const h = K[i + 1][0] - K[i][0], u = (t - K[i][0]) / h, u2 = u * u, u3 = u2 * u;
+        return (2 * u3 - 3 * u2 + 1) * K[i][1] + (u3 - 2 * u2 + u) * h * m[i] + (-2 * u3 + 3 * u2) * K[i + 1][1] + (u3 - u2) * h * m[i + 1];
+      };
+    };
+
+    // ---------------------------------------------------------------- the field (measured on the reference)
+    // From the check, a disc opens to fill the frame (22.60-22.90 s). Inside it, light and dark bands alternate
+    // with radius, one cycle per ~1000 px, and drift slowly in toward the centre. The light crest's radius over time:
+    // its edge, measured: it shows at 22.53 s as a thin ring just outside the dark round, then swells out from behind it
+    const DISC = [[22.5, 98], [22.533, 117], [22.567, 114], [22.6, 122], [22.633, 141], [22.667, 173], [22.7, 223], [22.733, 296], [22.767, 421],
+                  [22.8, 633], [22.833, 830], [22.867, 1020], [22.9, 1250], [24.8, 1250]];
+    const discAt = smoothKeys(DISC);
+    // (the measured crest positions, evened out: they were read from soft bands and jittered from reading to reading)
+    const crestAt = smoothKeys([[22.6, 320], [22.9, 280], [23.2, 160], [23.5, 30], [24.0, -200], [24.6, -440], [24.8, -500]]);
+    // our tones for the bands, kept clean and saturated (no brown): a vivid red-orange low, our orange, a light warm peach
+    const DARK = [236, 62, 12], MID = [255, 120, 38], LIGHT = [255, 222, 192];
+    const toneAt = (u) => {
+      const [a, b, k] = u < 0.5 ? [DARK, MID, u / 0.5] : [MID, LIGHT, (u - 0.5) / 0.5];
+      return `rgb(${a.map((v, i) => Math.round(v + (b[i] - v) * k)).join(",")})`;
+    };
+    const bg = document.getElementById("o-bg").getContext("2d");
+    const drawField = (t) => {
+      bg.clearRect(0, 0, 1920, 1080);
+      if (t < 22.533) return;
+      const R = discAt(t), crest = crestAt(t);
+      const g = bg.createRadialGradient(960, 540, 0, 960, 540, R);
+      // stops every ~5 px: with sparse stops the darkest point of each band can only sit on a stop, so the bands
+      // would creep inward in visible ~30 px steps instead of gliding
+      const N = 256;
+      for (let k = 0; k <= N; k++) {
+        const r = (R * k) / N;
+        g.addColorStop(k / N, toneAt(0.5 + 0.5 * Math.cos((2 * Math.PI * (r - crest)) / 1000)));
+      }
+      bg.fillStyle = g;
+      bg.globalAlpha = Math.min(1, 0.3 + (t - 22.533) / 0.1);   // it shows first as a faint rim, then fills in
+      bg.beginPath();
+      bg.arc(960, 540, R, 0, Math.PI * 2);
+      bg.fill();
+    };
+
+    // ---------------------------------------------------------------- the rings: thin white circles leaving the centre
+    // one after another, slowing as they go and fading as they grow (radii measured for the first two; the later
+    // two follow the second's path, 0.4 s apart)
+    const RA = [[22.7, 108], [22.733, 137], [22.767, 176], [22.8, 220], [22.9, 367], [23.0, 504], [23.1, 620], [23.2, 723], [23.3, 815], [23.4, 898], [23.6, 1040], [23.8, 1150]];
+    const RB = [[23.05, 110], [23.1, 188], [23.2, 327], [23.3, 461], [23.4, 582], [23.5, 690], [23.6, 790], [23.8, 950], [24.0, 1100]];
+    const shift = (K, d) => K.map(([t, r]) => [t + d, r]);
+    const withCurve = (K) => Object.assign(K, { at: smoothKeys(K) });
+    const RINGS = [["o-ringA", withCurve(RA)], ["o-ringB", withCurve(RB)], ["o-ringC", withCurve(shift(RB, 0.4))], ["o-ringD", withCurve(shift(RB, 0.8))]];
+    const ringAt = (id, K, t) => {
+      const el = document.getElementById(id);
+      if (t < K[0][0] || t > K[K.length - 1][0]) { el.setAttribute("opacity", 0); return; }
+      const r = K.at(t);
+      el.setAttribute("r", r);
+      // thin as it leaves the centre, thickening as it travels out; bright until late, then fading
+      el.setAttribute("stroke-width", 2 + 7 * Math.min(1, r / 1000));
+      el.setAttribute("opacity", Math.min(1, (t - K[0][0]) / 0.05) * (1 - Math.min(1, Math.max(0, r - 750) / 450)));
+    };
+
+    // ---------------------------------------------------------------- the words
+    // at 23.50 s the check gives way to "one tap", large, which settles back (measured widths: 736 px -> 485 px by
+    // 24.0 s), then draws in faster just before the cut (376 px at 24.7 s)
+    const WORD = [[23.5, 1], [23.6, 0.817], [23.7, 0.735], [23.8, 0.69], [23.9, 0.667], [24.0, 0.659], [24.1, 0.655], [24.2, 0.652],
+                  [24.3, 0.647], [24.4, 0.636], [24.5, 0.614], [24.6, 0.575], [24.7, 0.511], [24.8, 0.48]];
+    const wordAt = smoothKeys(WORD);
+    // small copies flick up around it for a few frames each, measured: [on, off, centre x, centre y, ink width px]
+    const COPIES = [["o-c1", 23.75, 23.93, 384, 260, 344], ["o-c2", 23.78, 23.95, 1696, 540, 248], ["o-c3", 23.88, 24.05, 632, 932, 144],
+                    ["o-c4", 23.97, 24.13, 768, 28, 224], ["o-c5", 23.98, 24.15, 1336, 348, 144], ["o-c6", 24.05, 24.25, 1204, 748, 224]];
+    const INK = 3.40;   // the word's ink width in em at Inter Bold
+    const word = document.getElementById("o-word");
+    const badge = document.getElementById("o-badge");
+
+    const place = (lt) => {
+      const t = lt + T0;
+      drawField(t);
+      RINGS.forEach(([id, K]) => ringAt(id, K, t));
+      gsap.set(word, { opacity: t >= 23.5 ? 1 : 0, scale: wordAt(t) });
+      // the badge rides the check until it shrinks away for the words
+      const bs = t < 23.3 ? 1 : 1 - 0.35 * Math.min(1, (t - 23.3) / 0.15);
+      gsap.set(badge, { opacity: t < 23.47 ? 1 : 0, scale: bs });
+      COPIES.forEach(([id, on, off, x, y, w]) => {
+        const s = w / (INK * 216);
+        gsap.set("#" + id, { opacity: t >= on && t < off ? 1 : 0, scale: s, x: x - 960, y: y - 540 });
+      });
+    };
+    const clock = { t: 0 };
+    tl.fromTo(clock, { t: 0 }, { t: 24.8 - T0, duration: 24.8 - T0, ease: "none", immediateRender: false, onUpdate: () => place(clock.t) }, 0);
+    place(0);
+
+    window.__timelines["onetap"] = tl;
+  </script>
+</template>

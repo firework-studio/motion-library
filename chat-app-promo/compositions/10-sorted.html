@@ -1,0 +1,139 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Inter";
+      font-weight: 100 900;
+      src: url("assets/fonts/Inter-Variable.ttf") format("truetype");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: #050306;
+      font-family: "Inter", sans-serif;
+    }
+    .abs {
+      position: absolute;
+    }
+    #s-svg {
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+      overflow: visible;
+    }
+  </style>
+  <div id="root" data-composition-id="sorted" data-width="1920" data-height="1080">
+    <svg id="s-svg" class="abs" viewBox="0 0 1920 1080" data-layout-allow-overflow>
+      <!-- a dashed frame closing in on the word: two upright lines and two level ones, across the whole frame -->
+      <g id="s-lines" stroke="#ff8a4a" stroke-opacity="0.7" stroke-width="2" stroke-dasharray="8 6" shape-rendering="crispEdges" opacity="0">
+        <line id="s-l" x1="0" y1="-20" x2="0" y2="1100" />
+        <line id="s-r" x1="0" y1="-20" x2="0" y2="1100" />
+        <line id="s-t" x1="-20" y1="0" x2="1940" y2="0" />
+        <line id="s-b" x1="-20" y1="0" x2="1940" y2="0" />
+      </g>
+      <defs>
+        <!-- the word's colour runs across it, deeper on the left and lighter on the right (as the reference) -->
+        <linearGradient id="s-grad" gradientUnits="objectBoundingBox" x1="0" y1="0" x2="1" y2="0">
+          <stop id="s-g0" offset="0" stop-color="#ff9a5c" />
+          <stop id="s-g1" offset="1" stop-color="#ffd2b0" />
+        </linearGradient>
+        <!-- neon: the letters sit in a soft bloom of their own light, a wide haze and a tighter glow, under a crisp core -->
+        <filter id="s-neon" x="-30%" y="-80%" width="160%" height="260%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="14" result="haze" />
+          <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="glow" />
+          <feComponentTransfer in="haze" result="hazeA"><feFuncA id="s-hazeA" type="linear" slope="0.55" /></feComponentTransfer>
+          <feComponentTransfer in="glow" result="glowA"><feFuncA type="linear" slope="0.8" /></feComponentTransfer>
+          <feMerge><feMergeNode in="hazeA" /><feMergeNode in="glowA" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+      </defs>
+      <text id="s-word" x="0" y="0" font-family="Inter" font-size="100" font-weight="700" letter-spacing="-1" text-anchor="middle" fill="url(#s-grad)" filter="url(#s-neon)">sorted</text>
+    </svg>
+  </div>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+    const T0 = 24.767;   // this composition starts at 24.767 s on the root; times below are written as root seconds - T0
+    const at = (t) => t - T0;
+    // a monotone cubic through measured keys, so speeds change without kinks (Fritsch-Carlson)
+    const smoothKeys = (K) => {
+      const n = K.length, d = [], m = [];
+      for (let i = 0; i < n - 1; i++) d.push((K[i + 1][1] - K[i][1]) / (K[i + 1][0] - K[i][0]));
+      m.push(d[0]);
+      for (let i = 1; i < n - 1; i++) m.push(d[i - 1] * d[i] <= 0 ? 0 : (2 * d[i - 1] * d[i]) / (d[i - 1] + d[i]));
+      m.push(d[n - 2]);
+      return (t) => {
+        if (t <= K[0][0]) return K[0][1];
+        if (t >= K[n - 1][0]) return K[n - 1][1];
+        let i = 0;
+        while (K[i + 1][0] < t) i++;
+        const h = K[i + 1][0] - K[i][0], u = (t - K[i][0]) / h, u2 = u * u, u3 = u2 * u;
+        return (2 * u3 - 3 * u2 + 1) * K[i][1] + (u3 - 2 * u2 + u) * h * m[i] + (-2 * u3 + 3 * u2) * K[i + 1][1] + (u3 - u2) * h * m[i + 1];
+      };
+    };
+    const col = (K, i) => smoothKeys(K.map((k) => [k[0], k[i]]));
+
+    // ---------------------------------------------------------------- measured on the reference, frame by frame
+    // the word's ink: [time, width px, baseline y, centre x]. It lands huge and settles fast, then keeps drawing in.
+    const WORD = [[24.767, 1123, 654, 948], [24.833, 851, 631, 950], [24.9, 708, 619, 951], [24.967, 616, 610, 952], [25.033, 553, 603, 952],
+                  [25.1, 508, 599, 953], [25.167, 475, 595, 953], [25.233, 451, 593, 953], [25.3, 434, 591, 954], [25.5, 400, 587, 954],
+                  [25.7, 381, 586, 954], [25.9, 373, 586, 954], [26.033, 361, 585, 954], [26.1, 348, 585, 954], [26.167, 329, 584, 954], [26.233, 300, 584, 954]];
+    const wW = col(WORD, 1), wB = col(WORD, 2), wX = col(WORD, 3);
+    // its colour runs from a light warm peach to a deep vivid red-orange (the reference: lavender to deep violet)
+    const COLOUR = [[24.767, 0], [25.1, 0.05], [25.3, 0.2], [25.5, 0.45], [25.7, 0.65], [25.9, 0.82], [26.233, 1]];
+    const cK = smoothKeys(COLOUR);
+    // two ends of the word: light peach to a hot orange-red on the left, pale apricot to our orange on the right
+    const FROM0 = [255, 154, 92], TO0 = [240, 58, 10], FROM1 = [255, 214, 184], TO1 = [255, 128, 46];
+    // the dashed frame: [time, left x, right x, top y, bottom y]
+    const FRAME = [[24.95, 60, 1840, -10, 1090], [25.033, 234, 1668, 20, 1042], [25.1, 348, 1555, 115, 948], [25.167, 434, 1470, 190, 874],
+                   [25.233, 500, 1404, 247, 818], [25.3, 552, 1353, 292, 772], [25.367, 594, 1312, 329, 737], [25.433, 627, 1278, 358, 708],
+                   [25.5, 654, 1252, 383, 684], [25.567, 676, 1230, 402, 665], [25.633, 694, 1212, 417, 650], [25.7, 708, 1199, 429, 638],
+                   [25.767, 718, 1188, 439, 628], [25.833, 726, 1180, 445, 621], [25.9, 732, 1174, 451, 616], [25.967, 738, 1169, 455, 613],
+                   [26.033, 743, 1163, 458, 610], [26.1, 750, 1157, 460, 609], [26.167, 761, 1148, 463, 607], [26.233, 774, 1133, 468, 603]];
+    const fL = col(FRAME, 1), fR = col(FRAME, 2), fT = col(FRAME, 3), fB = col(FRAME, 4);
+
+    const word = document.getElementById("s-word");
+    let ink = 0;   // ink width of the word at font-size 100, read once the font is in
+    const L = document.getElementById("s-l"), R = document.getElementById("s-r"), T = document.getElementById("s-t"), B = document.getElementById("s-b");
+    // larger than the reference: the word and its frame scaled up together about the centre of the frame
+    // everything is centred on the frame: the word's ink and the dashed box share the centre (960, 540); only the
+    // measured sizes and half-spans are kept from the reference
+    // the scale-up grows as the word settles, so where it comes to rest it is a little larger still (1.25 -> 1.5)
+    const CX = 960, CY = 540;
+    const bigAt = (t) => { const u = Math.min(1, Math.max(0, (t - 25.0) / 0.8)); return 1.25 + 0.25 * u * u * (3 - 2 * u); };
+    const place = (lt) => {
+      const t = lt + T0;
+      const BIG = bigAt(t);
+      if (!ink) ink = word.getBBox().width * 0.97;
+      const s = (wW(t) * BIG) / ink;
+      // "sorted" has no descenders: its ink runs from the baseline up 0.728 em, so the baseline sits 0.364 em below centre
+      word.setAttribute("transform", `translate(${CX} ${CY + 0.364 * 100 * s}) scale(${s})`);
+      const k = Math.max(0, Math.min(1, cK(t)));
+      const mix = (a, b) => `rgb(${a.map((v, i) => Math.round(v + (b[i] - v) * k)).join(",")})`;
+      document.getElementById("s-g0").setAttribute("stop-color", mix(FROM0, TO0));
+      document.getElementById("s-g1").setAttribute("stop-color", mix(FROM1, TO1));
+      // the bloom swells a little as the colour deepens, like a tube warming up
+      document.getElementById("s-hazeA").setAttribute("slope", 0.45 + 0.35 * k);
+      const show = t >= 24.95;
+      document.getElementById("s-lines").setAttribute("opacity", show ? Math.min(1, (t - 24.95) / 0.08) : 0);
+      if (show) {
+        const hw = ((fR(t) - fL(t)) / 2) * BIG, hh = ((fB(t) - fT(t)) / 2) * BIG;
+        const l = Math.round(CX - hw), r = Math.round(CX + hw), tp = Math.round(CY - hh), bt = Math.round(CY + hh);
+        L.setAttribute("x1", l); L.setAttribute("x2", l);
+        R.setAttribute("x1", r); R.setAttribute("x2", r);
+        T.setAttribute("y1", tp); T.setAttribute("y2", tp);
+        B.setAttribute("y1", bt); B.setAttribute("y2", bt);
+      }
+    };
+    const clock = { t: 0 };
+    tl.fromTo(clock, { t: 0 }, { t: 26.25 - T0, duration: 26.25 - T0, ease: "none", immediateRender: false, onUpdate: () => place(clock.t) }, 0);
+
+    const ready = document.fonts.load('700 100px "Inter"').then(() => { ink = 0; place(clock.t); });
+    window.__hf = window.__hf || {};
+    window.__hf.buildReady = window.__hf.buildReady || {};
+    window.__hf.buildReady["sorted-font"] = ready;
+    place(0);
+
+    window.__timelines["sorted"] = tl;
+  </script>
+</template>

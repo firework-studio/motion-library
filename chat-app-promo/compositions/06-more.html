@@ -1,0 +1,105 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Inter";
+      font-weight: 100 900;
+      src: url("assets/fonts/Inter-Variable.ttf") format("truetype");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: transparent;
+      font-family: "Inter", sans-serif;
+      color: #ffffff;
+    }
+    .abs {
+      position: absolute;
+    }
+    /* one line, 1em tall and centred on its box, so the box centre is the ink centre of the lowercase line */
+    .m-line {
+      left: 0;
+      top: 453px;
+      width: 1920px;
+      height: 174px;
+      font-size: 174px;
+      line-height: 174px;
+      text-align: center;
+      white-space: nowrap;
+      transform-origin: 960px 87px;
+      opacity: 0;
+    }
+    #m-chats {
+      font-weight: 400;
+    }
+    #m-more {
+      font-weight: 700;
+    }
+    #m-flash {
+      inset: 0;
+      background: #f7f5f8;
+      opacity: 0;
+    }
+    #m-moreInk {
+      color: #0b0a0d;
+      font-weight: 700;
+    }
+  </style>
+  <div id="root" data-composition-id="more" data-width="1920" data-height="1080">
+    <div id="m-chats" class="abs m-line">chats that do</div>
+    <div id="m-more" class="abs m-line">more</div>
+    <div id="m-flash" class="abs"></div>
+    <div id="m-moreInk" class="abs m-line">more</div>
+  </div>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+    const T0 = 16.8;   // this composition starts at 16.8 s on the root; times below are written as root seconds - T0
+    const at = (t) => t - T0;
+
+    // ---------------------------------------------------------------- "chats that do" (16.83-18.37 s)
+    // measured every other frame on the reference: [time, ink-centre y, font size px, letter-spacing em].
+    // It rises from below and settles (fast, then slow), shrinking a little, while the tracking closes steadily from
+    // 0.085em to -0.015em; from 18.0 s it shrinks faster, and at 18.40 s it is cut to a bold "more".
+    const CHATS = [[16.834, 927.2, 174.5, 0.0847], [16.9, 785.5, 164.8, 0.0854], [16.967, 722.8, 160.7, 0.0849], [17.034, 679.3, 159.3, 0.0787],
+                   [17.1, 646.2, 156.6, 0.0786], [17.167, 619.6, 155.2, 0.0749], [17.234, 599.1, 153.8, 0.0715], [17.3, 582.1, 153.8, 0.064],
+                   [17.367, 568.6, 152.5, 0.0616], [17.434, 557.5, 152.5, 0.054], [17.5, 549.5, 152.5, 0.0469], [17.567, 543.0, 151.1, 0.0432],
+                   [17.634, 538.0, 151.1, 0.0355], [17.7, 535.0, 151.1, 0.0278], [17.767, 533.0, 151.1, 0.0201], [17.834, 532.5, 149.7, 0.0173],
+                   [17.9, 532.5, 149.7, 0.0095], [17.967, 532.5, 149.7, 0.0028], [18.034, 532.5, 147.0, 0.0019], [18.1, 533.0, 145.6, -0.0069],
+                   [18.167, 532.5, 141.5, -0.0101], [18.234, 533.0, 134.6, -0.0104], [18.3, 533.0, 126.4, -0.0151], [18.367, 533.0, 109.9, -0.0152]];
+    // "more" (18.40-18.80 s): [time, ink-centre y, font size px]; it lands large and eases down a touch
+    const MORE = [[18.4, 546.5, 173.0], [18.467, 546.0, 163.5], [18.534, 545.5, 157.8], [18.6, 545.5, 157.8], [18.667, 545.5, 154.0],
+                  [18.734, 545.5, 154.0], [18.8, 545.0, 152.1]];
+    const lerpKeys = (K, t) => {
+      let i = 0;
+      while (i < K.length - 2 && K[i + 1][0] <= t) i++;
+      const a = K[i], b = K[i + 1], u = Math.min(1, Math.max(0, (t - a[0]) / (b[0] - a[0])));
+      return a.map((v, j) => v + (b[j] - v) * u);
+    };
+    const chats = document.getElementById("m-chats");
+    const more = document.getElementById("m-more");
+    const moreInk = document.getElementById("m-moreInk");
+    const place = (lt) => {
+      const t = lt + T0;
+      const [, cy, fs, ls] = lerpKeys(CHATS, t);
+      gsap.set(chats, { y: cy - 540, scale: fs / 174, letterSpacing: ls + "em" });
+      // for "more" the lowercase ink sits 0.1em below the box centre
+      const [, my, mf] = lerpKeys(MORE, t);
+      gsap.set([more, moreInk], { y: my - 540 - 0.1 * mf, scale: mf / 174 });
+    };
+    const clock = { t: 0 };
+    tl.fromTo(clock, { t: 0 }, { t: 18.95 - T0, duration: 18.95 - T0, ease: "none", immediateRender: false, onUpdate: () => place(clock.t) }, 0);
+    place(0);
+    tl.fromTo(chats, { opacity: 0 }, { opacity: 1, duration: 0.05, ease: "none", immediateRender: false }, at(16.82));
+    tl.set(chats, { opacity: 0 }, at(18.4));
+    tl.set(more, { opacity: 1 }, at(18.4));
+
+    // ---------------------------------------------------------------- white flash (18.80-18.93 s)
+    // the frame flashes white with the word in ink, then cuts to the next shot
+    tl.set(more, { opacity: 0 }, at(18.8));
+    tl.set(["#m-flash", moreInk], { opacity: 1 }, at(18.8));
+    tl.set(["#m-flash", moreInk], { opacity: 0 }, at(18.933));
+
+    window.__timelines["more"] = tl;
+  </script>
+</template>

@@ -1,0 +1,374 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: transparent;
+    }
+    .abs {
+      position: absolute;
+    }
+    #i-glass {
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+      opacity: 0;
+    }
+    /* the input's last shape, drawing into a square with a dark lens opening in it */
+    #i-shell {
+      left: 960px;
+      top: 536px;
+      width: 203px;
+      height: 132px;
+      margin: -66px 0 0 -101.5px;
+      border-radius: 27px;
+      background: #120e10;
+      box-shadow: inset 0 0 0 1.6px rgba(255, 214, 190, 0.5);
+    }
+    #i-lens {
+      left: 50%;
+      top: 50%;
+      width: 10px;
+      height: 10px;
+      margin: -5px 0 0 -5px;
+      border-radius: 50%;
+      /* soft-edged and warm-dark, not a hard black disc: it reads as depth in the block, and melts into the glass */
+      background: radial-gradient(circle, rgba(8, 5, 7, 0.96) 0%, rgba(8, 5, 7, 0.9) 52%, rgba(14, 9, 11, 0.5) 66%, rgba(18, 14, 16, 0) 74%);
+    }
+    #i-bloom {
+      left: 960px;
+      top: 536px;
+      width: 700px;
+      height: 700px;
+      margin: -350px 0 0 -350px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 120, 40, 0.32) 0%, rgba(255, 106, 31, 0.12) 35%, rgba(255, 106, 31, 0) 65%);
+      opacity: 0;
+    }
+  </style>
+  <div id="root" data-composition-id="icon" data-width="1920" data-height="1080">
+    <div id="i-bloom" class="abs"></div>
+    <div id="i-shell" class="abs"><div id="i-lens" class="abs"></div></div>
+    <canvas id="i-glass" class="abs" width="1920" height="1080"></canvas>
+  </div>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+    const T0 = 34.5;   // this composition starts at 34.5 s on the root; times below are written as root seconds - T0
+    const clamp01 = (v) => Math.min(1, Math.max(0, v));
+    const ease = (u) => u * u * (3 - 2 * u);
+
+    const gc = document.getElementById("i-glass");
+    const ggl = gc.getContext("webgl", { premultipliedAlpha: true, preserveDrawingBuffer: true, antialias: true });
+    const GU = {};
+    (function buildGlass() {
+      const vs = "attribute vec2 p; void main(){ gl_Position = vec4(p, 0.0, 1.0); }";
+      const fs = `
+        precision highp float;
+        uniform vec2 C; uniform float reveal, S, op, depth, colorR, lensR, lensFill, bubR, bubOp, halo, haloOp, milk, neon, pix, streak, streakY, sheen, t;
+        float sdRR(vec2 p, vec2 b, float r) { vec2 q = abs(p) - b + r; return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r; }
+        float slab(vec2 p) { return sdRR(p, vec2(215.0, 220.0), 128.0); }
+        vec3 ramp(float x) {
+          x = clamp(x, 0.0, 1.0);
+          vec3 c0 = vec3(1.0, 0.8, 0.66), c1 = vec3(1.0, 0.66, 0.44), c2 = vec3(1.0, 0.48, 0.17), c3 = vec3(0.98, 0.3, 0.1);
+          vec3 c4 = vec3(0.95, 0.3, 0.32), c5 = vec3(0.62, 0.16, 0.3), c6 = vec3(0.36, 0.1, 0.24);
+          if (x < 0.12) return mix(c0, c1, x / 0.12);
+          if (x < 0.3) return mix(c1, c2, (x - 0.12) / 0.18);
+          if (x < 0.5) return mix(c2, c3, (x - 0.3) / 0.2);
+          if (x < 0.68) return mix(c3, c4, (x - 0.5) / 0.18);
+          if (x < 0.85) return mix(c4, c5, (x - 0.68) / 0.17);
+          return mix(c5, c6, (x - 0.85) / 0.15);
+        }
+        // colour inside the glass: light poured in from the lower-left corner, spreading as colorR grows
+        vec3 inside(vec2 q) {
+          float k = length(q - vec2(-215.0, 220.0)) / max(colorR, 1.0);
+          vec3 c = ramp(k);
+          float lit = 1.0 - smoothstep(0.6, 1.05, k);
+          c = mix(vec3(0.045, 0.04, 0.05), c, lit);                               // no colour until the light reaches it
+          // a soft internal highlight band running across the slab
+          float band = exp(-pow((q.x + q.y * 0.9 + 60.0) / 220.0, 2.0)) * 0.08 * lit;
+          c += vec3(1.0, 0.85, 0.75) * band;
+          // the lens: a darker disk early on, then pale concentric rings floating in the glass
+          float r = length(q);
+          c = mix(c, c * 0.5, lensFill * smoothstep(lensR + 1.5, lensR - 1.5, r));
+          c += vec3(1.0, 0.92, 0.88) * (exp(-pow((r - lensR) / 2.4, 2.0)) * 0.4) * step(1.0, lensR);
+          return c;
+        }
+        void main() {
+          vec2 sp = vec2(gl_FragCoord.x, 1080.0 - gl_FragCoord.y);
+          vec2 p = (sp - C) / S;
+          float d = slab(p);
+          if (op < 0.001) discard;
+          if (d > 2.0) {
+            // ---- the light the glass sends out, drawn in the same shader so the two share one light.
+            // The glass's own soft glow, plus the halo: light pouring out of the slab's edge as a wave that travels
+            // outward (its front at the "halo" radius), strongest off the lit lower-left corner, warm white at the
+            // edge cooling to our orange and then deep red, broken into small LED cells that twinkle as the front passes.
+            float ds = d * S;                                                       // screen px from the glass edge
+            vec2 q = p / vec2(215.0, 220.0);
+            float warm = clamp(0.5 - 0.35 * (q.x - q.y), 0.0, 1.0);                  // 1 toward the lower left
+            float glowW = exp(-ds / 38.0) * (0.10 + 0.18 * haloOp) * (0.4 + 0.6 * warm) * op * depth;
+            vec3 col = mix(vec3(0.9, 0.55, 0.45), vec3(1.0, 0.55, 0.22), warm) * glowW;
+            float A = glowW;
+            // a neon tube traced just outside the glass: a hot thin core, a tighter glow and a wide misty haze,
+            // warm white-orange on the lit lower left, deepening to red-orange round the far side; it breathes a little
+            if (neon > 0.001) {
+              float breathe = 0.9 + 0.1 * sin(t * 7.0);
+              float core = exp(-pow((ds - 7.0) / 2.2, 2.0));
+              float glowN = exp(-pow((ds - 7.0) / 9.0, 2.0));
+              float haze = exp(-ds / 46.0);
+              float side = 0.45 + 0.55 * warm;
+              vec3 tube = mix(vec3(1.0, 0.32, 0.08), vec3(1.0, 0.72, 0.48), warm);
+              float I = neon * op * breathe * side;
+              col += vec3(1.0, 0.9, 0.82) * core * I * 0.9 + tube * (glowN * 0.55 + haze * 0.28) * I;
+              A += (core * 0.9 + glowN * 0.55 + haze * 0.28) * I;
+            }
+            if (haloOp > 0.001) {
+              // a disc of light centred on the icon that grows evenly outward (its rim at the "halo" radius),
+              // soft-edged, fullest near the glass, and bounded by the phone's outer edge (rig coords: x >= 375,
+              // y <= 964, corner 230), so it lights the module, the slope and the rim but never spills off the phone
+              float r = length(sp - C);
+              float R = max(halo, 1.0);
+              float feather = max(0.28 * R, 70.0);
+              float k = clamp((r - 215.0 * S) / max(R - 215.0 * S, 1.0), 0.0, 1.0);
+              float disc = smoothstep(R, R - feather, r);
+              float body = disc * (0.62 + 0.38 * exp(-ds / 160.0)) * smoothstep(0.0, 24.0, ds);
+              float front = exp(-pow((r - (R - feather * 0.55)) / (feather * 0.45), 2.0)) * 0.22;
+              vec2 pq = abs(sp - vec2(2187.5, -1018.0)) - vec2(1812.5, 1982.0) + 230.0;
+              float dPh = length(max(pq, 0.0)) + min(max(pq.x, pq.y), 0.0) - 230.0;
+              float inPh = smoothstep(4.0, -40.0, dPh);
+              float I = (body * 0.78 + front) * haloOp * op * inPh;
+              vec3 hc = mix(vec3(1.0, 0.74, 0.52), vec3(1.0, 0.5, 0.18), smoothstep(0.0, 0.5, k));   // one hue: warm white at the glass, our orange outward
+              // once it fills the phone the light washes out to a pale, milky peach and the LED cells melt into it
+              hc = mix(hc, vec3(1.0, 0.86, 0.76), milk * 0.75);
+              // LED cells: 12 px squares with a dark gap, each flickering a little, lit by the light under them
+              vec2 cp = floor(sp / 12.0);
+              vec2 cf = fract(sp / 12.0) - 0.5;
+              float cell = (1.0 - smoothstep(0.26, 0.42, max(abs(cf.x), abs(cf.y))));
+              float tw = 0.88 + 0.24 * fract(sin(dot(cp + floor(t * 18.0), vec2(12.9898, 78.233))) * 43758.5453);
+              float cellI = I * cell * mix(1.0, tw, front) * (1.0 - 0.7 * milk);
+              col += hc * (I * 0.5 + cellI * 0.45);
+              A += I * 0.5 + cellI * 0.45;
+            }
+            if (A < 0.002) discard;
+            gl_FragColor = vec4(col, min(A, 1.0));
+            return;
+          }
+          float a = clamp(0.5 - d * S, 0.0, 1.0);
+          // curved bevel: a quarter-circle profile over the outer 64 px
+          float B = 92.0;
+          float x = clamp(-d / B, 0.0, 1.0);
+          float e = 1.0 - smoothstep(0.0, 1.0, x); float slope = e * e * 2.2;
+          vec2 g = normalize(vec2(slab(p + vec2(1.0, 0.0)) - slab(p - vec2(1.0, 0.0)), slab(p + vec2(0.0, 1.0)) - slab(p - vec2(0.0, 1.0))) + 1e-5);
+          vec3 N = normalize(vec3(g * slope * 0.55 * depth + p / 220.0 * 0.22 * depth, 1.0));   // bevel plus a gentle convex dome
+          // the bubble: a dome rising inside the glass
+          vec2 bc = p - vec2(0.0, -4.0);
+          float rb = length(bc) / max(bubR, 1.0);
+          // bubble shape: a circle smoothly joined to a short capsule tail toward the lower left
+          vec2 u = bc / max(bubR, 1.0);
+          vec2 ta = vec2(-0.62, 0.62), tb = vec2(-0.98, 1.0);
+          vec2 pa = u - ta, ba = tb - ta;
+          float hh = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);
+          float dCap = length(pa - ba * hh) - mix(0.2, 0.05, hh);
+          float dCir = length(u) - 1.0;
+          float kk = 0.12; float hm = clamp(0.5 + 0.5 * (dCap - dCir) / kk, 0.0, 1.0);
+          float dBub = mix(dCap, dCir, hm) - kk * hm * (1.0 - hm);
+          bool inBub = dBub < 0.01 && bubR > 2.0;
+          vec3 Nb = inBub && rb < 0.995 ? normalize(vec3(bc / max(bubR, 1.0) * 0.9, sqrt(max(1.0 - rb * rb, 0.0)) + 0.15)) : N;
+          // refraction: the colour seen through a curved surface shifts, most at the rim
+          vec3 body = inside(p + N.xy * 34.0);
+          // the second surface: a faint line inside the edge where the glass turns
+          body += vec3(1.0, 0.9, 0.85) * exp(-pow((d + 24.0) / 7.0, 2.0)) * 0.05 * depth;
+          vec3 col = body;
+          if (inBub) {
+            // the bubble: milky glass, white at the top, our orange underneath, the plate showing through low down
+            // frosted glass bubble: solid milky white at the top, clearing toward the lower left where the plate shows through
+            float g = clamp(dot(u, normalize(vec2(-1.0, 1.0))) * 0.5 + 0.5, 0.0, 1.0);   // 1 at the lower left
+            float v = clamp(u.y * 0.5 + 0.5, 0.0, 1.0);                                  // 1 at the bottom
+            float clear = smoothstep(0.25, 0.95, 0.55 * v + 0.45 * g);                   // how see-through
+            vec3 behind = inside(p + vec2(-8.0, 8.0)) * 1.15 + 0.04;                    // the plate, barely refracted
+            vec3 bub = mix(vec3(0.93, 0.87, 0.86), mix(behind, vec3(1.0, 0.85, 0.78), 0.2), clear * 0.9);
+            bub = mix(bub, bub * vec3(0.95, 0.86, 0.84), smoothstep(0.4, 1.0, dot(u, normalize(vec2(1.0, 1.0))) * 0.5 + 0.5) * 0.6);
+            bub += (fract(sin(dot(floor(sp), vec2(12.9898, 78.233))) * 43758.5453) - 0.5) * 0.02 * (1.0 - clear);  // frost grain
+            // the edge has thickness: a bright lip catching light on the upper left, a soft shade on the lower right
+            float lip = smoothstep(-0.18, 0.0, dBub);
+            vec2 un = normalize(u + 1e-5);
+            float up = clamp(dot(un, normalize(vec2(-0.6, -1.0))) * 0.5 + 0.5, 0.0, 1.0);
+            // the edge continues the inner gradient: only a faint lift on the upper left, no white outline
+            bub += vec3(1.0, 0.97, 0.96) * lip * pow(up, 3.0) * (0.06 + 0.14 * haloOp);
+            // white gradient stroke: strong along the upper left, fading out by the right and the bottom;
+            // the lower left stays a clear gradient with no stroke
+            float tl = clamp(dot(un, normalize(vec2(-1.0, -1.0))) * 0.5 + 0.5, 0.0, 1.0);   // 1 at the upper left
+            float strokeDir = smoothstep(0.3, 0.95, tl);
+            float stroke = exp(-pow((dBub + 0.04) / 0.04, 2.0));
+            float glow = exp(-pow((dBub + 0.1) / 0.09, 2.0));
+            bub = mix(bub, vec3(1.0, 0.99, 0.985), clamp((stroke * 0.95 + glow * 0.35) * strokeDir * (0.85 + 0.15 * haloOp), 0.0, 0.95));
+            // a broad soft highlight on the upper-left of the face
+            float hl = exp(-dot(u - vec2(-0.38, -0.42), u - vec2(-0.38, -0.42)) / 0.18);
+            bub = mix(bub, vec3(1.0, 0.99, 0.985), hl * 0.45);
+            bub *= 0.6 + 0.4 * bubOp;                                                   // dim while it is still growing
+            // a metallic streak sweeps across it at the bottom of the squeeze
+            bub += vec3(1.0, 0.86, 0.84) * streak * exp(-pow(((bc.x + bc.y) * 0.7071 - streakY) / 34.0, 2.0)) * 0.5;   // a soft diagonal sheen
+            bub += vec3(1.0) * sheen * exp(-pow((bc.x + bc.y - 40.0) / 90.0, 2.0)) * 0.08;
+            // reveal: a soft front sweeping from the lower-left corner to the upper right
+            float c = clamp(dot(u, normalize(vec2(1.0, -1.0))) * 0.5 + 0.5, 0.0, 1.0);   // 0 at the lower left
+            float shown = 1.0 - smoothstep(reveal * 1.35 - 0.35, reveal * 1.35, c);
+            shown *= smoothstep(0.0, -0.025, dBub);                                      // soft, natural edge
+            col = mix(col, bub, shown);
+            N = normalize(vec3(mix(N.xy, N.xy * 0.3, shown), 1.0));
+          }
+          // light: key from the lower left on the curved rims (bright), a faint back rim on the top and right
+          vec2 n2 = normalize(N.xy + 1e-5);
+          float edge = 1.0 - N.z;
+          float key = pow(max(dot(n2, normalize(vec2(-1.0, 0.85))), 0.0), 1.4) * smoothstep(0.02, 0.4, edge);
+          float back = pow(max(dot(n2, normalize(vec2(1.0, -0.9))), 0.0), 2.0) * smoothstep(0.05, 0.45, edge);
+          float boost = 0.5 + 0.55 * haloOp;                                        // highlights peak with the halo
+          col += vec3(1.0, 0.93, 0.88) * key * 0.65 * depth * boost + vec3(1.0, 0.85, 0.8) * back * 0.35 * depth * boost;
+          // corner hot spots: the curved corners concentrate the light into a few intense, uneven glints
+          // (strongest bottom left, then top left, a warm one bottom right), the straight edges between stay darker
+          float onRim = smoothstep(0.15, 0.7, edge) * (1.0 - float(inBub));
+          float hBL = exp(-dot(p - vec2(-180.0, 185.0), p - vec2(-180.0, 185.0)) / (2.0 * 60.0 * 60.0));
+          float hTL = exp(-dot(p - vec2(-178.0, -182.0), p - vec2(-178.0, -182.0)) / (2.0 * 50.0 * 50.0));
+          float hBR = exp(-dot(p - vec2(176.0, 182.0), p - vec2(176.0, 182.0)) / (2.0 * 48.0 * 48.0));
+          float hotK = (0.3 + 1.2 * haloOp) * depth * onRim;
+          vec3 hot = (vec3(1.0, 0.98, 0.95) * hBL * 0.9 + vec3(1.0, 0.96, 0.94) * hTL * 0.6 + vec3(1.0, 0.62, 0.6) * hBR * 0.5) * hotK;
+          // and the long edges between them are pulled down a little, so the glints read against them
+          col *= 1.0 - onRim * (1.0 - clamp(hBL + hTL + hBR, 0.0, 1.0)) * 0.18;
+          // convex sheen: a curved band of reflected light following the dome across the upper left
+          vec2 q2 = p / vec2(215.0, 220.0);
+          float arc = exp(-pow((length(q2 - vec2(0.55, 0.6)) - 1.15) / 0.12, 2.0)) * smoothstep(0.3, -0.6, q2.x + q2.y);
+          col += vec3(1.0, 0.97, 0.95) * arc * 0.22 * depth * (0.7 + 0.6 * haloOp) * (1.0 - float(inBub));
+          // a broad soft specular on the flat face, lit from the upper left
+          col += vec3(1.0) * pow(max(dot(N, normalize(vec3(-0.35, -0.4, 1.0))), 0.0), 40.0) * 0.12 * depth * boost;
+          // the halo lights the glass from all around: every curved edge catches it, and the LED cells reflect in it
+          float fres = pow(edge, 1.6);
+          float near = smoothstep(halo * 0.35, halo * 0.9, 300.0 * S);
+          vec2 cell = abs(fract(sp / 12.0) - 0.5);
+          float led = mix(1.0, step(max(cell.x, cell.y), 0.33) * 1.4, pix * 0.4);
+          col += vec3(1.0, 0.68, 0.4) * fres * haloOp * 1.2 * led;
+          float leave = exp(-pow((halo - 215.0 * S - 60.0) / 90.0, 2.0)) * haloOp;   // the wave leaving the glass lights its rim
+          col += vec3(1.0, 0.85, 0.7) * smoothstep(0.2, 0.9, edge) * leave * 0.9;
+          col += vec3(1.0, 0.62, 0.3) * haloOp * 0.12 * N.z;                      // a wash of its light across the face
+          col = mix(col, col * (0.85 + 0.3 * step(max(cell.x, cell.y), 0.33)), pix * 0.25 * (1.0 - float(inBub)));
+          // see-through: the glass only "has a colour" where light passes; elsewhere it is clear
+          float lumC = dot(col, vec3(0.3, 0.55, 0.15));
+          float solid = inBub ? 1.0 : clamp(0.12 + lumC * 1.25 + fres * 0.9, 0.0, 1.0);
+          a *= solid;
+          col /= max(solid, 0.001);                                                // premultiplied below; keep the colour
+          col *= solid;
+          // the glass catches light all round its rim: a thin clean edge, brighter at the top and left
+          // a crisp outline just inside the edge, brightest along the top and left, the way thick glass catches light
+          float outline = exp(-pow((d + 3.0) / 2.2, 2.0));
+          float side = 0.35 + 0.65 * clamp(dot(n2, normalize(vec2(-0.7, -1.0))) * 0.5 + 0.5, 0.0, 1.0);
+          float rimAll = outline * side;
+          col += vec3(1.0, 0.97, 0.95) * rimAll * 0.5 * depth;
+          a = max(a, rimAll * 0.5 * depth);
+          // thickness: the far face of the slab seen through the near one, a soft line about 26 px in
+          float far = exp(-pow((d + 26.0) / 4.0, 2.0)) * (1.0 - float(inBub));
+          col += vec3(1.0, 0.95, 0.92) * far * 0.22 * depth;
+          a = max(a, far * 0.22 * depth);
+          // a broad window reflection sliding across the upper left of the face
+          float win = exp(-pow((p.x * 0.8 + p.y + 150.0) / 55.0, 2.0)) * smoothstep(120.0, -120.0, p.x + p.y * 0.2) * (1.0 - float(inBub));
+          col += vec3(1.0, 0.98, 0.96) * win * 0.16 * depth;
+          a = max(a, win * 0.16 * depth);
+          col *= 0.95;
+          col = col / (1.0 + col * 0.14);                                         // softer roll-off, no glare
+          col += hot;                                                              // the corner glints sit on top, unflattened
+          // the upper-right corner falls away into the dark, as in the reference
+          float corner = 1.0 - smoothstep(40.0, 320.0, length(p - vec2(215.0, -220.0)));
+          float keepBub = inBub ? 0.15 : 1.0;                                      // the bubble stays whole
+          col *= 1.0 - 0.9 * corner * keepBub;
+          a *= 1.0 - 0.75 * corner * keepBub;
+          gl_FragColor = vec4(col * a * op, a * op);
+        }`;
+      const sh = (type, src) => { const o = ggl.createShader(type); ggl.shaderSource(o, src); ggl.compileShader(o); if (!ggl.getShaderParameter(o, ggl.COMPILE_STATUS)) console.error(ggl.getShaderInfoLog(o)); return o; };
+      const prog = ggl.createProgram();
+      ggl.attachShader(prog, sh(ggl.VERTEX_SHADER, vs)); ggl.attachShader(prog, sh(ggl.FRAGMENT_SHADER, fs));
+      ggl.linkProgram(prog); ggl.useProgram(prog);
+      const buf = ggl.createBuffer(); ggl.bindBuffer(ggl.ARRAY_BUFFER, buf);
+      ggl.bufferData(ggl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), ggl.STATIC_DRAW);
+      const loc = ggl.getAttribLocation(prog, "p"); ggl.enableVertexAttribArray(loc); ggl.vertexAttribPointer(loc, 2, ggl.FLOAT, false, 0, 0);
+      for (const n of ["C", "reveal", "S", "op", "depth", "colorR", "lensR", "lensFill", "bubR", "bubOp", "halo", "haloOp", "milk", "neon", "pix", "streak", "streakY", "sheen", "t"]) GU[n] = ggl.getUniformLocation(prog, n);
+      ggl.viewport(0, 0, 1920, 1080);
+    })();
+
+    // ---------------------------------------------------------------- the icon, rebuilt from the input (measured on the reference)
+    // 34.5-34.75 s: the input's rounded block draws into a small square while its dot opens into a dark lens;
+    // 34.85-35.2 s: colour comes up through the glass from the lower-left corner and the bubble forms;
+    // 35.2-35.5 s: the icon grows to full size; 35.4 s on: it glows; 36.55-36.75 s: it dims for the closing line
+    const shell = document.getElementById("i-shell"), lens = document.getElementById("i-lens");
+    const CX = 960, CY = 536;   // the input's centre at the hand-over
+    const SLAB = 430;   // the glass slab's width at S = 1
+    // one measured size curve, the same one the input followed in the last shot, so nothing stops or jumps
+    const smoothKeys = (K) => {
+      const n = K.length, d = [], m = [];
+      for (let i = 0; i < n - 1; i++) d.push((K[i + 1][1] - K[i][1]) / (K[i + 1][0] - K[i][0]));
+      m.push(d[0]);
+      for (let i = 1; i < n - 1; i++) m.push(d[i - 1] * d[i] <= 0 ? 0 : (2 * d[i - 1] * d[i]) / (d[i - 1] + d[i]));
+      m.push(d[n - 2]);
+      return (t) => {
+        if (t <= K[0][0]) return K[0][1];
+        if (t >= K[n - 1][0]) return K[n - 1][1];
+        let i = 0;
+        while (K[i + 1][0] < t) i++;
+        const h = K[i + 1][0] - K[i][0], u = (t - K[i][0]) / h, u2 = u * u, u3 = u2 * u;
+        return (2 * u3 - 3 * u2 + 1) * K[i][1] + (u3 - 2 * u2 + u) * h * m[i] + (-2 * u3 + 3 * u2) * K[i + 1][1] + (u3 - u2) * h * m[i + 1];
+      };
+    };
+    const BOX = smoothKeys([[34.067, 738], [34.233, 420], [34.3, 327], [34.367, 234], [34.433, 189], [34.5, 163], [34.567, 147], [34.633, 137], [34.7, 131], [34.9, 132], [35.033, 138], [35.1, 144], [35.167, 154], [35.233, 175], [35.3, 205], [35.367, 220], [35.433, 228], [35.5, 234], [35.567, 238], [35.633, 242], [35.7, 244], [35.767, 246], [36.0, 248]]);
+    // the icon starts small inside the block's dark lens and grows out through it, on past the block's edge
+    const ICON = smoothKeys([[34.78, 84], [34.9, 100], [35.0, 122], [35.067, 140], [35.167, 156], [35.233, 175], [35.3, 205], [35.367, 220],
+                            [35.433, 228], [35.5, 234], [35.567, 238], [35.633, 242], [35.7, 244], [35.767, 246], [36.0, 248]]);
+    const draw = (t) => {
+      // the block shrinks along the measured curve and then holds at ~131 px, waiting; the icon grows out of it
+      const bw = Math.max(131, BOX(Math.min(t, 34.7)));
+      const h = Math.min(132, bw);
+      const sq = ease(clamp01((t - 34.5) / 0.25));
+      gsap.set(shell, { width: bw, height: h, marginLeft: -bw / 2, marginTop: -h / 2, borderRadius: Math.max(27, bw * (128 / 430) * sq + 27 * (1 - sq)),
+        opacity: 1 - clamp01((t - 35.1) / 0.2) });
+      // the lens opens to exactly the glass icon's own inner ring, keeps that size as the icon grows out of it, and
+      // dissolves into the glass as the colour comes up, so nothing pops: the dark of the block becomes the icon's well
+      const ringD = 2 * 165 * (ICON(Math.max(t, 34.78)) / SLAB) * 1.35;   // soft edge: the gradient's 74 % sits on the ring
+      // it opens from nothing (no dot first), softly, as the block squares off
+      const opened = ease(clamp01((t - 34.5) / 0.32));
+      const lr = ringD * opened;
+      gsap.set(lens, { width: lr, height: lr, marginLeft: -lr / 2, marginTop: -lr / 2, opacity: opened * (1 - ease(clamp01((t - 34.82) / 0.35))) });
+      const on = ease(clamp01((t - 34.78) / 0.15));
+      document.getElementById("i-glass").style.opacity = on;
+      const S = ICON(t) / SLAB;
+      // the colour spreads from the lower-left corner over ~0.7 s, as measured
+      const rev = 1 - Math.pow(1 - clamp01((t - 34.83) / 0.7), 2);
+      const glow = clamp01((t - 35.35) / 0.3);
+      const dim = 1 - 0.94 * ease(clamp01((t - 36.48) / 0.22));
+      ggl.clearColor(0, 0, 0, 0); ggl.clear(ggl.COLOR_BUFFER_BIT);
+      ggl.uniform2f(GU.C, CX, CY);
+      ggl.uniform1f(GU.S, S);
+      ggl.uniform1f(GU.op, dim);
+      ggl.uniform1f(GU.depth, 0.4 + 0.6 * rev);
+      ggl.uniform1f(GU.colorR, 1 + 560 * rev);
+      ggl.uniform1f(GU.lensR, 165);
+      ggl.uniform1f(GU.lensFill, 0.05);
+      ggl.uniform1f(GU.bubR, 112 * (0.6 + 0.4 * rev));
+      ggl.uniform1f(GU.bubOp, rev);
+      ggl.uniform1f(GU.reveal, rev);
+      ggl.uniform1f(GU.halo, 300);
+      ggl.uniform1f(GU.haloOp, 0);
+      ggl.uniform1f(GU.milk, 0);
+      ggl.uniform1f(GU.neon, 0.8 * glow * dim);
+      ggl.uniform1f(GU.pix, 0);
+      ggl.uniform1f(GU.streak, 0);
+      ggl.uniform1f(GU.streakY, -150);
+      ggl.uniform1f(GU.sheen, 0);
+      ggl.uniform1f(GU.t, t - T0);
+      ggl.drawArrays(ggl.TRIANGLE_STRIP, 0, 4);
+      gsap.set("#i-bloom", { opacity: glow * dim });
+    };
+    const clock = { t: 0 };
+    tl.fromTo(clock, { t: 0 }, { t: 37.0 - T0, duration: 37.0 - T0, ease: "none", immediateRender: false, onUpdate: () => draw(clock.t + T0) }, 0);
+    draw(T0);
+
+    window.__timelines["icon"] = tl;
+  </script>
+</template>

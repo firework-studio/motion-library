@@ -1,0 +1,200 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Inter";
+      font-weight: 100 900;
+      src: url("assets/fonts/Inter-Variable.ttf") format("truetype");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: transparent;
+      font-family: "Inter", sans-serif;
+      color: #ffffff;
+    }
+    .abs {
+      position: absolute;
+    }
+    #h-all {
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+    }
+    /* the studio's avatar: the mark in a white ring, 196 px across */
+    #h-avatar {
+      left: 0;
+      top: 0;
+      width: 196px;
+      height: 196px;
+      margin: -98px 0 0 -98px;
+      border-radius: 50%;
+      background: #0d0b10;
+      box-shadow: inset 0 0 0 5px rgba(255, 255, 255, 0.95);
+      overflow: hidden;
+    }
+    #h-avatar img {
+      position: absolute;
+      left: 22px;
+      top: 22px;
+      width: 152px;
+      height: 152px;
+    }
+    #h-bubble {
+      left: 0;
+      top: 0;
+      width: 100px;
+      height: 100px;
+      border-radius: 96px;
+      background: #241d20;
+      box-shadow: inset 0 0 0 2px rgba(255, 190, 150, 0.06);
+      overflow: hidden;
+    }
+    #h-text {
+      left: 84px;
+      top: 58px;
+      font-size: 72px;
+      line-height: 88px;
+      font-weight: 400;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+    }
+    #h-text .ch {
+      visibility: hidden;
+      white-space: pre;
+    }
+    #h-text .ch.on {
+      visibility: visible;
+    }
+    #h-rocket {
+      width: 76px;
+      height: 76px;
+      margin-left: 14px;
+    }
+    #h-time {
+      right: 86px;
+      bottom: 46px;
+      font-size: 58px;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 0.55);
+      white-space: pre;
+    }
+    #h-time span {
+      display: inline-block;
+      opacity: 0;
+    }
+    .sheen {
+      position: absolute;
+      left: 0;
+      top: -40px;
+      width: 320px;
+      height: 420px;
+      background: linear-gradient(90deg, rgba(255, 236, 220, 0) 0%, rgba(255, 236, 220, 0.13) 45%, rgba(255, 236, 220, 0.16) 55%, rgba(255, 236, 220, 0) 100%);
+      transform-origin: 50% 50%;
+      pointer-events: none;
+      opacity: 0;
+    }
+  </style>
+  <div id="root" data-composition-id="shipped" data-width="1920" data-height="1080">
+    <div id="h-all" class="abs" data-layout-allow-overflow>
+      <div id="h-bubble" class="abs">
+          <div id="h-bubble-sheen" class="sheen"></div>
+        <div id="h-text" class="abs"></div>
+        <div id="h-time" class="abs"></div>
+      </div>
+      <div id="h-avatar" class="abs"><img src="assets/images/studio-mark.png" alt="" /></div>
+    </div>
+  </div>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+    const T0 = 26.15;   // this composition starts at 26.15 s on the root; times below are written as root seconds - T0
+    const at = (t) => t - T0;
+    // a monotone cubic through measured keys, so speeds change without kinks (Fritsch-Carlson)
+    const smoothKeys = (K) => {
+      const n = K.length, d = [], m = [];
+      for (let i = 0; i < n - 1; i++) d.push((K[i + 1][1] - K[i][1]) / (K[i + 1][0] - K[i][0]));
+      m.push(d[0]);
+      for (let i = 1; i < n - 1; i++) m.push(d[i - 1] * d[i] <= 0 ? 0 : (2 * d[i - 1] * d[i]) / (d[i - 1] + d[i]));
+      m.push(d[n - 2]);
+      return (t) => {
+        if (t <= K[0][0]) return K[0][1];
+        if (t >= K[n - 1][0]) return K[n - 1][1];
+        let i = 0;
+        while (K[i + 1][0] < t) i++;
+        const h = K[i + 1][0] - K[i][0], u = (t - K[i][0]) / h, u2 = u * u, u3 = u2 * u;
+        return (2 * u3 - 3 * u2 + 1) * K[i][1] + (u3 - 2 * u2 + u) * h * m[i] + (-2 * u3 + 3 * u2) * K[i + 1][1] + (u3 - u2) * h * m[i + 1];
+      };
+    };
+    const col = (K, i) => smoothKeys(K.map((k) => [k[0], k[i]]));
+
+    // ---------------------------------------------------------------- measured on the reference, frame by frame
+    // the avatar rises from the bottom while "sorted" is still up, then drifts a little left as the reply settles
+    const AV = [[26.15, 427, 916], [26.217, 427, 882], [26.283, 427, 776], [26.35, 426, 714], [26.417, 423, 665], [26.483, 419, 638],
+                [26.55, 414, 614], [26.617, 408, 594], [26.683, 402, 578], [26.75, 396, 565], [26.85, 389, 552], [27.017, 380, 538],
+                [27.217, 373, 533], [27.483, 367, 532], [27.75, 364, 532]];
+    const avX = col(AV, 1), avY = col(AV, 2);
+    // the bubble opens from a small pill beside it: [time, left, right, top, bottom]
+    const BUB = [[26.25, 568, 940, 680, 800], [26.283, 568, 1026, 630, 789], [26.35, 568, 1148, 567, 767], [26.417, 566, 1234, 524, 753],
+                 [26.483, 565, 1298, 491, 742], [26.55, 564, 1345, 465, 733], [26.617, 562, 1381, 445, 725], [26.683, 559, 1407, 428, 718],
+                 [26.75, 557, 1427, 414, 712], [26.817, 553, 1439, 403, 706], [26.883, 549, 1447, 394, 701], [26.95, 545, 1451, 386, 696],
+                 [27.083, 538, 1460, 376, 692], [27.217, 532, 1468, 373, 693], [27.35, 528, 1473, 371, 694], [27.55, 523, 1478, 369, 696],
+                 [27.75, 521, 1480, 369, 697]];
+    const bL = col(BUB, 1), bR = col(BUB, 2), bT = col(BUB, 3), bB = col(BUB, 4);
+
+    // ---------------------------------------------------------------- the reply, typed: one character every ~1.5 frames
+    const MSG = "Shipped!";
+    const textEl = document.getElementById("h-text");
+    const chars = [...MSG].map((c) => {
+      const s = document.createElement("span");
+      s.className = "ch";
+      s.textContent = c;
+      textEl.appendChild(s);
+      return s;
+    });
+    // the rocket comes last, as its own glyph: drawn here, so the film needs no emoji font
+    // the rocket is Noto Emoji's (Apache 2.0), as a picture, so the film needs no emoji font
+    textEl.insertAdjacentHTML("beforeend", `<img id="h-rocket" class="ch" src="assets/images/emoji/emoji_u1f680.svg" alt="" />`);
+    const all = [...chars, document.getElementById("h-rocket")];
+    const typedAt = all.map((_, i) => 26.45 + i * 0.05);
+    // the time fades in letter by letter, out of a blur
+    const TIME = "10:14 AM";
+    const timeEl = document.getElementById("h-time");
+    [...TIME].forEach((c, i) => {
+      const s = document.createElement("span");
+      s.textContent = c;
+      timeEl.appendChild(s);
+      tl.fromTo(s, { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "sine.out", immediateRender: false }, at(27.05 + i * 0.045));
+    });
+
+    const avatar = document.getElementById("h-avatar");
+    const bubble = document.getElementById("h-bubble");
+    const place = (lt) => {
+      const t = lt + T0;
+      gsap.set(avatar, { x: avX(t), y: avY(t) });
+      const on = t >= 26.25;
+      const l = bL(t), r = bR(t), tp = bT(t), b = bB(t);
+      gsap.set(bubble, { opacity: on ? 1 : 0, x: l, y: tp, width: r - l, height: b - tp, borderRadius: Math.min(96, (b - tp) / 2) });
+      all.forEach((c, i) => c.classList.toggle("on", t >= typedAt[i] - 1e-3));
+      sheenAt(document.getElementById("h-bubble-sheen"), t);
+    };
+    // a soft sheen sweeps across the bubble from the left just before it is set aside (27.78-28.15 s, as the reference)
+    const sheenAt = (el, t) => {
+      const u = (t - 27.78) / 0.37;
+      el.style.opacity = u > 0 && u < 1 ? Math.sin(Math.PI * u) : 0;
+      el.style.transform = `translateX(${-320 + u * 1300}px) skewX(-18deg)`;
+    };
+    const clock = { t: 0 };
+    tl.fromTo(clock, { t: 0 }, { t: 28.2 - T0, duration: 28.2 - T0, ease: "none", immediateRender: false, onUpdate: () => place(clock.t) }, 0);
+    tl.fromTo(avatar, { opacity: 0 }, { opacity: 1, duration: 0.08, ease: "none", immediateRender: false }, 0);
+    // the rocket lands with a small pop
+    tl.fromTo("#h-rocket", { scale: 0.4, rotation: -20 }, { scale: 1, rotation: 0, duration: 0.25, ease: "back.out(2.5)", immediateRender: false }, at(typedAt[typedAt.length - 1]));
+
+    // from 27.9 s the next shot carries an identical copy of this exchange into its camera move
+
+    place(0);
+    window.__timelines["shipped"] = tl;
+  </script>
+</template>

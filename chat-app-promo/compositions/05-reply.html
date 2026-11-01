@@ -1,0 +1,346 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Inter";
+      font-weight: 100 900;
+      src: url("assets/fonts/Inter-Variable.ttf") format("truetype");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: transparent;
+      font-family: "Inter", sans-serif;
+      color: #ffffff;
+    }
+    .abs {
+      position: absolute;
+    }
+    #r-all {
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+    }
+    /* the studio's avatar, centred on (222, 381) as the reference's */
+    #r-avatar {
+      left: 133px;
+      top: 292px;
+      width: 178px;
+      height: 178px;
+      border-radius: 50%;
+      background: #0d0b10;
+      box-shadow: inset 0 0 0 4px rgba(255, 255, 255, 0.92);
+      overflow: hidden;
+      opacity: 0;
+    }
+    #r-avatar img {
+      position: absolute;
+      left: 19px;
+      top: 19px;
+      width: 140px;
+      height: 140px;
+    }
+    /* the reply opens from a small pill at the card's centre (1045, 551) into a 1374 x 642 card */
+    #r-card {
+      left: 1000px;
+      top: 534px;
+      width: 90px;
+      height: 34px;
+      border-radius: 17px;
+      background: #d9672c;
+      opacity: 0;
+    }
+    /* a rim of light that is dim on the left edge and catches on the right, so the card and the poster read as
+       slightly raised panels lit from the right */
+    .r-rim {
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      border: 2px solid transparent;
+      background: linear-gradient(90deg, rgba(255, 255, 255, 0.03), rgba(255, 220, 195, 0.1) 55%, rgba(255, 228, 205, 0.42)) border-box;
+      -webkit-mask: linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor;
+      mask: linear-gradient(#000 0 0) padding-box exclude, linear-gradient(#000 0 0);
+      pointer-events: none;
+    }
+    #r-content {
+      left: 358px;
+      top: 230px;
+      width: 1374px;
+      height: 642px;
+    }
+    /* the thumbnail lights up like a screen: a WebGL layer over a soft orange glow, edged by a thin rim */
+    #r-thumbGlow,
+    #r-thumb,
+    #r-thumbEdge {
+      left: 74px;
+      top: 73px;
+      width: 330px;
+      height: 494px;
+      border-radius: 28px;
+    }
+    #r-thumbGlow {
+      box-shadow: 0 0 46px 10px rgba(255, 106, 31, 0.85), 0 0 14px rgba(255, 170, 110, 0.6);
+      opacity: 0;
+    }
+    #r-thumb {
+      overflow: hidden;
+    }
+    #r-thumb img {
+      display: none;
+    }
+    #r-thumbGl {
+      width: 330px;
+      height: 494px;
+      display: block;
+    }
+    #r-thumbEdge {
+      box-shadow: inset 6px 0 14px -10px rgba(0, 0, 0, 0.6), inset -8px 0 16px -10px rgba(255, 230, 210, 0.45);
+      opacity: 0;
+    }
+    #r-thumbEdge .r-rim {
+      background: linear-gradient(90deg, rgba(255, 255, 255, 0.1), rgba(255, 235, 215, 0.3) 55%, rgba(255, 240, 225, 0.85)) border-box;
+    }
+    #r-title {
+      left: 488px;
+      top: 88px;
+      font-size: 66px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    .r-line {
+      left: 488px;
+      display: flex;
+      align-items: center;
+      gap: 40px;
+      font-size: 60px;
+      font-weight: 400;
+      color: rgba(236, 232, 238, 0.86);
+    }
+    .r-line svg {
+      flex: none;
+    }
+    #r-line1 {
+      top: 212px;
+    }
+    #r-line2 {
+      top: 318px;
+    }
+    .r-icon {
+      opacity: 0;
+    }
+    .r-tag {
+      top: 438px;
+      height: 130px;
+      border-radius: 65px;
+      background: rgba(255, 106, 31, 0.14);
+      box-shadow: inset 0 0 0 2.5px rgba(255, 128, 60, 0.42);
+      color: #ff9d5f;
+      font-size: 56px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      opacity: 0;
+    }
+    .r-tag span {
+      white-space: nowrap;
+    }
+    #r-tag1 {
+      left: 478px;
+      width: 220px;
+    }
+    #r-tag2 {
+      left: 732px;
+      width: 330px;
+    }
+  </style>
+  <div id="root" data-composition-id="reply" data-width="1920" data-height="1080">
+    <div id="r-all" class="abs" data-layout-allow-overflow>
+      <div id="r-avatar" class="abs"><img src="assets/images/studio-mark.png" alt="" /></div>
+      <div id="r-card" class="abs"><div class="r-rim"></div></div>
+      <div id="r-content" class="abs">
+        <div id="r-thumbGlow" class="abs"></div>
+        <div id="r-thumb" class="abs"><img id="r-thumbImg" src="assets/images/thumb.jpg" alt="" /><canvas id="r-thumbGl" width="660" height="988"></canvas></div>
+        <div id="r-thumbEdge" class="abs"><div class="r-rim"></div></div>
+        <div id="r-title" class="abs">Launch Film</div>
+        <div id="r-line1" class="abs r-line">
+          <svg class="r-icon" width="56" height="56" viewBox="0 0 56 56"><circle cx="28" cy="28" r="23" fill="#ff6a1f" /><path d="M28 15 V29 L37 34" fill="none" stroke="#231b19" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          <span class="r-text">0:45 · 4K</span>
+        </div>
+        <div id="r-line2" class="abs r-line">
+          <svg class="r-icon" width="56" height="56" viewBox="0 0 56 56"><rect x="4" y="9" width="48" height="38" rx="8" fill="#ff6a1f" /><path d="M23 19 L37 28 L23 37 Z" fill="#231b19" /></svg>
+          <span class="r-text">Firework Studio</span>
+        </div>
+        <div id="r-tag1" class="abs r-tag"><span>16:9</span></div>
+        <div id="r-tag2" class="abs r-tag"><span>Music on</span></div>
+      </div>
+    </div>
+  </div>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+    const T0 = 13.6;   // this composition starts at 13.6 s on the root; times below are written as root seconds - T0
+    const at = (t) => t - T0;
+
+    // ---------------------------------------------------------------- the avatar (13.70-13.93 s)
+    // a small grey dot that swells into the avatar and takes its colour
+    tl.fromTo("#r-avatar", { opacity: 0, scale: 0.45, filter: "grayscale(1) brightness(0.5)" },
+      { opacity: 1, scale: 1, filter: "grayscale(0) brightness(1)", duration: 0.23, ease: "power2.out", immediateRender: false }, at(13.7));
+
+    // ---------------------------------------------------------------- the reply opens (13.90-14.45 s)
+    // measured each 0.1 s: 90 x 34 -> 280 x 120 -> 950 x 447 -> 1219 x 571 -> 1374 x 642, about its centre;
+    // it opens in a soft orange and cools into the dark card in one continuous fade (no stepped colour changes)
+    const C = { x: 1045, y: 551 };
+    const box = (w, h, r) => ({ width: w, height: h, left: C.x - w / 2, top: C.y - h / 2, borderRadius: r });
+    tl.set("#r-card", { opacity: 1 }, at(13.9));
+    tl.to("#r-card", { ...box(280, 120, 60), duration: 0.1, ease: "sine.in" }, at(13.9));
+    tl.to("#r-card", { ...box(950, 447, 120), duration: 0.1, ease: "none" }, at(14.0));
+    tl.to("#r-card", { ...box(1219, 571, 140), duration: 0.1, ease: "sine.out" }, at(14.1));
+    tl.fromTo("#r-card", { backgroundColor: "#d9672c" }, { backgroundColor: "#231b19", duration: 0.42, ease: "sine.inOut", immediateRender: false }, at(13.92));
+    tl.to("#r-card", { ...box(1374, 642, 150), duration: 0.25, ease: "power2.out" }, at(14.2));
+
+    // ---------------------------------------------------------------- the content (14.40-15.40 s)
+    // the thumbnail arrives blurred and glowing in our orange, then clears; each line resolves out of a blur in turn
+    // ---- the thumbnail powers on (14.33-15.30 s), measured frame by frame on the reference:
+    //   reveal  only the brightest outlines first, filling in to the whole picture   14.33-14.47
+    //   duo     the picture mapped onto two-tone orange (dark rust -> orange -> warm white), until 14.87, gone by 15.10
+    //   inv     a partial inversion (to 0.62) from 14.47-14.53, held, back by 14.70
+    //   expo    an overexposed flash with the negative                               up to 1.28 at 14.55, back by 14.80
+    //   blur    soft at first, sharp by 15.00
+    //   glow    an orange bloom round the frame                                       rises to 14.58, gone by 14.85
+    const TH = { reveal: 0, duo: 1, inv: 0, expo: 1, blur: 7 };
+    tl.fromTo(TH, { reveal: 0 }, { reveal: 1, duration: 0.14, ease: "sine.in", immediateRender: false }, at(14.33));
+    // a partial inversion, as measured (dark pixels end up brighter than bright ones, but only ~60 % of the way,
+    // so the frame goes low-contrast and milky); it passes near-flat for a frame on the way in and out, as the reference
+    tl.fromTo(TH, { inv: 0 }, { inv: 0.62, duration: 0.067, ease: "sine.inOut", immediateRender: false }, at(14.467));
+    tl.to(TH, { inv: 0, duration: 0.07, ease: "sine.inOut" }, at(14.633));
+    tl.fromTo(TH, { expo: 1 }, { expo: 1.28, duration: 0.12, ease: "sine.out", immediateRender: false }, at(14.43));
+    tl.to(TH, { expo: 1, duration: 0.22, ease: "sine.inOut" }, at(14.58));
+    tl.fromTo(TH, { duo: 1 }, { duo: 0, duration: 0.3, ease: "sine.inOut", immediateRender: false }, at(14.84));
+    tl.fromTo(TH, { blur: 7 }, { blur: 0, duration: 0.67, ease: "power1.out", immediateRender: false }, at(14.33));
+    tl.fromTo("#r-thumbGlow", { opacity: 0 }, { opacity: 1, duration: 0.25, ease: "sine.in", immediateRender: false }, at(14.33));
+    tl.to("#r-thumbGlow", { opacity: 0, duration: 0.27, ease: "sine.inOut" }, at(14.58));
+    // measured by matching the poster frame to frame: it arrives ~30 px right of its place and a touch large,
+    // and settles by 14.57 s
+    tl.fromTo(["#r-thumbGlow", "#r-thumb", "#r-thumbEdge"], { x: 30, scale: 1.03 }, { x: 0, scale: 1, duration: 0.24, ease: "power2.out", immediateRender: false }, at(14.33));
+    // then the camera eases back: 1 -> 0.975 from 15.0 to 16.2 s, about the card's centre
+    tl.fromTo("#r-all", { scale: 1 }, { scale: 0.975, transformOrigin: "1045px 551px", duration: 1.2, ease: "sine.inOut", immediateRender: false }, at(15.0));
+    tl.fromTo("#r-thumbEdge", { opacity: 0 }, { opacity: 1, duration: 0.3, ease: "sine.out", immediateRender: false }, at(14.45));
+
+    const tc = document.getElementById("r-thumbGl");
+    const tg = tc.getContext("webgl", { premultipliedAlpha: true, preserveDrawingBuffer: true });
+    const timg = document.getElementById("r-thumbImg");
+    let tProg = null, tTex = null, TU = {};
+    const thumbSetup = () => {
+      const vs = "attribute vec2 p; varying vec2 uv; void main(){ uv = vec2(p.x * 0.5 + 0.5, 0.5 - p.y * 0.5); gl_Position = vec4(p, 0.0, 1.0); }";
+      const fs = `
+        precision highp float;
+        varying vec2 uv;
+        uniform sampler2D img;
+        uniform float reveal, duo, inv, expo, blur;
+        const vec3 W = vec3(0.299, 0.587, 0.114);
+        vec3 ramp(float l) {   // our two tones: dark rust, orange, warm white
+          vec3 a = vec3(0.10, 0.03, 0.02), b = vec3(0.80, 0.27, 0.06), c = vec3(1.0, 0.50, 0.18), d = vec3(1.0, 0.90, 0.80);
+          return l < 0.4 ? mix(a, b, l / 0.4) : l < 0.75 ? mix(b, c, (l - 0.4) / 0.35) : mix(c, d, (l - 0.75) / 0.25);
+        }
+        void main() {
+          vec2 px = vec2(1.0 / 660.0, 1.0 / 988.0) * blur;
+          vec3 c = texture2D(img, uv).rgb * 0.2;
+          c += (texture2D(img, uv + vec2(px.x, 0.0)).rgb + texture2D(img, uv - vec2(px.x, 0.0)).rgb
+              + texture2D(img, uv + vec2(0.0, px.y)).rgb + texture2D(img, uv - vec2(0.0, px.y)).rgb) * 0.12;
+          c += (texture2D(img, uv + px).rgb + texture2D(img, uv - px).rgb
+              + texture2D(img, uv + vec2(px.x, -px.y)).rgb + texture2D(img, uv + vec2(-px.x, px.y)).rgb) * 0.08;
+          float l = dot(c, W);
+          // only what is brighter than a falling threshold shows, so the outlines come first
+          float th = mix(0.95, -0.25, reveal);
+          float a = smoothstep(th, th + 0.18, l);
+          // a partial inversion squeezes the tones toward grey; stretch them back so the reversed picture keeps
+          // about a quarter of its normal contrast, as measured on the reference
+          float k = 1.0 + 1.3 * inv;
+          vec3 s = clamp(0.5 + (mix(c, 1.0 - c, inv) - 0.5) * k, 0.0, 1.0);
+          float ls = clamp(0.5 + (mix(l, 1.0 - l, inv) - 0.5) * k, 0.0, 1.0);
+          vec3 col = mix(s, ramp(clamp(ls * 1.15, 0.0, 1.0)), duo) * expo;
+          col = min(col, vec3(1.0));
+          gl_FragColor = vec4(col * a, a);
+        }`;
+      const sh = (type, src) => { const o = tg.createShader(type); tg.shaderSource(o, src); tg.compileShader(o); return o; };
+      tProg = tg.createProgram();
+      tg.attachShader(tProg, sh(tg.VERTEX_SHADER, vs));
+      tg.attachShader(tProg, sh(tg.FRAGMENT_SHADER, fs));
+      tg.linkProgram(tProg);
+      tg.useProgram(tProg);
+      const buf = tg.createBuffer();
+      tg.bindBuffer(tg.ARRAY_BUFFER, buf);
+      tg.bufferData(tg.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), tg.STATIC_DRAW);
+      const loc = tg.getAttribLocation(tProg, "p");
+      tg.enableVertexAttribArray(loc);
+      tg.vertexAttribPointer(loc, 2, tg.FLOAT, false, 0, 0);
+      for (const n of ["img", "reveal", "duo", "inv", "expo", "blur"]) TU[n] = tg.getUniformLocation(tProg, n);
+    };
+    const drawThumb = () => {
+      if (!tg || !timg.complete || !timg.naturalWidth) return;
+      if (!tProg) thumbSetup();
+      if (!tTex) {
+        tTex = tg.createTexture();
+        tg.bindTexture(tg.TEXTURE_2D, tTex);
+        tg.texImage2D(tg.TEXTURE_2D, 0, tg.RGBA, tg.RGBA, tg.UNSIGNED_BYTE, timg);
+        tg.texParameteri(tg.TEXTURE_2D, tg.TEXTURE_MIN_FILTER, tg.LINEAR);
+        tg.texParameteri(tg.TEXTURE_2D, tg.TEXTURE_MAG_FILTER, tg.LINEAR);
+        tg.texParameteri(tg.TEXTURE_2D, tg.TEXTURE_WRAP_S, tg.CLAMP_TO_EDGE);
+        tg.texParameteri(tg.TEXTURE_2D, tg.TEXTURE_WRAP_T, tg.CLAMP_TO_EDGE);
+      }
+      tg.viewport(0, 0, 660, 988);
+      tg.clearColor(0, 0, 0, 0);
+      tg.clear(tg.COLOR_BUFFER_BIT);
+      tg.uniform1i(TU.img, 0);
+      for (const n of ["reveal", "duo", "inv", "expo", "blur"]) tg.uniform1f(TU[n], TH[n]);
+      tg.drawArrays(tg.TRIANGLE_STRIP, 0, 4);
+    };
+    timg.addEventListener("load", drawThumb);
+    // every line resolves word by word, left to right: each word rises a little out of a blur, as if it dissolves in
+    const words = (sel) => {
+      const el = document.querySelector(sel);
+      const parts = el.textContent.split(" ");
+      el.textContent = "";
+      el.style.opacity = 1;
+      return parts.map((w, i) => {
+        const s = document.createElement("span");
+        s.textContent = w + (i < parts.length - 1 ? " " : "");
+        s.style.display = "inline-block";
+        s.style.whiteSpace = "pre";
+        s.style.opacity = 0;
+        el.appendChild(s);
+        return s;
+      });
+    };
+    const wordsIn = (sel, t, gap = 0.08) =>
+      words(sel).forEach((w, i) =>
+        tl.fromTo(w, { opacity: 0, y: 22, filter: "blur(14px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.42, ease: "power2.out", immediateRender: false }, at(t + i * gap)));
+    const iconIn = (sel, t) =>
+      tl.fromTo(sel, { opacity: 0, scale: 0.25 }, { opacity: 1, scale: 1, duration: 0.22, ease: "power2.out", immediateRender: false }, at(t));
+    wordsIn("#r-title", 14.42, 0.1);
+    iconIn("#r-line1 .r-icon", 14.58);
+    wordsIn("#r-line1 .r-text", 14.66);
+    iconIn("#r-line2 .r-icon", 14.84);
+    wordsIn("#r-line2 .r-text", 14.92);
+    // the tags open sideways out of a thin upright line, then their labels resolve
+    [["#r-tag1", 220, 14.62], ["#r-tag2", 330, 14.72]].forEach(([sel, w, t]) => {
+      tl.set(sel, { opacity: 1 }, at(t));
+      tl.fromTo(sel, { width: 4, x: w / 2 - 2 }, { width: w, x: 0, duration: 0.28, ease: "power3.out", immediateRender: false }, at(t));
+      wordsIn(sel + " span", t + 0.3);
+    });
+
+    // ---------------------------------------------------------------- out (16.20-16.85 s)
+    // the whole exchange lifts off the top, gathering speed, to make room for the next line
+    tl.to("#r-all", { y: -1200, duration: 0.65, ease: "power3.in" }, at(16.2));
+
+    const thumbClock = { t: 0 };
+    tl.fromTo(thumbClock, { t: 0 }, { t: 1, duration: 16.85 - T0, ease: "none", immediateRender: false, onUpdate: drawThumb }, 0);
+    drawThumb();
+
+    window.__timelines["reply"] = tl;
+  </script>
+</template>

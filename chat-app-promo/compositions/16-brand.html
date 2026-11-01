@@ -1,0 +1,104 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: transparent;
+    }
+    .abs {
+      position: absolute;
+    }
+    #b-svg {
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+      overflow: visible;
+    }
+    #b-glow {
+      left: 960px;
+      top: 531px;
+      width: 520px;
+      height: 520px;
+      margin: -260px 0 0 -260px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 130, 50, 0.55) 0%, rgba(255, 106, 31, 0.2) 35%, rgba(255, 106, 31, 0) 70%);
+      opacity: 0;
+    }
+    #b-mark {
+      left: 960px;
+      top: 531px;
+      width: 240px;
+      height: 240px;
+      margin: -120px 0 0 -120px;
+      opacity: 0;
+    }
+  </style>
+  <div id="root" data-composition-id="brand" data-width="1920" data-height="1080">
+    <div id="b-glow" class="abs"></div>
+    <svg id="b-svg" class="abs" viewBox="0 0 1920 1080" data-layout-allow-overflow>
+      <defs>
+        <filter id="b-soft" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="1.2" result="core" />
+          <feGaussianBlur in="SourceGraphic" stdDeviation="9" result="halo" />
+          <feMerge><feMergeNode in="halo" /><feMergeNode in="core" /></feMerge>
+        </filter>
+        <filter id="b-head" x="-200%" y="-200%" width="500%" height="500%"><feGaussianBlur stdDeviation="7" /></filter>
+      </defs>
+      <!-- the trail: a ring drawn by the light as it circles -->
+      <circle id="b-ring" cx="960" cy="531" r="112" fill="none" stroke="#ffb27a" stroke-width="7" stroke-linecap="round" filter="url(#b-soft)"
+        stroke-dasharray="703.7" stroke-dashoffset="703.7" transform="rotate(-90 960 531)" opacity="0" />
+      <!-- the head of the light -->
+      <circle id="b-headGlow" cx="960" cy="531" r="22" fill="#ff7a2e" filter="url(#b-head)" opacity="0" />
+      <circle id="b-headCore" cx="960" cy="531" r="7" fill="#fff1e2" opacity="0" />
+    </svg>
+    <img id="b-mark" class="abs" src="assets/images/studio-mark.png" alt="" />
+  </div>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+    const T0 = 40.0;   // this composition starts at 40.0 s on the root; times below are written as root seconds - T0
+    const clamp01 = (v) => Math.min(1, Math.max(0, v));
+    const ease = (u) => u * u * (3 - 2 * u);
+
+    // ---------------------------------------------------------------- as the reference, in our orange
+    // 40.05 s: a point of light kindles in the middle of the line; it draws the mark's outline in one sweep
+    // (here a ring, 40.15-40.85 s) while the sentence is pulled into it; the mark resolves inside (40.6-41.0 s),
+    // the ring and the glow die away by 41.2 s, and the mark holds to the end
+    const R = 112, C = 2 * Math.PI * R;
+    const ring = document.getElementById("b-ring");
+    const hg = document.getElementById("b-headGlow"), hc = document.getElementById("b-headCore");
+    const place = (lt) => {
+      const t = lt + T0;
+      const kindle = ease(clamp01((t - 40.03) / 0.12));
+      const u = clamp01((t - 40.15) / 0.6), e = 1 - Math.pow(1 - u, 2.2);
+      const out = ease(clamp01((t - 40.08) / 0.12));
+      // once the ring closes it draws in onto the mark (40.7-41.0 s) and hands its light over to it
+      const close = ease(clamp01((t - 40.7) / 0.32));
+      const r = R * out * (1 - 0.05 * close);
+      const ang = -Math.PI / 2 + e * 2 * Math.PI + close * 0.8;
+      const hx = 960 + Math.cos(ang) * r, hy = 531 + Math.sin(ang) * r;
+      const fade = 1 - close;
+      [hg, hc].forEach((c) => { c.setAttribute("cx", hx); c.setAttribute("cy", hy); c.setAttribute("opacity", kindle * fade); });
+      ring.setAttribute("r", r);
+      ring.setAttribute("stroke-dasharray", 2 * Math.PI * r);
+      ring.setAttribute("stroke-dashoffset", 2 * Math.PI * r * (1 - e));
+      ring.setAttribute("stroke-width", 7 * (1 - 0.6 * close));
+      ring.setAttribute("opacity", (t >= 40.15 ? 1 : 0) * (1 - close));
+      // the glow gathers onto the mark, then slowly cools away (gone by 41.8 s)
+      const g = kindle * (1 - ease(clamp01((t - 40.9) / 0.9)));
+      gsap.set("#b-glow", { opacity: g, scale: 1 - 0.35 * close });
+      // the mark unfolds out of the light: from small, turned, blurred and over-bright to itself
+      const m = ease(clamp01((t - 40.62) / 0.5));
+      const settle = 1 + 0.025 * clamp01((t - 41.1) / 1.7);   // and a last, slow breath in
+      gsap.set("#b-mark", { opacity: m, scale: (0.55 + 0.45 * (1 - Math.pow(1 - m, 3))) * settle, rotation: -35 * (1 - m),
+        filter: `blur(${(1 - m) * 8}px) brightness(${1 + 0.9 * (1 - m)})` });
+    };
+    const clock = { t: 0 };
+    tl.fromTo(clock, { t: 0 }, { t: 42.8 - T0, duration: 42.8 - T0, ease: "none", immediateRender: false, onUpdate: () => place(clock.t) }, 0);
+    place(0);
+
+    window.__timelines["brand"] = tl;
+  </script>
+</template>

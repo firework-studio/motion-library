@@ -1,0 +1,281 @@
+<template>
+  <style>
+    /* static cut for the dashed outline: a variable font's overlapping contours would show through the stroke */
+    @font-face {
+      font-family: "Inter Display";
+      font-weight: 500;
+      src: url("assets/fonts/InterDisplay-Medium.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "Inter";
+      font-weight: 100 900;
+      src: url("assets/fonts/Inter-Variable.ttf") format("truetype");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: transparent;
+      font-family: "Inter", sans-serif;
+      color: #ffffff;
+    }
+    .abs {
+      position: absolute;
+    }
+    .word {
+      left: 0;
+      width: 1920px;
+      top: 0;
+      height: 1080px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 196px;
+      font-weight: 400;
+      letter-spacing: -0.01em;
+    }
+    .fl {
+      display: inline-block;
+    }
+    .dash-v {
+      top: -20px;
+      width: 0;
+      height: 1120px;
+      width: 2px;
+      background: repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0 16px, transparent 16px 30px);
+    }
+    .dash-h {
+      left: -1300px;
+      height: 0;
+      width: 4600px;
+      height: 2px;
+      background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.9) 0 16px, transparent 16px 30px);
+    }
+    .ring {
+      left: 960px;
+      top: 540px;
+      border: 4.5px solid rgba(255, 255, 255, 0.95);
+      border-radius: 50%;
+    }
+    #w-fast-outline svg {
+      overflow: visible;
+    }
+    #w-grid {
+      inset: -600px;
+      opacity: 0;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.14) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.14) 1px, transparent 1px);
+      background-size: 100px 100px;
+      background-position: 32px 28px;
+    }
+    .sq {
+      background: #ffffff;
+    }
+    .ob {
+      opacity: 0;
+      background: linear-gradient(135deg, rgba(255, 128, 52, 0.68), rgba(255, 100, 26, 0.6));
+      box-shadow: inset 0 0 0 1px rgba(255, 220, 190, 0.16);
+    }
+    #w-box {
+      border: 3px solid #ffffff;
+      opacity: 0;
+    }
+    #w-pill {
+      left: 885px;
+      top: 512px;
+      width: 150px;
+      height: 56px;
+      border-radius: 28px;
+      background: linear-gradient(135deg, #ffa25a, #ff6a1f 60%, #e2520f);
+      box-shadow: 0 0 40px rgba(255, 106, 31, 0.55);
+      opacity: 0;
+    }
+  </style>
+  <div data-hf-id="hf-1v1w" id="root" data-composition-id="words" data-width="1920" data-height="1080">
+    <!-- smart: framed by dashed guides -->
+    <div data-hf-id="hf-txzh" id="w-smart-set" class="abs" style="inset: 0">
+      <div data-hf-id="hf-fu1w" id="w-v1" class="abs dash-v" style="left: 320px"></div>
+      <div data-hf-id="hf-zqma" id="w-v2" class="abs dash-v" style="left: 1600px"></div>
+      <div data-hf-id="hf-zzbp" id="w-h1" class="abs dash-h" style="top: 0px"></div>
+      <div data-hf-id="hf-fsqp" id="w-h2" class="abs dash-h" style="top: 1078px"></div>
+      <div data-hf-id="hf-d4m6" id="w-smart" class="abs word">smart</div>
+    </div>
+    <!-- fast: inside rings, blows up, flips to outline, snaps back -->
+    <div data-hf-id="hf-3rlk" id="w-fast-set" class="abs" style="inset: 0; opacity: 0">
+      <div data-hf-id="hf-u1tf" id="w-r1" class="abs ring"></div>
+      <div data-hf-id="hf-j6bs" id="w-r2" class="abs ring"></div>
+      <div id="w-r3" class="abs ring" style="opacity: 0"></div>
+      <div data-hf-id="hf-fx6q" id="w-fast" class="abs word"><span class="fl">f</span><span class="fl">a</span><span class="fl">s</span><span class="fl">t</span></div>
+      <div data-hf-id="hf-ccl0" id="w-fast-outline" class="abs word" style="opacity: 0">
+        <svg data-hf-id="hf-d3iy" width="1680" height="260" viewBox="0 0 1680 260"><text data-hf-id="hf-hb32" id="w-fast-dash" x="840" y="200" text-anchor="middle" font-family="Inter Display" font-size="196" font-weight="500" fill="none" stroke="#ffffff" stroke-width="1.15" stroke-dasharray="5.5 2.8" stroke-linecap="round">fast</text></svg>
+      </div>
+    </div>
+    <!-- yours: grid, drifting squares, an orange block barging in, then a frame closing to the input -->
+    <div data-hf-id="hf-zbri" id="w-yours-set" class="abs" style="inset: 0; opacity: 0">
+      <div id="w-cam" class="abs" style="inset: 0">
+      <div id="w-ob1" class="abs ob" style="left: 1078px; top: 311px; width: 343px; height: 343px"></div>
+      <div id="w-ob2" class="abs ob" style="left: 500px; top: 541px; width: 341px; height: 341px"></div>
+      <div id="w-ob3" class="abs ob" style="left: 388px; top: 82px; width: 227px; height: 227px"></div>
+      <div data-hf-id="hf-xdka" id="w-grid" class="abs"></div>
+      <div data-hf-id="hf-4i42" id="w-yours" class="abs word" style="opacity: 0; letter-spacing: 0.06em; font-size: 256px; top: -31.5px">yours</div>
+      <div data-hf-id="hf-36q6" id="w-yours-outline" class="abs word" style="opacity: 0; top: -25px">
+        <svg data-hf-id="hf-rwga" width="860" height="340" viewBox="0 0 860 340"><text data-hf-id="hf-65my" id="w-yours-dash" x="430" y="256" text-anchor="middle" font-family="Inter" font-size="256" font-weight="400" letter-spacing="0.06em" fill="none" stroke="rgba(255,255,255,0.95)" stroke-width="3" stroke-dasharray="6 5">yours</text></svg>
+      </div>
+      </div>
+      <div data-hf-id="hf-ohbx" id="w-squares" class="abs" style="inset: 0"></div>
+      <div id="w-big" class="abs word" style="opacity: 0; letter-spacing: 0.06em; font-size: 220px; mix-blend-mode: difference">yours</div>
+    </div>
+    <div data-hf-id="hf-qlpt" id="w-box" class="abs"></div>
+    <div data-hf-id="hf-ct5n" id="w-pill" class="abs"></div>
+  </div>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+    // local time; this scene starts at 6.15 s in the film
+    const hash = (i, k) => { const s = Math.sin(i * 127.1 + k * 311.7) * 43758.5453; return s - Math.floor(s); };
+
+    // ---------------------------------------------------------------- smart
+    // continuing the pan of the phone leaving right: the word and its grid slide in from the left together and settle
+    tl.fromTo("#w-smart-set", { x: -1500 }, { x: 0, duration: 0.7, ease: "power3.out", immediateRender: false }, 0);   // same pan as the phone leaving
+    // the right-hand dashed line is the one that pushes the phone out; it sits on the phone's left edge during the pan,
+    // then lets go and moves in. Top and bottom lines start at the frame edges and close in. (Fitted to the reference.)
+    tl.to("#w-v2", { x: -305, duration: 0.75, ease: "sine.out" }, 0.35);   // the frame stays centred on the word
+    tl.to("#w-v1", { x: 305, duration: 0.75, ease: "sine.out" }, 0.35);
+    tl.fromTo("#w-h1", { y: 0 }, { y: 405, duration: 0.9, ease: "sine.out", immediateRender: false }, 0.2);
+    tl.fromTo("#w-h2", { y: 0 }, { y: -387, duration: 0.9, ease: "sine.out", immediateRender: false }, 0.2);
+    tl.set("#w-smart-set", { opacity: 0 }, 1.18);
+
+    // ---------------------------------------------------------------- fast
+    // cut in big and loosely spaced, tight inside the small ring; as the rings blow outward the word settles
+    // to its normal size and spacing (timings from the reference: cut 7.33 s, settled by about 7.73 s)
+    tl.set("#w-fast-set", { opacity: 1 }, 1.18);
+    const ring = (sel, r) => ({ width: r * 2, height: r * 2, x: -r, y: -r });
+    tl.set("#w-r1", ring(0, 300), 0);
+    tl.set("#w-r2", ring(0, 720), 0);
+    tl.fromTo("#w-r1", ring(0, 300), { ...ring(0, 670), duration: 0.32, ease: "power2.out", immediateRender: false }, 1.18);
+    tl.fromTo("#w-r2", ring(0, 720), { ...ring(0, 1350), duration: 0.32, ease: "power2.out", immediateRender: false }, 1.18);
+    tl.fromTo("#w-fast", { scale: 1.32 }, { scale: 1, duration: 0.38, ease: "power2.out", immediateRender: false }, 1.18);   // must finish before the jump cut at 1.583
+    // the loose spacing closes up: each letter slides toward the centre (transforms only, no layout)
+    document.querySelectorAll("#w-fast .fl").forEach((el, i) => {
+      tl.fromTo(el, { x: (i - 1.5) * 30 }, { x: 0, duration: 0.38, ease: "power2.out", immediateRender: false }, 1.18);
+    });
+    // jump cuts: a big "fast" snapped into the top-left corner, then into the bottom-right corner,
+    // then a huge dashed-outline "fastfastfast" sliding left, then back to the word in its rings
+    tl.set("#w-fast", { scale: 3.7, x: -557, y: -340 }, 1.583);   // cropped by the top-left corner, as the reference
+    tl.set("#w-fast", { scale: 3.7, x: 615, y: 292 }, 1.717);     // then the bottom-right corner; hard cuts, no drift
+    tl.set("#w-fast", { opacity: 0 }, 1.85);
+    tl.set("#w-fast-outline", { opacity: 1, scale: 5.5, x: 0, y: 220 }, 1.85);   // sits low, its bottom cut off by the frame; it does not move   // one word filling the width, bottom cropped
+    tl.fromTo("#w-fast-dash", { attr: { "stroke-dashoffset": 0 } }, { attr: { "stroke-dashoffset": -12 }, duration: 0.133, ease: "none", immediateRender: false }, 1.85);   // dashes run one way
+    tl.set(["#w-r1", "#w-r2"], { opacity: 0 }, 1.85);    // the outline frame shows the word alone
+    tl.set("#w-fast-outline", { opacity: 0 }, 1.983);
+    tl.set("#w-fast", { opacity: 1, x: 0, y: 0 }, 1.983);
+    // three rings start packed tight (bright inside, fainter outward), then the two faint ones sweep in across the
+    // bright ring and spread out inside it, as in the reference
+    tl.set("#w-r3", { opacity: 1 }, 1.983);
+    tl.set("#w-r2", { opacity: 0.72 }, 1.983);   // measured on the reference: radii 802 / 897 / ~975
+    tl.set("#w-r1", { opacity: 0.45 }, 1.983);
+    tl.fromTo("#w-r3", ring(0, 800), { ...ring(0, 776), duration: 0.5, ease: "sine.out", immediateRender: false }, 1.983);
+    tl.fromTo("#w-r2", ring(0, 895), { ...ring(0, 585), duration: 0.45, ease: "sine.inOut", immediateRender: false }, 2.02);
+    tl.fromTo("#w-r1", ring(0, 975), { ...ring(0, 440), duration: 0.45, ease: "sine.inOut", immediateRender: false }, 2.02);
+    tl.set("#w-r2", ring(0, 895), 1.983);
+    tl.set("#w-r1", ring(0, 975), 1.983);
+    // the word shrinks slowly with the inner rings closing on it, then the frame goes
+    tl.fromTo("#w-fast", { scale: 1 }, { scale: 0.87, duration: 0.37, ease: "sine.in", immediateRender: false }, 1.983);
+    tl.set("#w-fast-set", { opacity: 0 }, 2.38);
+
+    // ---------------------------------------------------------------- yours
+    tl.set("#w-yours-set", { opacity: 1 }, 2.38);
+    tl.set("#w-grid", { opacity: 1 }, 2.38);   // the grid is there from the cut
+    // the camera pulls back the whole time (the word's width on screen, measured on the reference, / its own 513 px)
+    const CAMK = [[8.60, 790], [8.633, 741], [8.70, 709], [8.767, 690], [8.833, 675], [8.90, 662], [9.03, 640],
+                  [9.30, 590], [9.50, 548], [9.70, 514], [9.90, 488], [10.40, 440]].map(([t, w]) => [t - 6.15, w / 560]);   // 560: our word with its loose spacing
+    const kAt = (lt) => { let i = 0; while (i < CAMK.length - 2 && CAMK[i + 1][0] < lt) i++;
+      const [t0, a0] = CAMK[i], [t1, a1] = CAMK[i + 1]; return a0 + (a1 - a0) * Math.min(1, Math.max(0, (lt - t0) / (t1 - t0))); };
+    tl.set("#w-cam", { scale: CAMK[0][1], transformOrigin: "960px 540px" }, 0);
+    for (let i = 0; i < CAMK.length - 1; i++)
+      tl.to("#w-cam", { scale: CAMK[i + 1][1], duration: CAMK[i + 1][0] - CAMK[i][0], ease: "none" }, CAMK[i][0]);
+    // "yours" comes in on the empty grid
+    tl.fromTo("#w-yours", { opacity: 0 }, { opacity: 1, duration: 0.01, ease: "none", immediateRender: false }, 8.6 - 6.15);
+    // 22 white squares by 10 s. Positions ride the camera (camera coordinates, measured on the reference); their size
+    // on screen is driven on its own, as measured: the first five appear small and grow, most hold their size, two
+    // shrink right away to small dots, and the latest few grow slightly. Sizes in screen px: [t, px] keyframes.
+    const field = document.getElementById("w-squares");
+    const squares = [];
+    const GROW = (t0) => [[t0, 33], [t0 + 0.07, 62], [10.0, 54]];
+    const HOLD = (t0, a = 32, b = 27) => [[t0, a], [10.0, b]];
+    const SHRINK = (t0, a = 31) => [[t0, a], [t0 + 0.1, 13], [10.0, 11]];
+    const SIZES = [GROW(8.6), GROW(8.633), GROW(8.667), GROW(8.7), GROW(8.733),
+      HOLD(8.767), HOLD(8.8), HOLD(8.833), HOLD(8.867), HOLD(8.9), HOLD(9.0), SHRINK(9.033),
+      SHRINK(9.133, 15), SHRINK(9.133), HOLD(9.333, 28, 27), [[9.467, 8], [9.6, 11]], [[9.567, 9], [9.7, 11]], HOLD(9.567, 25, 27),
+      HOLD(9.6, 30, 28), HOLD(9.65, 30, 28), HOLD(9.7, 30, 28), HOLD(9.75, 30, 28)];
+    const sizeAt = (kf, ft) => { if (ft <= kf[0][0]) return kf[0][1]; for (let i = 0; i < kf.length - 1; i++) if (ft <= kf[i + 1][0]) {
+      const u = (ft - kf[i][0]) / (kf[i + 1][0] - kf[i][0]); return kf[i][1] + (kf[i + 1][1] - kf[i][1]) * (i === 0 && kf.length > 2 ? 1 - (1 - u) * (1 - u) : u); }
+      return kf[kf.length - 1][1]; };
+    const SQ = [[369, 197, 50, 8.6], [1631, 783, 49, 8.633], [524, 919, 51, 8.667], [1329, 272, 50, 8.7], [1375, 743, 52, 8.733], [570, 375, 26, 8.767], [1694, 495, 27, 8.8], [173, 620, 27, 8.833], [922, 728, 28, 8.867], [999, 223, 28, 8.9], [365, 500, 28, 9.0], [1149, 955, 28, 9.033], [777, 311, 13, 9.133], [1564, 429, 28, 9.133], [34, 1033, 28, 9.333], [1934, 29, 13, 9.467], [-49, -12, 13, 9.567], [1957, 1088, 30, 9.567], [-117, 526, 27, 9.6], [2023, 696, 50, 9.65], [1116, -77, 27, 9.7], [719, 1164, 27, 9.75]];
+    SQ.forEach(([cx, cy, sz, at], i) => {
+      const el = document.createElement("div");
+      el.className = "abs sq";
+      el.style.left = "0px";
+      el.style.top = "0px";
+      field.appendChild(el);
+      squares.push(el);
+      // screen position at the box close (film 10.03 s), used below to clear the ones outside the box
+      const k = kAt(10.03 - 6.15);
+      el.dataset.sx = 960 + (cx - 960) * k;
+      el.dataset.sy = 540 + (cy - 540) * k;
+    });
+    const placeSquares = (lt) => {
+      const ft = lt + 6.15, k = kAt(lt);
+      SQ.forEach(([cx, cy, , at], i) => {
+        const el = squares[i];
+        const px = sizeAt(SIZES[i], ft);
+        el.style.width = el.style.height = px + "px";
+        el.style.transform = `translate(${960 + (cx - 960) * k - px / 2}px, ${540 + (cy - 540) * k - px / 2}px)`;
+        el.style.visibility = ft >= at ? "visible" : "hidden";
+      });
+    };
+    const sqClock = { t: 0 };
+    tl.fromTo(sqClock, { t: 2.38 }, { t: 4.25, duration: 1.87, ease: "none", immediateRender: false, onUpdate: () => placeSquares(sqClock.t) }, 2.38);
+    // the word settles as a faint, crawling dashed outline
+    tl.set("#w-yours", { opacity: 0 }, 3.083);   // 9.233 s: the word turns into a faint dashed outline
+    tl.set("#w-yours-outline", { opacity: 1 }, 3.083);
+    tl.fromTo("#w-yours-dash", { attr: { "stroke-dashoffset": 0 } }, { attr: { "stroke-dashoffset": -60 }, duration: 4.25 - 3.083, ease: "none", immediateRender: false }, 3.083);   // the dashes keep crawling
+    // 8.80-8.967 s: frosted orange blocks jump across the word, one or two frames each, under the grid lines and the text
+    tl.set("#w-ob1", { opacity: 1 }, 2.65).set("#w-ob1", { opacity: 0 }, 2.717);   // over "rs"
+    tl.set("#w-ob2", { opacity: 1 }, 2.717).set("#w-ob2", { opacity: 0 }, 2.783);  // lower left of the word
+    tl.set("#w-ob3", { opacity: 1 }, 2.75).set("#w-ob3", { opacity: 0 }, 2.817);   // upper left
+    // jump cuts of a huge "yours" laid over the small one in difference mode, so where they overlap goes black:
+    // 9.067-9.133 s cropped to "urs" at the upper left, 9.167-9.233 s cropped to "you" at the lower right
+    tl.set("#w-big", { opacity: 1, scale: 3.0, x: -880, y: -230 }, 2.85);    // from 9.0 s
+    tl.set("#w-big", { opacity: 0 }, 2.95);
+    tl.set("#w-big", { opacity: 1, scale: 3.8, x: 900, y: 62, letterSpacing: "0.01em" }, 2.95);   // tighter, as the reference
+    tl.set("#w-big", { opacity: 0 }, 3.083);
+    // 9.733-10.133 s, measured frame by frame: two lines slide in from the screen edges, speeding up, and
+    // everything outside them is cut away; at 10.067 s they become a square frame that shrinks around the word
+    const FRAMEK = [[9.733, -4, -10], [9.767, 12, -10], [9.80, 48, -10], [9.833, 87, -10], [9.867, 129, -10], [9.90, 174, -10],
+                    [9.933, 223, -10], [9.967, 276, -10], [10.0, 336, -10], [10.033, 402, -10], [10.067, 479, 58], [10.10, 570, 150], [10.133, 694, 273]];
+    const box = document.getElementById("w-box"), set = document.getElementById("w-yours-set");
+    const placeFrame = (lt) => {
+      const t = lt + 6.15; let i = 0;
+      if (t < FRAMEK[0][0]) { set.style.clipPath = "none"; return; }   // before the frame closes (also when seeking back)
+      while (i < FRAMEK.length - 2 && FRAMEK[i + 1][0] <= t) i++;
+      const [t0, l0, top0] = FRAMEK[i], [t1, l1] = FRAMEK[i + 1];
+      const L = l0 + (l1 - l0) * Math.min(1, Math.max(0, (t - t0) / (t1 - t0)));
+      const T = FRAMEK[t >= t1 ? i + 1 : i][2];   // top and bottom edges cut in, they do not slide
+      Object.assign(box.style, { left: L + "px", top: T + "px", width: 1920 - 2 * L + "px", height: 1080 - 2 * T + "px" });
+      set.style.clipPath = `inset(${Math.max(0, T)}px ${Math.max(0, L)}px)`;
+    };
+    // while the frame closes the word pulls in on itself: measured 550 -> 408 px wide from 9.567 to 10.133 s while the grid
+    // only shrinks to 0.92, so the letters tighten (0.06em -> -0.05em) and the word shrinks a little more than the camera
+    tl.fromTo("#w-yours-dash", { attr: { "letter-spacing": 15.4 } }, { attr: { "letter-spacing": -12.8 }, duration: 10.133 - 9.567, ease: "power2.in", immediateRender: false }, 9.567 - 6.15);
+    tl.fromTo("#w-yours-outline", { scale: 1 }, { scale: 0.95, transformOrigin: "960px 540px", duration: 10.133 - 9.567, ease: "power2.in", immediateRender: false }, 9.567 - 6.15);
+    const frameClock = { t: 0 };
+    tl.set("#w-box", { opacity: 1 }, 9.733 - 6.15);
+    // the clock runs from the start of the composition, so seeking back before 9.733 s always clears the crop
+    tl.fromTo(frameClock, { t: 0 }, { t: 10.133 - 6.15, duration: 10.133 - 6.15, ease: "none", immediateRender: false, onUpdate: () => placeFrame(frameClock.t) }, 0);
+    tl.set(["#w-box", "#w-yours-set"], { opacity: 0 }, 10.167 - 6.15);
+
+    window.__timelines["words"] = tl;
+  </script>
+</template>

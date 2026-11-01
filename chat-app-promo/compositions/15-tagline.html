@@ -1,0 +1,118 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Inter";
+      font-weight: 100 900;
+      src: url("assets/fonts/Inter-Variable.ttf") format("truetype");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: transparent;
+      font-family: "Inter", sans-serif;
+      color: #ffffff;
+    }
+    .abs {
+      position: absolute;
+    }
+    /* the closing line, typed from a fixed left edge so the finished line sits centred */
+    #g-line {
+      left: 0;
+      top: 0;
+      font-size: 82px;
+      line-height: 100px;
+      font-weight: 400;
+      letter-spacing: -0.005em;
+      white-space: pre;
+      transform-origin: 960px 531px;
+    }
+    #g-line .ch {
+      visibility: hidden;
+    }
+    #g-line .ch.on {
+      visibility: visible;
+    }
+    #g-caret {
+      left: 0;
+      top: 0;
+      width: 4px;
+      height: 96px;
+      background: #ffffff;
+    }
+  </style>
+  <div id="root" data-composition-id="tagline" data-width="1920" data-height="1080">
+    <div id="g-wrap" class="abs" style="inset: 0">
+      <div id="g-line" class="abs"></div>
+      <div id="g-caret" class="abs"></div>
+    </div>
+  </div>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+    const T0 = 36.7;   // this composition starts at 36.7 s on the root; times below are written as root seconds - T0
+    const clamp01 = (v) => Math.min(1, Math.max(0, v));
+
+    // ---------------------------------------------------------------- measured on the reference
+    // typing runs 36.73-38.43 s (the full stop), a character every ~2-3 frames with small hesitations at the spaces;
+    // the caret holds, blinks off 38.73-39.05, on to 39.2, then goes; the line greys from 39.37 to 40.0 s;
+    // throughout, the camera eases in ~3.5 %
+    const MSG = "make it with a message.";
+    const line = document.getElementById("g-line");
+    const caret = document.getElementById("g-caret");
+    const chars = [...MSG].map((c) => {
+      const s = document.createElement("span");
+      s.className = "ch";
+      s.textContent = c;
+      line.appendChild(s);
+      return s;
+    });
+    const typedAt = [];
+    {
+      let t = 36.733;
+      chars.forEach((s, i) => {
+        typedAt.push(t);
+        const c = MSG[i];
+        t += c === " " ? 0.1 : 0.067 + ((i * 37) % 3) * 0.008;
+      });
+      // stretch to land the full stop at 38.43 s
+      const k = (38.433 - 36.733) / (typedAt[typedAt.length - 1] - 36.733);
+      for (let i = 0; i < typedAt.length; i++) typedAt[i] = 36.733 + (typedAt[i] - 36.733) * k;
+    }
+    let left = 0;   // the line's left edge, set so the finished line is centred
+    const BASE = 562;
+    const layout = () => {
+      chars.forEach((c) => c.classList.add("on"));
+      const w = line.getBoundingClientRect().width / (gsap.getProperty(line, "scale") || 1);
+      left = 960 - w / 2;
+      gsap.set(line, { x: left, y: BASE - 76 });
+    };
+    const place = (lt) => {
+      const t = lt + T0;
+      let n = 0;
+      chars.forEach((c, i) => { const on = t >= typedAt[i] - 1e-3; c.classList.toggle("on", on); if (on) n = i + 1; });
+      const last = n ? chars[n - 1] : null;
+      const x = last ? last.offsetLeft + last.offsetWidth : 0;
+      const blinkOff = (t >= 38.73 && t < 39.05) || t >= 39.2;
+      gsap.set(caret, { x: left + x + 4, y: BASE - 79, opacity: t >= 36.733 && !blinkOff ? 1 : 0 });
+      const zoom = 1 + 0.035 * clamp01((t - 36.733) / 3.3);
+      gsap.set("#g-wrap", { scale: zoom, transformOrigin: "960px 531px" });
+      // greys (39.37-40.0 s), then is drawn into the light at the centre and gone by 41.0 s
+      // the light at the centre pulls the whole line into itself: it gathers in toward the middle, faster as it goes,
+      // blurring and thinning, and is swallowed by 40.7 s
+      const pull = clamp01((t - 40.05) / 0.65), pe = Math.pow(pull, 1.7);
+      line.style.opacity = (1 - 0.4 * clamp01((t - 39.37) / 0.63)) * (1 - Math.pow(pull, 2.2));
+      gsap.set(line, { scaleX: 1 - 0.94 * pe, scaleY: 1 - 0.55 * pe, transformOrigin: `${960 - left}px 50%`, filter: `blur(${10 * pe}px)` });
+    };
+    const clock = { t: 0 };
+    tl.fromTo(clock, { t: 0 }, { t: 41.05 - T0, duration: 41.05 - T0, ease: "none", immediateRender: false, onUpdate: () => place(clock.t) }, 0);
+    const ready = document.fonts.load('400 82px "Inter"').then(() => { layout(); place(clock.t); });
+    window.__hf = window.__hf || {};
+    window.__hf.buildReady = window.__hf.buildReady || {};
+    window.__hf.buildReady["tagline-font"] = ready;
+    layout();
+    place(0);
+
+    window.__timelines["tagline"] = tl;
+  </script>
+</template>

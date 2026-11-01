@@ -1,0 +1,198 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Inter";
+      font-weight: 100 900;
+      src: url("assets/fonts/Inter-Variable.ttf") format("truetype");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: transparent;
+      font-family: "Inter", sans-serif;
+      color: #ffffff;
+    }
+    .abs {
+      position: absolute;
+    }
+    /* the input: a glowing orange field that opens from its upper-left corner, measured on the reference */
+    #a-move,
+    #a-bubble {
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+    }
+    #a-box {
+      left: 478px;
+      top: 318px;
+      width: 205px;
+      height: 97px;
+      border-radius: 48.5px;
+      overflow: hidden;
+    }
+    #a-fill {
+      inset: 0;
+      border-radius: inherit;
+      background: linear-gradient(180deg, #e9530f 0%, #f26a24 45%, #ff9a5c 100%);
+      box-shadow: inset 0 0 0 3px rgba(255, 214, 186, 0.7);
+    }
+    #a-bright {
+      inset: 0;
+      border-radius: inherit;
+      background: linear-gradient(180deg, #ff7a2e 0%, #ff9c5a 55%, #ffc08c 100%);
+    }
+    #a-glow {
+      left: 478px;
+      top: 318px;
+      width: 205px;
+      height: 97px;
+      border-radius: 48.5px;
+      box-shadow: 0 0 70px 14px rgba(255, 106, 31, 0.55), 0 0 22px rgba(255, 150, 90, 0.5);
+    }
+    #a-text {
+      left: 561px;
+      top: 379px;
+      width: 790px;
+      font-size: 69px;
+      line-height: 104px;
+      font-weight: 400;
+      letter-spacing: -0.005em;
+      white-space: normal;
+    }
+    .ch {
+      position: relative;
+      visibility: hidden;
+    }
+    .ch.on {
+      visibility: visible;
+    }
+    .ch.last::after {
+      content: "";
+      position: absolute;
+      right: -7px;
+      top: 6px;
+      width: 3px;
+      height: 88px;
+      background: #ffffff;
+    }
+    #a-meta {
+      right: 82px;
+      bottom: 58px;
+      display: flex;
+      align-items: center;
+      gap: 34px;
+      font-size: 55px;
+      line-height: 1;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 0.58);
+      -webkit-mask-image: linear-gradient(90deg, #000 40%, transparent 60%);
+      mask-image: linear-gradient(90deg, #000 40%, transparent 60%);
+      -webkit-mask-size: 300% 100%;
+      mask-size: 300% 100%;
+      -webkit-mask-position: 100% 0;
+      mask-position: 100% 0;
+    }
+  </style>
+  <div id="root" data-composition-id="ask" data-width="1920" data-height="1080">
+    <div id="a-move" class="abs" data-layout-allow-overflow>
+      <div id="a-bubble" class="abs" data-layout-allow-overflow>
+      <div id="a-glow" class="abs"></div>
+      <div id="a-box" class="abs" data-layout-allow-overflow>
+        <div id="a-fill" class="abs"></div>
+        <div id="a-bright" class="abs"></div>
+        <div id="a-meta" class="abs" data-layout-allow-overlap>
+          <span>10:12 AM</span>
+          <svg width="46" height="46" viewBox="0 0 46 46"><circle id="a-ring" cx="23" cy="23" r="19" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-dasharray="120" stroke-dashoffset="120" transform="rotate(-90 23 23)" /><path id="a-tick" d="M15 23.5 L20.5 29 L31 17.5" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="26" stroke-dashoffset="26" /></svg>
+        </div>
+      </div>
+      <div id="a-text" class="abs" data-layout-allow-overflow data-layout-allow-overlap></div>
+      </div>
+    </div>
+  </div>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+    const T0 = 10.167;   // this composition starts at 10.167 s on the root; times below are written as root seconds - T0
+
+    // ---------------------------------------------------------------- typing
+    // the whole sentence is laid out up front, so a word that will not fit lands on the second line as soon as its
+    // first letter is typed, as in the reference; one character every 1-2 frames (~21 per second)
+    const MSG = "Can you make a launch film for tonight?";
+    const textEl = document.getElementById("a-text");
+    const caret0 = document.createElement("span");
+    caret0.className = "ch on";
+    textEl.appendChild(caret0);
+    const chars = [...MSG].map((c) => {
+      const s = document.createElement("span");
+      s.className = "ch";
+      s.textContent = c;
+      textEl.appendChild(s);
+      return s;
+    });
+    const STEPS = [2, 1, 2, 1, 1];
+    const typedAt = [];
+    let f = 0;
+    for (let i = 0; i < chars.length; i++) { typedAt.push((f + 1) / 30); f += STEPS[i % STEPS.length]; }
+    const CURSOR_OFF = typedAt[typedAt.length - 1] + 0.05;   // the cursor goes once the question mark is in
+    const typeAt = (lt) => {
+      let n = 0;
+      while (n < chars.length && typedAt[n] <= lt + 2e-3) n++;
+      caret0.classList.toggle("last", n === 0);
+      chars.forEach((c, i) => {
+        c.classList.toggle("on", i < n);
+        c.classList.toggle("last", i === n - 1 && lt < CURSOR_OFF);
+      });
+    };
+    const typeClock = { t: 0 };
+    tl.fromTo(typeClock, { t: 0 }, { t: 2.2, duration: 2.2, ease: "none", immediateRender: false, onUpdate: () => typeAt(typeClock.t) }, 0);
+    typeAt(0);
+
+    // ---------------------------------------------------------------- the field opens
+    // anchored at its upper-left corner while the text stays put: a 205 x 97 pill at 10.167 s with the caret hanging
+    // out of it, 330 x 150 a frame later, then 955 x 448 by 10.77 s (power3.out matches the measured widths), the
+    // corners settling from a pill to 85 px; it starts bright and glowing and deepens. Grown, it sits centred.
+    tl.to(["#a-box", "#a-glow"], { width: 330, height: 150, borderRadius: 75, duration: 1 / 30, ease: "none" }, 0);
+    tl.to(["#a-box", "#a-glow"], { width: 955, height: 448, borderRadius: 85, duration: 0.57, ease: "power3.out" }, 10.2 - T0);
+    tl.fromTo("#a-bright", { opacity: 1 }, { opacity: 0, duration: 0.7, ease: "sine.inOut", immediateRender: false }, 10.25 - T0);
+    tl.fromTo("#a-glow", { opacity: 1 }, { opacity: 0, duration: 0.8, ease: "sine.inOut", immediateRender: false }, 10.3 - T0);
+
+    // ---------------------------------------------------------------- the time and the read mark
+    // 12.55-12.85 s, revealed from left to right
+    tl.fromTo("#a-ring", { attr: { "stroke-dashoffset": 120 } }, { attr: { "stroke-dashoffset": 0 }, duration: 0.3, ease: "power2.out", immediateRender: false }, 12.72 - T0);
+    tl.fromTo("#a-tick", { attr: { "stroke-dashoffset": 26 } }, { attr: { "stroke-dashoffset": 0 }, duration: 0.15, ease: "power2.out", immediateRender: false }, 12.9 - T0);
+    tl.fromTo("#a-meta", { maskPosition: "100% 0", webkitMaskPosition: "100% 0" }, { maskPosition: "0% 0", webkitMaskPosition: "0% 0", duration: 0.3, ease: "sine.out", immediateRender: false }, 12.55 - T0);
+
+    // ---------------------------------------------------------------- sent: up to the top right, dimming
+    // centre and width measured frame by frame (12.80-13.47 s): a slow start, a fast lift, then it settles
+    // with only its time line showing at the top of the frame, where it stays dim for the reply that follows
+    const MOVEK = [[12.80, 959, 543, 0.958], [12.867, 960, 540, 0.957], [12.933, 964, 535, 0.955], [13.0, 970, 527, 0.952],
+                   [13.067, 979, 511, 0.95], [13.133, 997, 487, 0.948], [13.2, 1025, 443, 0.945], [13.233, 1052, 408, 0.942],
+                   [13.267, 1089, 349, 0.937], [13.3, 1150, 253, 0.931], [13.333, 1205, 170, 0.927], [13.367, 1240, 117, 0.922],
+                   [13.4, 1263, 81, 0.918], [13.433, 1280, 55, 0.916], [13.467, 1294, 35, 0.914], [13.55, 1318, -10, 0.912], [13.65, 1326, -38, 0.91], [13.8, 1330, -52, 0.91], [13.95, 1330, -56, 0.91]];
+    const mover = document.getElementById("a-move");
+    const moveAt = (lt) => {
+      const t = lt + T0;
+      if (t < MOVEK[0][0]) {   // a slow pull back while the sentence is typed: 1 -> 0.958 from 10.77 to 12.80 s
+        const s = 1 - 0.042 * Math.min(1, Math.max(0, (t - 10.77) / (12.8 - 10.77)));
+        gsap.set(mover, { x: 0, y: 0, scale: s, transformOrigin: "960px 544px" });
+        return;
+      }
+      let i = 0;
+      while (i < MOVEK.length - 2 && MOVEK[i + 1][0] <= t) i++;
+      const [t0, x0, y0, s0] = MOVEK[i], [t1, x1, y1, s1] = MOVEK[i + 1];
+      const u = Math.min(1, Math.max(0, (t - t0) / (t1 - t0)));
+      const s = s0 + (s1 - s0) * u;
+      gsap.set(mover, { x: x0 + (x1 - x0) * u - 960, y: y0 + (y1 - y0) * u - 544, scale: s, transformOrigin: "960px 544px" });
+    };
+    const moveClock = { t: 0 };
+    tl.fromTo(moveClock, { t: 0 }, { t: 13.95 - T0, duration: 13.95 - T0, ease: "none", immediateRender: false, onUpdate: () => moveAt(moveClock.t) }, 0);
+    moveAt(0);
+    tl.fromTo("#a-bubble", { opacity: 1 }, { opacity: 0.3, duration: 0.35, ease: "sine.inOut", immediateRender: false }, 13.35 - T0);
+    // 16.20-16.85 s: it lifts away with the reply below it
+    tl.to("#a-bubble", { y: -1200, duration: 0.65, ease: "power3.in" }, 16.2 - T0);
+
+    window.__timelines["ask"] = tl;
+  </script>
+</template>
