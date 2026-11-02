@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en" data-resolution="landscape">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"></script>
+    <script>
+      window.FILM_LANG = "en";
+    </script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: #111111;
+      }
+    </style>
+  </head>
+  <body>
+    <div data-hf-id="hf-qt5w" id="root" data-composition-id="main" data-start="0" data-duration="40.2" data-fps="60" data-width="1920" data-height="1080">
+      <div data-hf-id="hf-i4s7" id="s1-hook" class="clip" data-composition-id="s1-hook" data-composition-src="compositions/s1-hook.html" data-start="0.0" data-duration="7.6" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080"></div>
+      <div id="s2-states" class="clip" data-composition-id="s2-states" data-composition-src="compositions/s2-states.html" data-start="7.6" data-duration="7.25" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080"></div>
+      <div id="s3-swap" class="clip" data-composition-id="s3-swap" data-composition-src="compositions/s3-swap.html" data-start="14.85" data-duration="7.45" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080"></div>
+      <div id="s4-light" class="clip" data-composition-id="s4-light" data-composition-src="compositions/s4-light.html" data-start="22.3" data-duration="6.6" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080"></div>
+      <div id="s5-ship" class="clip" data-composition-id="s5-ship" data-composition-src="compositions/s5-ship.html" data-start="28.9" data-duration="11.3" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080"></div>
+      <audio data-hf-id="hf-uaq9" id="voiceover" src="assets/audio/voiceover.mp3" data-start="0.2" data-duration="37.9" data-track-index="9" data-volume="1"></audio>
+    </div>
+    <script>
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = gsap.timeline({ paused: true });
+    </script>
+  </body>
+</html>

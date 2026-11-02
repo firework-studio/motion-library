@@ -14,6 +14,7 @@ Each entry is a self-contained [HyperFrames](https://github.com/heygen-com/hyper
 | [launch-film-machine](launch-film-machine) | 2026-10-28 | Launch film as an isometric machine: counter-drifting stills, a part-by-part build, a WebGL projector lamp, a timeline read shot by shot and a Renaissance hand at the end |
 | [tidal-launch-promo](tidal-launch-promo) | 2026-10-28 | Upbeat product film with voiceover: a glowing WebGL sphere of 3,000 photos, a dot-to-logo reveal, instant search, good-news alerts, climbing numbers and bright signal pins on a Three.js terrain |
 | [chat-app-promo](chat-app-promo) | 2026-10-31 | Product film for a concept chat app: typed headlines, an icon grown from a camera hole, a film card reply, one-tap actions, an emoji reaction and a ring of light that draws the tagline into the logo |
+| [thinking-orbs-intro](thinking-orbs-intro) | 2026-11-02 | Voiced intro to an open-source orb set: word-by-word captions, state-switching orbs, a ring that settles into a turning grid, spinners swapped for orbs, a dark-to-light pill tour and a reduced-motion switch |
 
 ## Run an entry
 

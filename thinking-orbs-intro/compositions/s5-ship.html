@@ -1,0 +1,345 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: #111111;
+      font-family: "Inter", sans-serif;
+    }
+    /* captions */
+    #s5-caps {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 96px;
+      height: 170px;
+    }
+    .cap-block {
+      position: absolute;
+      left: 160px;
+      right: 160px;
+      top: 0;
+      text-align: center;
+    }
+    .cap-line {
+      font-size: 64px;
+      line-height: 82px;
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+    }
+    .cap-word {
+      display: inline-block;
+      margin: 0 0.12em;
+    }
+    .cap-pill {
+      display: inline-block;
+      padding: 0 22px;
+      margin: 0 0.06em;
+      border-radius: 999px;
+      background: #262626;
+    }
+    /* the licence */
+    #s5-license {
+      position: absolute;
+      left: 330px;
+      top: 300px;
+      width: 1260px;
+      opacity: 0;
+    }
+    #s5-license h3 {
+      font-size: 40px;
+      font-weight: 600;
+      color: #f2f2f2;
+    }
+    #s5-license h3 em {
+      margin-left: 14px;
+      padding: 4px 14px;
+      border-radius: 10px;
+      background: #262626;
+      font-style: normal;
+      font-size: 28px;
+      font-weight: 500;
+      color: #b4b4b4;
+      vertical-align: middle;
+    }
+    #s5-copy {
+      margin-top: 10px;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 28px;
+      color: #7a7a7a;
+    }
+    #s5-body {
+      margin-top: 26px;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 28px;
+      line-height: 40px;
+      color: #c8c8c8;
+      white-space: pre;
+    }
+    /* shipping it */
+    #s5-shiprow {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 640px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 16px;
+      opacity: 0;
+    }
+    #s5-build {
+      position: relative;
+      height: 88px;
+      width: 400px;
+      border-radius: 44px;
+      background: #1e1e1e;
+      font-size: 30px;
+      color: #c8c8c8;
+    }
+    #s5-build canvas {
+      position: absolute;
+      left: 16px;
+      top: 16px;
+    }
+    #s5-build span {
+      position: absolute;
+      left: 92px;
+      top: 0;
+      line-height: 88px;
+      white-space: nowrap;
+    }
+    #s5-price {
+      height: 64px;
+      padding: 0 24px;
+      border-radius: 32px;
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      line-height: 62px;
+      font-size: 28px;
+      color: #8d8d8d;
+    }
+    #s5-btn {
+      position: relative;
+      width: 220px;
+      height: 72px;
+      border-radius: 36px;
+      font-size: 30px;
+      font-weight: 600;
+    }
+    #s5-btn span {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      line-height: 72px;
+      text-align: center;
+    }
+    #s5-perm {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 780px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 24px;
+      opacity: 0;
+    }
+    #s5-ask {
+      position: relative;
+      font-size: 34px;
+      color: #9a9a9a;
+    }
+    #s5-strike {
+      position: absolute;
+      left: -4px;
+      top: 52%;
+      height: 3px;
+      width: 0;
+      background: #e8e8e8;
+    }
+    #s5-needed {
+      padding: 10px 22px;
+      border-radius: 999px;
+      background: #262626;
+      font-size: 30px;
+      color: #ededed;
+      opacity: 0;
+    }
+    /* the repo card */
+    #s5-card {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 430px;
+      margin: 0 auto;
+      width: fit-content;
+      padding: 40px 60px 40px 40px;
+      border-radius: 40px;
+      background: #171717;
+      border: 1px solid #262626;
+      display: flex;
+      align-items: center;
+      gap: 36px;
+      opacity: 0;
+    }
+    #s5-card b {
+      display: block;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 44px;
+      font-weight: 500;
+      color: #f5f5f5;
+      white-space: nowrap;
+    }
+    #s5-card span {
+      display: block;
+      margin-top: 12px;
+      font-size: 30px;
+      color: #8d8d8d;
+    }
+    /* the studio signature: the Firework mark and the studio name */
+    #s5-by {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 690px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 16px;
+      opacity: 0;
+    }
+    #s5-by img {
+      width: 64px;
+      height: 64px;
+    }
+    #s5-by span {
+      font-size: 34px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      color: #ededed;
+    }
+    #s5-cursor {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 44px;
+      height: 44px;
+      opacity: 0;
+    }
+  </style>
+  <div id="root" data-composition-id="s5-ship" data-width="1920" data-height="1080">
+    <div id="s5-license">
+      <h3>MIT License<em>MIT</em></h3>
+      <div id="s5-copy">Copyright (c) 2026 Jakub Antalik</div>
+      <div id="s5-body"></div>
+    </div>
+    <div id="s5-shiprow">
+      <div id="s5-build"><canvas></canvas><span id="s5-build-a">In your build…</span><span id="s5-build-b" style="opacity: 0">In production</span></div>
+      <div id="s5-price">Your app · Pro plan</div>
+      <div id="s5-btn"><span id="s5-btn-a">Ship</span><span id="s5-btn-b" style="opacity: 0">Shipped ✓</span></div>
+    </div>
+    <div id="s5-perm">
+      <div id="s5-ask"><span>Ask the author for permission?</span><i id="s5-strike"></i></div>
+      <div id="s5-needed">not needed</div>
+    </div>
+    <div id="s5-card">
+      <canvas id="s5-card-orb"></canvas>
+      <div><b>github.com/Jakubantalik/thinking-orbs</b><span>by Jakub Antalik · MIT · npm install thinking-orbs</span></div>
+    </div>
+    <div id="s5-by"><img src="assets/brand/firework-mark.svg" alt="" /><span>Firework Studio</span></div>
+    <svg id="s5-cursor" viewBox="0 0 24 24">
+      <path d="M4 2 L4 19 L8.6 14.9 L11.6 21.6 L14.6 20.3 L11.6 13.7 L17.8 13.7 Z" fill="#f5f5f5" stroke="#111111" stroke-width="1.4" stroke-linejoin="round" />
+    </svg>
+    <div id="s5-caps"></div>
+  </div>
+  <script src="assets/lib/thinking-orbs-engine.js"></script>
+  <script src="assets/lib/orb-view.js"></script>
+  <script src="assets/data/vo-words.js"></script>
+  <script src="assets/lib/film.js"></script>
+  <script src="assets/lib/captions.js"></script>
+  <script>
+    (function () {
+      const O = window.OrbView;
+      // scene time 0 is film time 28.9; constants below are film time, converted with T()
+      const START = 28.9, DURATION = 11.3;
+      const T = (film) => film - START;
+      const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+      const lerp = (a, b, k) => a + (b - a) * k;
+      const easeInOut = (x) => { x = clamp(x, 0, 1); return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+
+      // the first lines of the project's own LICENSE, typed out while "The whole set is MIT licensed" plays
+      const BODY = [
+        "Permission is hereby granted, free of charge, to any person obtaining a copy",
+        "of this software and associated documentation files (the \"Software\"), to deal",
+        "in the Software without restriction, including without limitation the rights",
+        "to use, copy, modify, merge, publish, distribute, sublicense, and/or sell",
+      ].join("\n");
+      const TYPE = { from: 29.3, to: 31.0 };
+      const body = document.getElementById("s5-body");
+
+      // the Ship button is clicked on "ship"
+      const CLICK = 31.68;
+      const btn = document.getElementById("s5-btn");
+      const buildCtx = O.fit(document.querySelector("#s5-build canvas"), 56, 56);
+      const cardCtx = O.fit(document.getElementById("s5-card-orb"), 120, 120);
+      const END_CARD = "#s5-card";
+      const cursor = document.getElementById("s5-cursor");
+      // the button is the last of three items in a centred row: 400 + 16 + price + 16 + 220
+      const BTN_AT = { x: 1270, y: 676 }, CUR_FROM = { x: 1500, y: 960 };
+
+      function render(t) {
+        const n = Math.round(BODY.length * clamp((t - TYPE.from) / (TYPE.to - TYPE.from), 0, 1));
+        body.textContent = BODY.slice(0, n);
+        // ship row
+        O.clear(buildCtx);
+        O.drawState(buildCtx, "working", t, 56, 28, 28, 1);
+        const shipped = clamp((t - CLICK) / 0.2, 0, 1);
+        btn.style.background = `rgb(${Math.round(lerp(242, 38, shipped))},${Math.round(lerp(242, 38, shipped))},${Math.round(lerp(242, 38, shipped))})`;
+        document.getElementById("s5-btn-a").style.color = "#111111";
+        document.getElementById("s5-btn-a").style.opacity = 1 - shipped;
+        document.getElementById("s5-btn-b").style.color = "#ededed";
+        document.getElementById("s5-btn-b").style.opacity = shipped;
+        document.getElementById("s5-build-a").style.opacity = 1 - shipped;
+        document.getElementById("s5-build-b").style.opacity = shipped;
+        const k = easeInOut((t - 31.2) / (CLICK - 0.08 - 31.2));
+        const press = t >= CLICK && t < CLICK + 0.12 ? 0.85 : 1;
+        cursor.style.transform = `translate(${lerp(CUR_FROM.x, BTN_AT.x, k)}px, ${lerp(CUR_FROM.y, BTN_AT.y, k)}px) scale(${press})`;
+        cursor.style.opacity = clamp((t - 31.2) / 0.2, 0, 1) * (1 - clamp((t - 32.4) / 0.25, 0, 1));
+        // the closing card's orb
+        O.clear(cardCtx);
+        O.drawState(cardCtx, "searching", t, 120, 60, 60, 1);
+      }
+
+      const tl = gsap.timeline({ paused: true });
+      const clock = { t: 0 };
+      tl.to(clock, { t: DURATION, duration: DURATION, ease: "none", onUpdate: () => render(START + clock.t) }, 0);
+      tl.fromTo("#s5-license", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out", immediateRender: true }, T(29.02));
+      tl.fromTo("#s5-shiprow", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out", immediateRender: true }, T(31.2));
+      tl.fromTo("#s5-perm", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.35, ease: "power2.out", immediateRender: true }, T(33.0));
+      tl.fromTo("#s5-strike", { width: 0 }, { width: "calc(100% + 8px)", duration: 0.35, ease: "power2.inOut", immediateRender: true }, T(33.27));
+      tl.fromTo("#s5-needed", { opacity: 0, x: -10 }, { opacity: 1, x: 0, duration: 0.3, ease: "power2.out", immediateRender: true }, T(33.66));
+      // everything clears for the repo card on "The repo's on screen"
+      tl.to(["#s5-license", "#s5-shiprow", "#s5-perm"], { opacity: 0, y: -16, duration: 0.3, ease: "power2.in", stagger: 0.04 }, T(34.3));
+      tl.fromTo(END_CARD, { opacity: 0, y: 24, scale: 0.97 }, { opacity: 1, y: 0, scale: 1, duration: 0.5, ease: "power3.out", immediateRender: true }, T(34.75));
+      tl.fromTo("#s5-by", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out", immediateRender: true }, T(35.3));
+
+      const caps = document.getElementById("s5-caps");
+      if (FILM.lang === "en") {
+        window.Captions.build(caps, tl, [
+          { lines: [[77, 80]], shown: true },
+          { lines: [[81, 83], [84, 86]], pills: [[85, 85]] },
+          { lines: [[87, 91], [92, 95]], pills: [[90, 90]] },
+          { lines: [[96, 98]] },
+          { lines: [[99, 102]], pills: [[100, 100]] },
+          { lines: [[103, 104], [105, 106]] },
+        ], { offset: START });
+      }
+      FILM.localize(document);
+      render(START);
+      FILM.scene("s5-ship", tl, START, DURATION);
+    })();
+  </script>
+</template>

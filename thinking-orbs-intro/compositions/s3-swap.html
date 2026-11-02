@@ -1,0 +1,381 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: #111111;
+      font-family: "Inter", sans-serif;
+    }
+    /* captions */
+    #s3-caps {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 96px;
+      height: 170px;
+    }
+    .cap-block {
+      position: absolute;
+      left: 160px;
+      right: 160px;
+      top: 0;
+      text-align: center;
+    }
+    .cap-line {
+      font-size: 64px;
+      line-height: 82px;
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+    }
+    .cap-word {
+      display: inline-block;
+      margin: 0 0.12em;
+    }
+    .cap-pill {
+      display: inline-block;
+      padding: 0 22px;
+      margin: 0 0.06em;
+      border-radius: 999px;
+      background: #262626;
+    }
+    /* ---------- the interface demo ---------- */
+    #s3-picker {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 330px;
+      margin: 0 auto;
+      width: fit-content;
+      padding: 14px 20px;
+      border-radius: 60px;
+      background: #171717;
+      border: 1px solid #242424;
+      display: flex;
+      gap: 24px;
+      opacity: 0;
+    }
+    #s3-picker .slot {
+      position: relative;
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+    }
+    #s3-picker .slot.on {
+      background: #2c2c2c;
+    }
+    #s3-picker canvas {
+      position: absolute;
+      left: 4px;
+      top: 4px;
+    }
+    .s3-panel {
+      position: absolute;
+      top: 520px;
+      width: 540px;
+      padding: 28px 28px 32px;
+      border-radius: 32px;
+      background: #171717;
+      border: 1px solid #242424;
+      opacity: 0;
+    }
+    .s3-panel h4 {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 28px;
+      font-weight: 400;
+      color: #8d8d8d;
+    }
+    .s3-panel h4::before {
+      content: "";
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #5a5a5a;
+    }
+    .s3-pill {
+      position: relative;
+      margin-top: 24px;
+      height: 100px;
+      border-radius: 50px;
+      background: #222222;
+    }
+    .s3-pill canvas {
+      position: absolute;
+      left: 18px;
+      top: 18px;
+    }
+    .s3-pill span {
+      position: absolute;
+      left: 104px;
+      top: 0;
+      line-height: 100px;
+      font-size: 30px;
+      color: #d6d6d6;
+      white-space: nowrap;
+    }
+    #s3-cursor {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 44px;
+      height: 44px;
+      opacity: 0;
+    }
+    /* ---------- one pill, many apps ---------- */
+    #s3-context {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+    }
+    #s3-app {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 420px;
+      text-align: center;
+      font-size: 28px;
+      color: #7a7a7a;
+    }
+    #s3-big {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 480px;
+      margin: 0 auto;
+      width: 720px;
+      height: 128px;
+      border-radius: 64px;
+    }
+    #s3-big canvas {
+      position: absolute;
+      left: 24px;
+      top: 24px;
+    }
+    #s3-big span {
+      position: absolute;
+      left: 132px;
+      top: 0;
+      line-height: 128px;
+      font-size: 42px;
+      white-space: nowrap;
+    }
+    #s3-theme {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 660px;
+      text-align: center;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 28px;
+      color: #7a7a7a;
+    }
+    #s3-tabs {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 740px;
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+    }
+    #s3-tabs span {
+      padding: 12px 26px;
+      border-radius: 999px;
+      font-size: 28px;
+      color: #6a6a6a;
+    }
+    #s3-tabs span.on {
+      background: #262626;
+      color: #ededed;
+    }
+  </style>
+  <div id="root" data-composition-id="s3-swap" data-width="1920" data-height="1080">
+    <div id="s3-picker"></div>
+    <div id="s3-panel-0" class="s3-panel" style="left: 110px">
+      <h4>Chat</h4>
+      <div class="s3-pill"><canvas></canvas><span>Loading…</span><span style="opacity: 0">Connecting…</span></div>
+    </div>
+    <div id="s3-panel-1" class="s3-panel" style="left: 690px">
+      <h4>Search</h4>
+      <div class="s3-pill"><canvas></canvas><span>Loading…</span><span style="opacity: 0">Searching 1,204 results…</span></div>
+    </div>
+    <div id="s3-panel-2" class="s3-panel" style="left: 1270px">
+      <h4>Upload</h4>
+      <div class="s3-pill"><canvas></canvas><span>Loading…</span><span style="opacity: 0">Uploading · 62%</span></div>
+    </div>
+    <svg id="s3-cursor" viewBox="0 0 24 24">
+      <path d="M4 2 L4 19 L8.6 14.9 L11.6 21.6 L14.6 20.3 L11.6 13.7 L17.8 13.7 Z" fill="#f5f5f5" stroke="#111111" stroke-width="1.4" stroke-linejoin="round" />
+    </svg>
+    <div id="s3-context">
+      <div id="s3-app"></div>
+      <div id="s3-big"><canvas></canvas><span></span></div>
+      <div id="s3-theme"></div>
+      <div id="s3-tabs"><span>Message</span><span>Terminal</span><span>Docs</span><span>Music</span><span>Issues</span><span>Checkout</span></div>
+    </div>
+    <div id="s3-caps"></div>
+  </div>
+  <script src="assets/lib/thinking-orbs-engine.js"></script>
+  <script src="assets/lib/orb-view.js"></script>
+  <script src="assets/data/vo-words.js"></script>
+  <script src="assets/lib/film.js"></script>
+  <script src="assets/lib/captions.js"></script>
+  <script>
+    (function () {
+      const O = window.OrbView;
+      // scene time 0 is film time 14.85; constants below are film time, converted with T()
+      const START = 14.85, DURATION = 7.45;
+      const T = (film) => film - START;
+      const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+      const lerp = (a, b, k) => a + (b - a) * k;
+      const easeInOut = (x) => { x = clamp(x, 0, 1); return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+
+      const STATES = ["working", "searching", "solving", "listening", "connecting", "weaving", "composing", "breathing", "shaping"];
+
+      // ---------- the interface demo: a picker of nine, three panels still on a generic spinner ----------
+      const picker = document.getElementById("s3-picker");
+      const slots = STATES.map((state) => {
+        const slot = document.createElement("div");
+        slot.className = "slot";
+        const c = document.createElement("canvas");
+        slot.appendChild(c);
+        picker.appendChild(slot);
+        return { slot, ctx: O.fit(c, 64, 64), state };
+      });
+      // the cursor picks an orb, and the panel it serves trades its spinner for that orb
+      const PICKS = [
+        { slot: 4, click: 16.15, swap: 16.4, panel: 0 },
+        { slot: 1, click: 16.95, swap: 17.14, panel: 1 },
+        { slot: 8, click: 17.62, swap: 17.96, panel: 2 },
+      ];
+      const panels = [0, 1, 2].map((i) => {
+        const el = document.getElementById("s3-panel-" + i), spans = el.querySelectorAll(".s3-pill span");
+        const pick = PICKS.find((p) => p.panel === i);
+        return { ctx: O.fit(el.querySelector("canvas"), 64, 64), a: spans[0], b: spans[1], state: STATES[pick.slot], swap: pick.swap };
+      });
+      // picker slot centres in frame space: the bar is centred, 9 slots of 72 px with 24 px gaps, 20 px padding
+      const BAR_W = 9 * 72 + 8 * 24 + 40, BAR_X = (1920 - BAR_W) / 2;
+      const slotCentre = (i) => ({ x: BAR_X + 20 + i * 96 + 36, y: 330 + 15 + 36 });
+      const PATH = [
+        { t: 15.55, x: 1500, y: 900 },
+        ...PICKS.flatMap((p) => { const c = slotCentre(p.slot); return [{ t: p.click - 0.12, x: c.x + 8, y: c.y + 10 }, { t: p.click + 0.25, x: c.x + 8, y: c.y + 10 }]; }),
+      ];
+      function cursorAt(t) {
+        if (t <= PATH[0].t) return PATH[0];
+        for (let i = 1; i < PATH.length; i++) {
+          if (t <= PATH[i].t) {
+            const k = easeInOut((t - PATH[i - 1].t) / (PATH[i].t - PATH[i - 1].t));
+            return { x: lerp(PATH[i - 1].x, PATH[i].x, k), y: lerp(PATH[i - 1].y, PATH[i].y, k) };
+          }
+        }
+        return PATH[PATH.length - 1];
+      }
+      function spinner(ctx, t, alpha, size, color) {
+        if (alpha <= 0) return;
+        ctx.save();
+        ctx.setTransform(O.DPR, 0, 0, O.DPR, 0, 0);
+        ctx.globalAlpha = alpha;
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 4;
+        ctx.lineCap = "round";
+        const a = t * Math.PI * 2 * 1.3;
+        ctx.beginPath(); ctx.arc(size / 2, size / 2, size * 0.3, a, a + Math.PI * 1.5); ctx.stroke();
+        ctx.restore();
+      }
+      const cursor = document.getElementById("s3-cursor");
+
+      // ---------- one pill dropped into six kinds of app, on the words of the line ----------
+      const CONTEXTS = [
+        { at: 18.87, app: "Message", text: "typing…", state: "breathing", light: false },
+        { at: 19.2, app: "Docs", text: "Generating summary…", state: "composing", light: false },
+        { at: 19.58, app: "Music", text: "Buffering…", state: "listening", light: false },
+        { at: 20.11, app: "Issues", text: "Syncing issues…", state: "connecting", light: false },
+        { at: 20.53, app: "Checkout", text: "Processing payment…", state: "solving", light: true },
+        { at: 20.83, app: "Message", text: "typing…", state: "breathing", light: true },
+        { at: 21.41, app: "Terminal", text: "deploy · building…", state: "working", light: false },
+      ];
+      // 0 on a dark surface, 1 on a light one, easing over 0.25 s at each change
+      function lightAt(t) {
+        let v = 0, prev = false;
+        for (const c of CONTEXTS) {
+          if (t < c.at) break;
+          if (c.light !== prev) { const k = easeInOut((t - c.at) / 0.25); v = c.light ? k : 1 - k; prev = c.light; }
+        }
+        return v;
+      }
+      const TABS = ["Message", "Terminal", "Docs", "Music", "Issues", "Checkout"];
+      const big = document.getElementById("s3-big"), bigText = big.querySelector("span"), bigCtx = O.fit(big.querySelector("canvas"), 80, 80);
+      const appEl = document.getElementById("s3-app"), themeEl = document.getElementById("s3-theme");
+      const tabEls = Array.from(document.querySelectorAll("#s3-tabs span"));
+
+      function render(film) {
+        const t = film;
+        // picker and panels
+        slots.forEach((s, i) => {
+          O.clear(s.ctx);
+          O.drawState(s.ctx, s.state, t, 64, 32, 32, 1);
+          const picked = PICKS.some((p) => p.slot === i && t >= p.click && t < (PICKS[PICKS.indexOf(p) + 1]?.click ?? 99));
+          s.slot.classList.toggle("on", picked);
+        });
+        panels.forEach((p) => {
+          O.clear(p.ctx);
+          const k = clamp((t - p.swap) / 0.2, 0, 1);
+          spinner(p.ctx, t, 1 - k, 64, "#9a9a9a");
+          O.drawState(p.ctx, p.state, t, 64, 32, 32, k);
+          p.a.style.opacity = 1 - k;
+          p.a.style.transform = `translateY(${-12 * k}px)`;
+          p.b.style.opacity = clamp((t - p.swap - 0.06) / 0.2, 0, 1);
+        });
+        const c = cursorAt(t), press = PICKS.some((p) => t >= p.click && t < p.click + 0.12) ? 0.85 : 1;
+        cursor.style.transform = `translate(${c.x}px, ${c.y}px) scale(${press})`;
+        cursor.style.opacity = clamp((t - 15.55) / 0.2, 0, 1) * (1 - clamp((t - 18.2) / 0.2, 0, 1));
+
+        // the context pill
+        let ci = -1;
+        CONTEXTS.forEach((c, i) => { if (t >= c.at) ci = i; });
+        const cur = CONTEXTS[Math.max(ci, 0)];
+        // the surface eases between dark and light instead of cutting, so a light context never flashes
+        const L = lightAt(t);
+        const mixc = (a, b) => `rgb(${a.map((v, i) => Math.round(v + (b[i] - v) * L)).join(",")})`;
+        big.style.background = mixc([30, 30, 30], [242, 242, 242]);
+        bigText.style.color = mixc([217, 217, 217], [26, 26, 26]);
+        bigText.textContent = cur.text;
+        appEl.textContent = cur.app;
+        themeEl.textContent = 'theme="auto" · ' + (L > 0.5 ? "dark ink on light" : "light ink on dark");
+        tabEls.forEach((el, i) => el.classList.toggle("on", TABS[i] === cur.app));
+        // each switch pops the pill slightly, the way the content changes under the cursor
+        const since = t - cur.at, pop = 1 + 0.04 * Math.exp(-since * 14) * (since >= 0 ? 1 : 0);
+        big.style.transform = `scale(${pop})`;
+        O.clear(bigCtx);
+        O.drawState(bigCtx, cur.state, t, 80, 40, 40, 1 - L, undefined, true);
+        O.drawState(bigCtx, cur.state, t, 80, 40, 40, L, undefined, false);
+      }
+
+      const tl = gsap.timeline({ paused: true });
+      const clock = { t: 0 };
+      tl.to(clock, { t: DURATION, duration: DURATION, ease: "none", onUpdate: () => render(START + clock.t) }, 0);
+      // the demo comes in on "Swap", and steps aside on "and it fits"
+      tl.fromTo("#s3-picker", { opacity: 0, y: -16 }, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out", immediateRender: true }, T(14.95));
+      [0, 1, 2].forEach((i) => {
+        tl.fromTo("#s3-panel-" + i, { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.45, ease: "power3.out", immediateRender: true }, T(15.1 + i * 0.08));
+      });
+      tl.to(["#s3-picker", "#s3-panel-0", "#s3-panel-1", "#s3-panel-2"], { opacity: 0, y: -20, duration: 0.3, ease: "power2.in", stagger: 0.04 }, T(18.45));
+      tl.fromTo("#s3-context", { opacity: 0, scale: 0.96 }, { opacity: 1, scale: 1, duration: 0.3, ease: "power2.out", immediateRender: true }, T(18.82));
+      tl.to("#s3-context", { opacity: 0, y: -20, duration: 0.25, ease: "power2.in" }, T(22.05));
+
+      const caps = document.getElementById("s3-caps");
+      if (FILM.lang === "en") {
+        window.Captions.build(caps, tl, [
+          { lines: [[39, 41], [42, 45]], pills: [[42, 42]] },
+          { lines: [[46, 48], [49, 50]] },
+          { lines: [[51, 53], [54, 55]], pills: [[53, 53]] },
+          { lines: [[56, 58], [59, 61]] },
+        ], { offset: START });
+      }
+      FILM.localize(document);
+      render(START);
+      FILM.scene("s3-swap", tl, START, DURATION);
+    })();
+  </script>
+</template>
