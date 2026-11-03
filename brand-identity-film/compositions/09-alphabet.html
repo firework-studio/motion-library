@@ -1,0 +1,146 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Space Grotesk";
+      font-weight: 300 700;
+      src: url("assets/fonts/SpaceGrotesk-Variable.ttf") format("truetype");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: #ecebe5;
+    }
+    #ab-sheet {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+      transform-origin: 960px 540px;
+    }
+    .ab-ch {
+      position: absolute;
+      left: 0;
+      top: 0;
+      font-family: "Space Grotesk";
+      font-weight: 500;
+      font-size: 184px;
+      line-height: 1;
+      color: #1c4135;
+      white-space: pre;
+      transform-origin: 0 78%;
+    }
+    #ab-grain {
+      position: absolute;
+      inset: 0;
+      opacity: 0.12;
+      mix-blend-mode: multiply;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0.6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    }
+  </style>
+  <div id="root" data-composition-id="alphabet" data-width="1920" data-height="1080">
+    <div id="ab-sheet"></div>
+    <div id="ab-grain"></div>
+  </div>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+    const clamp01 = (v) => Math.min(1, Math.max(0, v));
+    const sm = (u) => { u = clamp01(u); return u * u * (3 - 2 * u); };
+    const out3 = (u) => 1 - Math.pow(1 - clamp01(u), 3);
+    const hash = (n) => { const v = Math.sin(n * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v); };
+
+    // ---------------------------------------------------------------- the specimen, one element per character
+    // Six lines of Space Grotesk Medium, 184 px, pairs set tight, 0.2 em between pairs, 184 px line pitch, every line
+    // centred, the block filling the frame (as measured on the reference once settled: about 1460 px wide).
+    // The face's own stylistic alternates (a ss01, g ss02, y ss03, B D J ss04, I ss05) wait, zero-width, right after
+    // their pairs; in the second part they open into the line one by one, in the brand's dark, while the rest of the
+    // sheet pales: the same move as the reference, with the alternates this face really has.
+    const LINES = ["Aa Bb Cc Dd Ee", "Ff Gg Hh Ii Jj Kk", "Ll Mm Nn Oo Pp", "Qq Rr Ss Tt Uu Vv", "Ww Xx Yy Zz", "0123456789@&"];
+    const ALTS = { Aa: ["a", "ss01", 0.92], Bb: ["B", "ss04", 1.02], Dd: ["D", "ss04", 1.12], Gg: ["g", "ss02", 1.22], Ii: ["I", "ss05", 1.32], Jj: ["J", "ss04", 1.42], Yy: ["y", "ss03", 1.52] };
+    const SIZE = 184, PITCH = 184, SPACE = 0.2 * SIZE, PALE = 0.3;
+    const sheet = document.getElementById("ab-sheet");
+    const lines = LINES.map((line, li) => {
+      const items = [];
+      line.split(" ").forEach((pair, pi) => {
+        if (pi > 0) items.push({ space: true });
+        [...pair].forEach((ch) => items.push({ ch }));
+        if (ALTS[pair]) { const [ch, ss, at] = ALTS[pair]; items.push({ ch, ss, at, alt: true }); }
+      });
+      items.forEach((it) => {
+        if (it.space) return;
+        const el = document.createElement("span");
+        el.className = "ab-ch";
+        el.textContent = it.ch;
+        if (it.ss) el.style.fontFeatureSettings = `"${it.ss}"`;
+        sheet.appendChild(el);
+        it.el = el;
+      });
+      return { li, items };
+    });
+    const glyphs = lines.flatMap((l) => l.items.filter((it) => !it.space));
+    glyphs.forEach((it, i) => { it.n = i; });
+
+    // ---------------------------------------------------------------- part 1 (0-1.0 s): misplaced, then home
+    // A hard cut into a sheet that is nearly set but not quite: about a quarter of the characters ride up or down off
+    // their line (0.18-0.38 em) and about a fifth stand too large (1.15-1.4x); each slides and shrinks home on its own
+    // delay, all within 0.6 s, while the camera eases back from close (1.3 -> 1).
+    glyphs.forEach((it) => {
+      const i = it.n;
+      it.dy = hash(i * 3 + 1) < 0.28 ? (hash(i * 3 + 2) < 0.5 ? -1 : 1) * (0.18 + 0.2 * hash(i * 3 + 4)) * SIZE : 0;
+      it.big = hash(i * 5 + 7) < 0.2 ? 1.15 + 0.25 * hash(i * 5 + 8) : 1;
+      it.d0 = 0.35 * hash(i * 7 + 9);
+      it.dur = 0.55 + 0.25 * hash(i * 7 + 10);
+    });
+    // ---------------------------------------------------------------- part 2 (from ~0.75 s): pale, alternates, @ &
+    // Nothing waits for the last thing to finish: the sheet starts to pale (0.75-1.45 s) while the last characters
+    // are still landing; the alternates open into their lines one after another, each easing in over 0.38 s and
+    // overlapping the next; the @ and & rise back to dark as the last alternates settle; and from 1.85 s the setting
+    // loosens, slowly at first, gathering pace into the cut. One continuous pull-back carries all of it.
+    const LIFT = { "@": 1.72, "&": 1.88 };
+    // one continuous pull-back for both parts: quick at the cut, easing off but never stopping (1.3 -> ~0.88)
+    const SCALE = (t) => 1.3 - 0.36 * (1 - Math.exp(-t / 0.5)) - 0.06 * (t / 2.5);
+
+    let W = null;   // advance widths, measured once the font is in
+    const measure = () => { W = new Map(glyphs.map((it) => [it, it.el.offsetWidth])); };
+    const draw = (t) => {
+      if (!W) return;
+      sheet.style.transform = `scale(${SCALE(t)})`;
+      const top0 = 540 - (PITCH * LINES.length) / 2;
+      const loose = Math.pow(clamp01((t - 1.85) / 0.65), 2);   // gathers pace into the cut
+      lines.forEach(({ li, items }) => {
+        // each alternate opens its own width over 0.15 s once its moment comes
+        const open = (it) => (it.alt ? sm((t - it.at) / 0.38) : 1);
+        const width = items.reduce((s, it) => s + (it.space ? SPACE : W.get(it) * open(it)), 0);
+        let x = 960 - width / 2;
+        items.forEach((it) => {
+          if (it.space) { x += SPACE; return; }
+          const i = it.n, o = open(it);
+          const k = 1 - out3((t - it.d0) / it.dur);   // part 1: 1 = misplaced, 0 = home
+          let s = 1 + (it.big - 1) * k, dy = it.dy * k;
+          const dx = (hash(i * 11 + 1) - 0.5) * 0.14 * SIZE * loose;
+          s *= 1 - 0.12 * hash(i * 11 + 2) * loose;
+          dy += (hash(i * 11 + 3) - 0.5) * 0.06 * SIZE * loose;
+          let op;
+          if (it.alt) { op = o; s *= 0.85 + 0.15 * o; }
+          else {
+            op = 1 - (1 - PALE) * sm((t - 0.75) / 0.7);
+            if (LIFT[it.ch]) op = Math.max(op, sm((t - LIFT[it.ch]) / 0.35));
+          }
+          it.el.style.opacity = op.toFixed(3);
+          it.el.style.transform = `translate(${(x + dx).toFixed(2)}px, ${(top0 + li * PITCH + dy).toFixed(2)}px) scale(${s.toFixed(4)})`;
+          x += W.get(it) * o;
+        });
+      });
+    };
+    const clock = { t: 0 };
+    tl.fromTo(clock, { t: 0 }, { t: 2.5, duration: 2.5, ease: "none", immediateRender: false, onUpdate: () => draw(clock.t) }, 0);
+
+    window.__hf = window.__hf || {};
+    window.__hf.buildReady = window.__hf.buildReady || {};
+    window.__hf.buildReady["alphabet-font"] = document.fonts.load('500 184px "Space Grotesk"').then(() => { measure(); draw(clock.t); });
+
+    window.__timelines["alphabet"] = tl;
+  </script>
+</template>

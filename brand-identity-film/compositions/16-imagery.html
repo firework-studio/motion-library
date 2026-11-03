@@ -1,0 +1,294 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Space Grotesk";
+      font-weight: 300 700;
+      src: url("assets/fonts/SpaceGrotesk-Variable.ttf") format("truetype");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: #0d1a16;
+    }
+    #im-cv {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+    }
+    #im-grain {
+      position: absolute;
+      inset: 0;
+      opacity: 0.12;
+      mix-blend-mode: multiply;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0.6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    }
+  </style>
+  <div id="root" data-composition-id="imagery" data-width="1920" data-height="1080">
+    <canvas id="im-cv" width="1920" height="1080"></canvas>
+    <div id="im-grain"></div>
+  </div>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+    const clamp01 = (v) => Math.min(1, Math.max(0, v));
+    const smoother = (u) => { u = clamp01(u); return u * u * u * (u * (u * 6 - 15) + 10); };
+    const lerp = (a, b, u) => a + (b - a) * u;
+    const hash = (n) => { const v = Math.sin(n * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v); };
+    const FR = 30;
+    const cv = document.getElementById("im-cv");
+    const g = cv.getContext("2d");
+    // brand sheet v3
+    const INK = "#0d1a16", PINE = "#1c4135", SPRUCE = "#22503f", VERDIGRIS = "#4f8a78", CELADON = "#a9c4b6";
+    const BONE = "#ecebe5", COPPER = "#b8704a", BRASS = "#d6b27a", MIST = "#dde5df";   // brass at its light stop
+    // shots, timed on the reference (36.0-40.0 s there)
+    const T51 = 0.87, T52 = 2.0, T53 = 2.5, T54 = 3.5, END = 4.0;
+
+    // ---------------------------------------------------------------- the images (generated for the film, FLUX.1-schnell)
+    // Each is sampled once, when loaded, into a grid of luminance values over a fixed crop; every effect below reads
+    // those grids, so a frame costs only the drawing.
+    const load = (src) => new Promise((res) => { const im = new Image(); im.onload = () => res(im); im.src = src; });
+    const grid = (im, crop, cols, rows) => {
+      const c = document.createElement("canvas"); c.width = cols; c.height = rows;
+      const x = c.getContext("2d", { willReadFrequently: true });
+      x.imageSmoothingEnabled = true; x.imageSmoothingQuality = "high";
+      x.drawImage(im, crop[0], crop[1], crop[2], crop[3], 0, 0, cols, rows);
+      const d = x.getImageData(0, 0, cols, rows).data, L = new Float32Array(cols * rows), T = new Float32Array(cols * rows);
+      for (let i = 0; i < cols * rows; i++) {
+        L[i] = (0.2126 * d[i * 4] + 0.7152 * d[i * 4 + 1] + 0.0722 * d[i * 4 + 2]) / 255;
+        T[i] = ((d[i * 4 + 1] + d[i * 4 + 2]) / 2 - d[i * 4]) / 255;   // how teal: the backdrop, not the person
+      }
+      return { L, T, cols, rows };
+    };
+    let IM = null;
+    // profile: cropped in close on the face and throat (as the reference frames it), shown darker
+    const PROFILE_CROP = [20, 0, 1100, 608];   // wide enough that the backdrop shows on both sides of the head
+    // the stripe cells for 51, as measured on the reference: 16 px across (a 11 px bar and a 5 px gap), 16 px down
+    const CW51 = 16, CH51 = 16;
+    // dancer: a mask of the figure and its pole, cut from the generated image beforehand (the figure is black on a
+    // dark halo: a pixel is figure where it is under a third of the halo's local maximum), cropped round the figure;
+    // 10 x 6 px cells
+    const CW53 = 10, CH53 = 6;
+    // heron: a crop round the bird, centred; 9 px dot cells
+    const HERON_CROP = [470, 80, 650, 650], D54 = 9;
+    // The subjects are cut out by a matting model (hyperframes remove-background, run once on each image); the
+    // dancer's pole and the heron's legs, too thin for it, are joined in from tone. The smear front of 51 is the
+    // photograph pixel-sorted top to bottom by lightness (pixelsort, MIT), made once.
+    const files = ["gen-profile.jpg", "gen-profile-sorted.jpg", "gen-profile-matte.png", "gen-portrait-matte.png", "gen-portrait.jpg", "gen-dancer-mask.png", "gen-bird.jpg", "gen-bird-matte.png"];
+    const ready = Promise.all([...files.map((n) => load(`assets/images/${n}`)), document.fonts.load('700 100px "Space Grotesk"')]).then(([pr, ps, pm, qm, po, dm, bi, bm]) => {
+      IM = {
+        profile: pr, sorted: ps,
+        p51: grid(pr, PROFILE_CROP, 1920 / CW51, Math.ceil(1080 / CH51)),
+        p51m: grid(pm, PROFILE_CROP, 1920 / CW51, Math.ceil(1080 / CH51)),
+        p52m: grid(qm, [0, 0, 1344, 756], 1920 / 4, 1080 / 4),
+        p52: grid(po, [0, 0, 1344, 756], 1920 / 4, 1080 / 4),
+        d53: grid(dm, [0, 0, 960, 540], 1920 / CW53, 1080 / CH53),
+        h54: grid(bi, HERON_CROP, Math.floor(1080 / D54), Math.floor(1080 / D54)),
+        h54m: grid(bm, HERON_CROP, Math.floor(1080 / D54), Math.floor(1080 / D54)),
+      };
+    });
+
+    // ---------------------------------------------------------------- 50 (0-0.87 s): the profile
+    // A cut from black: the photograph comes up over three frames and drifts in, slowly (1 -> 1.04).
+    // the photograph, a shade darker and moodier than generated (the face mostly in shadow, as in the reference)
+    const photo = (w, h) => {
+      g.drawImage(IM.profile, PROFILE_CROP[0], PROFILE_CROP[1], PROFILE_CROP[2], PROFILE_CROP[3], 960 - w / 2, 540 - h / 2, w, h);
+      g.globalCompositeOperation = "multiply"; g.fillStyle = "rgb(150, 150, 150)"; g.fillRect(0, 0, 1920, 1080);
+      g.globalCompositeOperation = "source-over";
+    };
+    const shot50 = (t) => {
+      const z = 1 + 0.04 * (t / T51), w = 1920 * z, h = 1080 * z;
+      g.globalAlpha = clamp01(t * FR / 3);
+      photo(w, h);
+      g.globalAlpha = 1;
+    };
+
+    // ---------------------------------------------------------------- 51 (0.87-2.0 s): stripes take the photograph
+    // Read frame by frame on the reference, four layers, each running left to right:
+    // 1. a smear front: just ahead of the conversion the photograph's columns are dragged into vertical bands (each
+    //    column's own colours, stretched top to bottom, flickering frame to frame);
+    // 2. the person goes black first, its front well ahead of the stripes;
+    // 3. behind the stripe front the backdrop becomes dark vertical bars in 16 px cells, broken: many cells missing,
+    //    and different ones each frame, the breaks thinning out until the bars run whole;
+    // 4. then, top to bottom, the bright part of the backdrop lights up to pale bars, with stray cells flickering
+    //    at the edge of the change, and it settles into a clean pixel silhouette. The dark backdrop stays dark bars.
+    const shot51 = (t) => {
+      const tt = t - T51, z = 1.04 + 0.02 * (tt / (T52 - T51)), f = Math.floor(tt * FR + 1e-6);
+      const { L, T, cols, rows } = IM.p51;
+      const w = 1920 * z, h = 1080 * z;
+      photo(w, h);
+      const bars = (tt / 0.62) * cols, black = ((tt + 0.1) / 0.5) * cols, smearW = 9;
+      // a soft front: ahead of the stripes the photograph darkens gradually over 420 px, so the change does not cut in
+      const fx = Math.max(0, bars * CW51 - 40), soft = g.createLinearGradient(fx, 0, fx + 420, 0);
+      soft.addColorStop(0, "rgba(13, 26, 22, 0.8)"); soft.addColorStop(1, "rgba(13, 26, 22, 0)");
+      g.fillStyle = soft; g.fillRect(fx, 0, 420, 1080);
+      const broken = 0.42 * (1 - smoother((tt - 0.1) / 0.75)) + 0.015;
+      for (let c = 0; c < cols; c++) {
+        const lag = 3 * hash(c * 7 + 1), x = c * CW51;
+        const isBar = c < bars - lag, isBlack = c < black - lag, isSmear = !isBar && c < bars - lag + smearW;
+        if (isSmear) {
+          // the dragged column: the pixel-sorted photograph, each column nudged up or down a little every frame
+          const dy = (hash(c * 13 + f * 7) - 0.5) * 120, sx = PROFILE_CROP[0] + (x / 1920) * PROFILE_CROP[2], sw = (CW51 / 1920) * PROFILE_CROP[2];
+          // strongest at the stripe front, fading out ahead of it
+          g.globalAlpha = 1 - clamp01((c - (bars - lag)) / smearW);
+          g.drawImage(IM.sorted, sx, PROFILE_CROP[1], sw, PROFILE_CROP[3], x, dy - 60, CW51, 1200);
+          g.globalAlpha = 1;
+        }
+        for (let r = 0; r < rows; r++) {
+          const i = r * cols + c, l = L[i], backdrop = IM.p51m.L[i] < 0.5, y = r * CH51;
+          // the person goes black, except inside the smear band, where the dragged pixels show through
+          if (!backdrop) {
+            // the person darkens gradually over a few columns behind its front, not in one step
+            const a = isBar ? 1 : isSmear ? 0 : clamp01((black - lag - c) / 6);
+            if (a > 0) { g.globalAlpha = a; g.fillStyle = INK; g.fillRect(x, y, CW51, CH51); g.globalAlpha = 1; }
+            continue;
+          }
+          if (!isBar) continue;
+          g.fillStyle = INK; g.fillRect(x, y, CW51, CH51);
+          if (hash(i * 3 + f * 17) < broken) continue;   // a broken bar
+          // the bright backdrop lights up top to bottom, a few cells early or late at the edge of the change
+          const light = l >= 0.24 && tt - 0.55 > (r / rows) * 0.38 + 0.08 * (hash(i * 5 + Math.floor(f / 2)) - 0.5);
+          g.fillStyle = light ? CELADON : l >= 0.24 ? VERDIGRIS : SPRUCE;
+          g.fillRect(x, y, CW51 - 5, CH51);
+        }
+      }
+    };
+
+    // ---------------------------------------------------------------- 52 (2.0-2.5 s): the portrait in brass lines
+    // A hard cut to the portrait set entirely in brass lines on ink, in 16 px blocks: every block carries lines, across
+    // where the image is near black (the figure and its streaming hair) and down everywhere else. As in the reference the camera pushes in hard on the figure (1 -> 1.9), the blocks re-sampling
+    // as it goes, so the line pattern keeps re-forming.
+    const B = 16;
+    const shot52 = (t) => {
+      // it opens on the whole figure and pushes in on the head
+      const tt = t - T52, { L, cols, rows } = IM.p52m, P = IM.p52.L, u = smoother(tt / 0.5), z = 1 + 0.55 * u, fx = lerp(960, 1560, u), fy = lerp(540, 380, u);
+      g.fillStyle = INK; g.fillRect(0, 0, 1920, 1080);
+      g.fillStyle = BRASS;
+      for (let by = 0; by < 1080; by += B) for (let bx = 0; bx < 1920; bx += B) {
+        const sx = (bx + B / 2 - 960) / z + fx, sy = (by + B / 2 - 540) / z + fy;
+        const c = Math.floor(sx / 4), r = Math.floor(sy / 4);
+        const inside = c >= 0 && c < cols && r >= 0 && r < rows, m = inside ? L[r * cols + c] : 0, l = inside ? P[r * cols + c] : 1;
+        // the figure (the matte, and within it only what is dark in the photograph, so each strand of hair reads):
+        // thin lines across, reading dark; everything else, the light between strands included: broad lines down
+        if (m > 0.5 && l < 0.3) for (let k = 3; k < B; k += 8) g.fillRect(bx, by + k, B, 2);
+        else for (let k = 1; k < B; k += 8) g.fillRect(bx + k, by, 6, B);
+      }
+    };
+
+    // ---------------------------------------------------------------- 53 (2.5-3.5 s): the dancer in broken lines
+    // Ink, faint vertical lines; the dancer drawn in short bone dashes (one per 10 x 6 px cell of the figure), the pole
+    // in copper dashes along its diagonal. It opens on two frames of a copper field, as the reference opens on red. The
+    // dash pattern is fixed; only the camera moves, pulling back.
+    // the pole in mask pixels x 2 (frame px): cells near this line are copper, the rest of the figure bone
+    const POLE = [[637, 134], [1461, 397]];
+    const nearPole = (x, y) => {
+      const [a, b] = POLE, dx = b[0] - a[0], dy = b[1] - a[1], u = clamp01(((x - a[0]) * dx + (y - a[1]) * dy) / (dx * dx + dy * dy));
+      return Math.hypot(x - a[0] - u * dx, y - a[1] - u * dy) < 22;
+    };
+    const shot53 = (t) => {
+      const tt = t - T53, f = Math.floor(tt * FR / 2), { L, cols, rows } = IM.d53;
+      g.fillStyle = tt < 2 / FR ? COPPER : INK; g.fillRect(0, 0, 1920, 1080);
+      g.fillStyle = "rgba(236, 235, 229, 0.06)";
+      for (let x = 0; x < 1920; x += 14) g.fillRect(x, 0, 2, 1080);
+      g.save();
+      // the camera pulls back through the shot, faster toward the cut (1.08 -> 0.72), as every cut here does
+      const z = 1.08 - 0.36 * Math.pow(clamp01(tt / (T54 - T53)), 1.8);
+      g.translate(960, 540); g.scale(z, z); g.translate(-960, -540);
+      for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+        if (L[r * cols + c] < 0.5) continue;
+        if (nearPole(c * CW53 + CW53 / 2, r * CH53 + CH53 / 2)) continue;   // the pole is drawn as copper lines below
+        // the figure is a mask over a field of dashes that flows: every row of dashes travels sideways at its own steady
+        // speed (alternate rows in opposite directions), so the body shimmers smoothly, never flickers
+        const sp = (r % 2 ? 1 : -1) * (40 + 50 * hash(r * 13)), ph = ((c * CW53 + tt * sp) % 40 + 40) % 40;
+        const len = 22, gap = 18, x0 = c * CW53, y = r * CH53;
+        // the part of this row's dash pattern that falls inside this cell
+        const a0 = Math.max(x0, x0 - ph), a1 = Math.min(x0 + CW53, x0 - ph + len), b0 = Math.max(x0, x0 - ph + len + gap), b1 = Math.min(x0 + CW53, x0 - ph + 2 * len + gap);
+        g.fillStyle = BONE;
+        if (a1 > a0) g.fillRect(a0, y + 1, a1 - a0, 3);
+        if (b1 > b0) g.fillRect(b0, y + 1, b1 - b0, 3);
+      }
+      // the pole as the reference's red band: five clean parallel copper lines along its length, broken here and there
+      // and re-broken every two frames
+      g.fillStyle = COPPER;
+      const [pa, pb] = POLE, len = Math.hypot(pb[0] - pa[0], pb[1] - pa[1]), ux = (pb[0] - pa[0]) / len, uy = (pb[1] - pa[1]) / len;
+      g.save();
+      g.translate(pa[0], pa[1]); g.rotate(Math.atan2(uy, ux));
+      for (let w = -2; w <= 2; w++) for (let d = -50; d < len + 50; d += 22) {
+        if (hash(d * 3 + w * 101) < 0.15) continue;
+        g.fillRect(d, w * 9 - 1.5, 18, 3);
+      }
+      g.restore();
+      g.restore();
+    };
+
+    // ---------------------------------------------------------------- 54 (3.5-4.0 s): the heron in dots
+    // Paper; the heron as an ordered-dither of pine dots (a 4 x 4 Bayer threshold on its tone), centred. The dots grow
+    // and the tone darkens until it is a solid pine silhouette, and in the last frames the silhouette gathers into one
+    // pine square: the next shot's block.
+    const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map((v) => (v + 0.5) / 16);
+    // As the reference: it opens large and noisy (dense mixed dots, the bird a fifth larger than it settles), cleans
+    // up and settles over 0.3 s, fills to a solid silhouette, and then the silhouette itself reshapes into the square:
+    // every row of the bird stretches or shrinks to the square's width and the rows close up to its height.
+    const shot54 = (t) => {
+      const tt = t - T54, u = smoother(tt / 0.3), solid = smoother((tt - 0.26) / 0.08), sq = smoother((tt - 0.34) / 0.14);
+      const { L, cols, rows } = IM.h54, M = IM.h54m.L;
+      g.fillStyle = BONE; g.fillRect(0, 0, 1920, 1080);
+      // it opens close and the camera keeps pulling back (1.35 -> 1), carrying on the dancer's pull-back
+      const z = 1.35 - 0.35 * (1 - Math.pow(1 - clamp01(tt / 0.34), 2)), D = D54 * z, x0 = 960 - (cols * D) / 2, y0 = 540 - (rows * D) / 2, f = Math.floor(tt * FR);
+      if (!IM.h54rows) {
+        const rr = [];
+        for (let r = 0; r < rows; r++) { let a = -1, b = -1; for (let c = 0; c < cols; c++) if (M[r * cols + c] >= 0.5) { if (a < 0) a = c; b = c; } if (a >= 0) rr.push([r, a, b + 1]); }
+        IM.h54rows = rr;
+      }
+      const RR = IM.h54rows, S = 150;
+      if (sq <= 0) {
+        for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+          if (M[r * cols + c] < 0.5) continue;
+          const tone = 0.3 + 0.7 * (1 - L[r * cols + c]);
+          // noise in the threshold that dies away as it settles
+          if (tone + 0.5 * u + solid < BAYER[(r % 4) * 4 + (c % 4)]) continue;
+          const d = D * lerp(0.75, 1.02, Math.max(u, solid));
+          g.fillStyle = solid > 0.5 || tone > 0.55 ? PINE : VERDIGRIS;
+          g.fillRect(x0 + c * D + (D - d) / 2, y0 + r * D + (D - d) / 2, d, d);
+        }
+        return;
+      }
+      // the solid silhouette, row by row, reshaped toward the square
+      g.fillStyle = PINE;
+      const n = RR.length;
+      RR.forEach(([r, a, b], k) => {
+        const yA = y0 + r * D, yB = 540 - S + (k / n) * 2 * S;
+        const xa = lerp(x0 + a * D, 960 - S, sq), xb = lerp(x0 + b * D, 960 + S, sq), y = lerp(yA, yB, sq), h = lerp(D, (2 * S) / n, sq) + 0.6;
+        g.fillRect(xa, y, xb - xa, h);
+      });
+    };
+
+    const draw = (t) => {
+      g.clearRect(0, 0, 1920, 1080);
+      if (!IM) return;
+      if (t < T51) shot50(t);
+      else if (t < T52) shot51(t);
+      else if (t < T53) shot52(t);
+      else if (t < T54) {
+        shot53(t);
+        // the heron opens on the dancer through a paper circle that grows from the middle over the last six frames
+        // (the film's circle motif), carrying the pull-back straight on
+        const iris = smoother((t - (T54 - 6 / FR)) / (6 / FR));
+        if (iris > 0) {
+          g.save(); g.beginPath(); g.arc(960, 540, iris * 1150, 0, 7); g.clip();
+          shot54(T54); g.restore();
+        }
+      }
+      else shot54(t);
+    };
+    const clock = { t: 0 };
+    tl.fromTo(clock, { t: 0 }, { t: END, duration: END, ease: "none", immediateRender: false, onUpdate: () => draw(clock.t) }, 0);
+    window.__hf = window.__hf || {};
+    window.__hf.buildReady = window.__hf.buildReady || {};
+    window.__hf.buildReady["imagery"] = ready.then(() => draw(clock.t));
+
+    window.__timelines["imagery"] = tl;
+  </script>
+</template>

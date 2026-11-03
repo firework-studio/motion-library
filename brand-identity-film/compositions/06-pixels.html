@@ -1,0 +1,126 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: #1c4135;
+    }
+    .abs {
+      position: absolute;
+    }
+    #p-cv {
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+    }
+    #p-grain {
+      inset: 0;
+      opacity: 0.12;
+      mix-blend-mode: multiply;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0.6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    }
+  </style>
+  <div id="root" data-composition-id="pixels" data-width="1920" data-height="1080">
+    <canvas id="p-cv" class="abs" width="1920" height="1080"></canvas>
+    <div id="p-grain" class="abs"></div>
+  </div>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+    const clamp01 = (v) => Math.min(1, Math.max(0, v));
+    const smoother = (u) => { u = clamp01(u); return u * u * u * (u * (u * 6 - 15) + 10); };
+    const hash = (n) => { const v = Math.sin(n * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v); };
+    const BONE = "#ecebe5";
+    const STEP = 2 / 30;   // the cells change every second frame
+
+    const cv = document.getElementById("p-cv");
+    const g = cv.getContext("2d");
+
+    // ---------------------------------------------------------------- the slogan as a cell font
+    // Five cells square, every letter the same width, strokes on the grid: a regular, full cell font (no stepped lean;
+    // the italic that follows supplies the slant)
+    const FONT = {
+      M: ["X...X", "XX.XX", "X.X.X", "X...X", "X...X"],
+      A: [".XXX.", "X...X", "XXXXX", "X...X", "X...X"],
+      K: ["X...X", "X..X.", "XXX..", "X..X.", "X...X"],
+      E: ["XXXXX", "X....", "XXXX.", "X....", "XXXXX"],
+      S: [".XXXX", "X....", ".XXX.", "....X", "XXXX."],
+      H: ["X...X", "X...X", "XXXXX", "X...X", "X...X"],
+      P: ["XXXX.", "X...X", "XXXX.", "X....", "X...."],
+      I: ["XXXXX", "..X..", "..X..", "..X..", "XXXXX"],
+    };
+    const LEAN = [0, 0, 0, 0, 0];
+    const LINES = ["MAKE", "SHAPE", "SHIP"], GAPC = 2, ROWC = 6.5, P = 38;
+    // every glyph: its cell box (width + lean by 5 rows), its target cells, and its place on the cell grid
+    const glyphs = [];
+    LINES.forEach((line, li) => {
+      const w = [...line].reduce((s, ch) => s + FONT[ch][0].length, 0) + GAPC * (line.length - 1);
+      let cx = -w / 2;
+      [...line].forEach((ch) => {
+        const rows = FONT[ch], gw = rows[0].length, on = new Set();
+        rows.forEach((row, r) => [...row].forEach((c, k) => { if (c === "X") on.add(r * 8 + k + LEAN[r]); }));
+        glyphs.push({ gx: cx, gy: (li - 1) * ROWC - 2.5, gw, on, n: glyphs.length });
+        cx += gw + GAPC;
+      });
+    });
+
+    // ---------------------------------------------------------------- the decode
+    // Every glyph starts as a compact lump of cells, like a falling block: a solid rectangle (2-4 wide, 2-3 tall) with a
+    // cell or two stuck on, re-thrown every second frame. Each glyph then switches to its letter in reading order, a
+    // couple of frames after the one before it, and settles over a handful of steps: first with several wrong cells,
+    // then fewer, then none. Fixed seeds, so every frame is the same on every render.
+    const BLOB = 3, SETTLE = 8;
+    const lump = (gl, seed) => {
+      const on = new Set(), w = 2 + Math.floor(hash(seed) * 3), h = 2 + Math.floor(hash(seed + 1) * 2);
+      const x0 = Math.floor(hash(seed + 2) * (gl.gw - w + 1)), y0 = Math.floor(hash(seed + 3) * (5 - h + 1));
+      for (let r = 0; r < h; r++) for (let c = 0; c < w; c++) on.add((y0 + r) * 8 + x0 + c);
+      // one or two cells stuck to a side, so the lump reads as a block piece rather than a plain square
+      const extra = 1 + Math.floor(hash(seed + 4) * 2);
+      for (let e = 0; e < extra; e++) {
+        const side = Math.floor(hash(seed + 5 + e) * 4), k = Math.floor(hash(seed + 7 + e) * Math.max(w, h));
+        const [r, c] = side === 0 ? [y0 - 1, x0 + Math.min(k, w - 1)] : side === 1 ? [y0 + h, x0 + Math.min(k, w - 1)] : side === 2 ? [y0 + Math.min(k, h - 1), x0 - 1] : [y0 + Math.min(k, h - 1), x0 + w];
+        if (r >= 0 && r < 5 && c >= 0 && c < gl.gw) on.add(r * 8 + c);
+      }
+      return on;
+    };
+    const cellsAt = (gl, t) => {
+      // every glyph is a lump for the first 0.13 s; then they turn to letters 0.035 s apart, the last few still
+      // carrying a wrong cell or two at the cut, as in the reference
+      const k = Math.floor((t - 0.13 - 0.035 * gl.n) / STEP) + BLOB;
+      if (k < BLOB) return lump(gl, gl.n * 97 + Math.floor(t / STEP) * 13);
+      const errs = Math.round(6 * (1 - (k - BLOB) / SETTLE));
+      const on = new Set(gl.on);
+      for (let e = 0; e < errs; e++) {
+        const seed = gl.n * 53 + k * 7 + e;
+        const id = Math.floor(hash(seed) * 5) * 8 + Math.floor(hash(seed + 0.5) * gl.gw);
+        if (on.has(id)) on.delete(id); else on.add(id);
+      }
+      return on;
+    };
+    // the camera eases back as it decodes (cells 38 -> 30 px), then drifts in a touch
+    const ZOOM = (t) => (1 - 0.21 * smoother(t / 0.5)) * (1 + 0.04 * smoother((t - 0.5) / 0.5));
+    const draw = (t) => {
+      g.clearRect(0, 0, 1920, 1080);
+      const gr = g.createLinearGradient(0, 0, 1920, 1080);
+      gr.addColorStop(0, "#2b5545"); gr.addColorStop(0.55, "#1c4135"); gr.addColorStop(1, "#16382d");
+      g.fillStyle = gr;
+      g.fillRect(0, 0, 1920, 1080);
+      const p = P * ZOOM(t), s = p * 0.88;
+      g.fillStyle = BONE;
+      glyphs.forEach((gl) => {
+        cellsAt(gl, t).forEach((id) => {
+          const r = Math.floor(id / 8), c = id % 8;
+          const x = 960 + (gl.gx + c) * p, y = 540 + (gl.gy + r) * p;
+          g.beginPath(); g.roundRect(x, y, s, s, 2); g.fill();
+        });
+      });
+    };
+    const clock = { t: 0 };
+    tl.fromTo(clock, { t: 0 }, { t: 1, duration: 1, ease: "none", immediateRender: false, onUpdate: () => draw(clock.t) }, 0);
+    draw(0);
+
+    window.__timelines["pixels"] = tl;
+  </script>
+</template>

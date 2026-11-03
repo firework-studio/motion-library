@@ -1,0 +1,310 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: #ecebe5;
+    }
+    .abs {
+      position: absolute;
+    }
+    #c2-gl {
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+    }
+    #c2-grain {
+      inset: 0;
+      opacity: 0.12;
+      mix-blend-mode: multiply;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0.6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    }
+  </style>
+  <div id="root" data-composition-id="cubes2" data-width="1920" data-height="1080">
+    <canvas id="c2-gl" class="abs" width="1920" height="1080"></canvas>
+    <div id="c2-grain" class="abs"></div>
+  </div>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+    const clamp01 = (v) => Math.min(1, Math.max(0, v));
+    const sm = (u) => { u = clamp01(u); return u * u * (3 - 2 * u); };
+    const smoother = (u) => { u = clamp01(u); return u * u * u * (u * (u * 6 - 15) + 10); };
+
+    // ---------------------------------------------------------------- the scene: real cubes on a fixed grid
+    // Cubes are 1 x 1 x 1 units on a grid 3.7 units across by 4.3 down: at the start only the row of four is in
+    // frame (the next cubes in the row and the rows above and below sit just past the frame edges), so the grid enters from the edges.
+    // The camera has a long lens (20 degree field) and starts 20 units back, where one cube face reads exactly as the
+    // 153 px square the previous shot ends on, so the hand-over is seamless. The grid is there from the start; the
+    // camera only ever moves back, so neighbours come into view from the edges as the frame widens.
+    THREE.ColorManagement.legacyMode = false;   // colours below are sRGB, so they match the 2D shot exactly
+    const canvas = document.getElementById("c2-gl");
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
+    renderer.setPixelRatio(1);
+    renderer.setSize(1920, 1080, false);
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(20, 1920 / 1080, 0.1, 1000);
+    const D0 = 1080 / (153 * 2 * Math.tan((10 * Math.PI) / 180));   // 153 px per unit at the start
+
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFShadowMap;   // PCF honours shadow.radius: a soft, contact-like shadow
+
+    // light: a soft key from the upper left and front that casts a soft shadow onto the paper behind, a sky/ground
+    // fill, and a faint cool rim from the lower right that picks out the bevels
+    const hemi = new THREE.HemisphereLight(0xf4f5f0, 0x50605a, 0.05);
+    scene.add(hemi);
+    const key = new THREE.DirectionalLight(0xffffff, 0.12);
+    key.position.set(-2.2, 3.0, 12);   // nearly frontal: the shadow sits close under the lower right edge
+    key.castShadow = true;
+    key.shadow.mapSize.set(4096, 4096);
+    key.shadow.radius = 14;
+    key.shadow.blurSamples = 16;
+    key.shadow.bias = -0.0004;
+    scene.add(key, key.target);
+    const rim = new THREE.DirectionalLight(0xdfe9e3, 0.05);
+    rim.position.set(8, -4, 5);
+    scene.add(rim);
+    // a soft fill from the right so the shaded sides stay deep green rather than going black
+    const fill = new THREE.DirectionalLight(0x7fc4a6, 0.16);   // tinted with the green, so a face turning through it stays green, not grey
+    fill.position.set(6, 1, 3);
+    scene.add(fill);
+    // a warm pool of light just in front of the upper left of the row: it lays the same soft upper-left-to-lower-right
+    // falloff across each face as the 2D square had, so the hand-over is seamless; far out it reads as a gentle pool
+    const pool = new THREE.PointLight(0xfffaf5, 1.4, 0, 2);
+    pool.position.set(-0.75, 0.75, 0.95);
+    scene.add(pool);
+    // the paper: invisible except for the shadows it catches, just behind the cubes
+    const paper = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.ShadowMaterial({ opacity: 0.0 }));
+    paper.position.z = -0.52;
+    paper.receiveShadow = true;
+    paper.material.depthWrite = false;
+    scene.add(paper);
+    // the letters stand on a plane 13 units forward; a second shadow catcher sits just behind them there, so their
+    // shadows fall close under them instead of far off on the grid's plane
+    const paper2 = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.ShadowMaterial({ opacity: 0.0, depthWrite: false }));
+    paper2.position.z = 13 - 0.52;
+    paper2.receiveShadow = true;
+    scene.add(paper2);
+
+    // a cube with softly rounded edges (2.5 % bevel), so light runs along every edge: it reads as an object
+    const roundedCube = (b = 0.04) => {
+      const w = 1 - 2 * b, r = 0.035;
+      const sh = new THREE.Shape();
+      sh.moveTo(-w / 2 + r, -w / 2); sh.lineTo(w / 2 - r, -w / 2); sh.quadraticCurveTo(w / 2, -w / 2, w / 2, -w / 2 + r);
+      sh.lineTo(w / 2, w / 2 - r); sh.quadraticCurveTo(w / 2, w / 2, w / 2 - r, w / 2);
+      sh.lineTo(-w / 2 + r, w / 2); sh.quadraticCurveTo(-w / 2, w / 2, -w / 2, w / 2 - r);
+      sh.lineTo(-w / 2, -w / 2 + r); sh.quadraticCurveTo(-w / 2, -w / 2, -w / 2 + r, -w / 2);
+      const g = new THREE.ExtrudeGeometry(sh, { depth: w, bevelEnabled: true, bevelThickness: b, bevelSize: b, bevelSegments: 5, curveSegments: 6 });
+      g.translate(0, 0, -w / 2);
+      g.computeVertexNormals();
+      return g;
+    };
+    const box = roundedCube();
+    const pine = new THREE.MeshStandardMaterial({ color: new THREE.Color("#0e4a3b"), roughness: 0.48, metalness: 0.0 });
+    // a small photo studio for reflections: a dim room with one large soft box above left and a thin strip light on the
+    // right, baked into an environment map. As the letters build the cubes turn from matte paint into satin anodised
+    // metal: deep pine with soft, long highlights running along every bevel, instead of flat plastic.
+    const studio = (() => {
+      const env = new THREE.Scene();
+      const room = new THREE.Mesh(new THREE.SphereGeometry(50, 32, 16), new THREE.MeshBasicMaterial({ color: 0x1a1d1b, side: THREE.BackSide }));
+      env.add(room);
+      const box = (w, h, c, x, y, z) => {
+        const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color: c, side: THREE.DoubleSide }));
+        m.position.set(x, y, z); m.lookAt(0, 0, 0); env.add(m);
+      };
+      // lights placed at grazing angles: the flat fronts face a dark room and stay deep, while every bevel and
+      // rounded edge catches a light, so the form is drawn by highlights
+      box(46, 18, 0xfff4e8, -6, 40, 6);     // a long soft box overhead, warm: lights the top edges
+      box(4, 36, 0xe2efe8, 42, 4, 4);       // a thin strip on the right, cool: a line down the right edges
+      box(30, 6, 0x6f7a74, -30, -18, 6);    // a faint bounce low left
+      const pm = new THREE.PMREMGenerator(renderer);
+      const tex = pm.fromScene(env, 0.04).texture;
+      pm.dispose();
+      return tex;
+    })();
+    const PINE_DEEP = new THREE.Color("#0a5440");   // a touch more saturated, to hold the same green under even light
+    pine.envMap = studio;
+    pine.envMapIntensity = 0;
+    // a fine, even grain in the surface (a bump map of noise), like powder-coated metal or fired glaze: it breaks
+    // the flat sheen that reads as plastic, and keeps the colour itself unchanged
+    pine.bumpMap = (() => {
+      const c = document.createElement("canvas"); c.width = c.height = 256;
+      const x = c.getContext("2d"), im = x.createImageData(256, 256);
+      let seed = 7;
+      const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+      for (let i = 0; i < 256 * 256; i++) { const v = 110 + rnd() * 36; im.data.set([v, v, v, 255], i * 4); }
+      x.putImageData(im, 0, 0);
+      const tx = new THREE.CanvasTexture(c); tx.wrapS = tx.wrapT = THREE.RepeatWrapping; tx.repeat.set(1.5, 1.5);
+      return tx;
+    })();
+    pine.bumpScale = 0;
+    const cube = () => {
+      const m = new THREE.Mesh(box, pine);
+      m.castShadow = true;
+      scene.add(m);
+      return m;
+    };
+
+    const PITCH = 3.55;   // across: the four span about 1780 px, so even with perspective none touches the frame edge
+    const ROW_PITCH = 4.3;   // down: the next rows start just past the frame edge, so at first only the four are seen
+    const rowX = [-1.5, -0.5, 0.5, 1.5].map((k) => k * PITCH);
+    const four = rowX.map((x) => ({ m: cube(), x }));   // all pine: the four read as one family
+
+    // the rest of the grid, already standing, each cube its own object so any of them can be picked up later
+    const COLS = 34, ROWS = 17;   // an even column count puts the row of four on the grid (x = ±1.775, ±5.325)
+    const cells = [];
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+      const x = (c - COLS / 2 + 0.5) * PITCH, y = (r - (ROWS - 1) / 2) * ROW_PITCH;
+      const fi = Math.abs(y) < 0.01 ? rowX.findIndex((rx) => Math.abs(rx - x) < 0.01) : -1;
+      if (fi >= 0) { cells.push({ x, y, m: four[fi].m, four: true }); continue; }
+      const m = cube();
+      m.position.set(x, y, 0);
+      cells.push({ x, y, m, four: false });
+    }
+
+    // ---------------------------------------------------------------- the letters (from 1.95 s), built by the grid itself
+    // Three bold capital Ts (6 x 8 modules, a module is one cube, pitch 1.107 units = 64 px) side by side. Every module
+    // is one particular cube of the grid: it is picked up out of the plane, moved along one axis, then the other, and
+    // set down, like a precise machine. Cubes no letter needs slide out of frame along their row. Once a letter is
+    // complete its modules turn over one by one and come up in their style: cubes (left), the Tilo tile (middle),
+    // round discs (right). The camera swings a little off axis while they build, so the depth reads.
+    const T = ["XXXXXX", "XXXXXX", "..XX..", "..XX..", "..XX..", "..XX..", "..XX..", "..XX.."];
+    const MP = 64 / 57.8, LW = 5 * MP + 1, GAP = 1.6;
+    const left0 = -(3 * LW + 2 * GAP) / 2 + 0.5, top0 = (7 * MP + 1) / 2 - 0.5;
+    const mods = [];
+    for (let L = 0; L < 3; L++) T.forEach((row, r) => row.split("").forEach((ch, c) => {
+      if (ch === "X") mods.push({ L, r, c, tx: left0 + L * (LW + GAP) + c * MP, ty: top0 - r * MP });
+    }));
+    // supply: nearest cubes first, visible ones before those beyond the frame edge (half view 16.6 x 9.3 units)
+    const onScreen = (q) => Math.abs(q.x) < 16.6 && Math.abs(q.y) < 9.3;
+    [...mods].sort((a, b) => a.r - b.r || a.L - b.L || a.c - b.c).forEach((md) => {
+      let best = null, bd = 1e9;
+      cells.forEach((q) => {
+        if (q.taken) return;
+        const d = Math.abs(q.x - md.tx) + Math.abs(q.y - md.ty) + (onScreen(q) ? 0 : 60);
+        if (d < bd) { bd = d; best = q; }
+      });
+      best.taken = true; md.cell = best;
+    });
+    // a raster, like a printer head: row by row from the top, and across all three letters within a row
+    // faster and more decisive; each leg starts before the last one has quite stopped (OVL), so a module never comes to
+    // a dead stop mid-path: it reads as one quick, deliberate move with crisp corners
+    // The letters are built on a plane 13 units in front of the grid, so the camera never has to push in after
+    // pulling back (no reversal, no stall): each module lifts straight out of the grid toward the viewer, growing by
+    // perspective, then moves across and down into place. They start while the pull-back is still settling.
+    const LT = 1.5, STEP = 0.024, LIFT = 0.34, MOVE = 0.3, Z = 13, OVL = 0.35;
+    [...mods].sort((a, b) => a.r - b.r || a.L - b.L || a.c - b.c).forEach((md, n) => {
+      md.t0 = LT + n * STEP;
+      md.yFirst = Math.abs(md.cell.y - md.ty) > Math.abs(md.cell.x - md.tx);
+      // the turns are not in step: each module waits its own time after landing, turns about its own axis (up-down
+      // or left-right), in its own direction, at its own pace
+      const h1 = Math.abs(Math.sin(n * 12.9898) * 43758.5453) % 1, h2 = Math.abs(Math.sin(n * 78.233) * 12345.678) % 1;
+      md.flip = md.t0 + LIFT * (1 - OVL) + MOVE * (1 - OVL) + MOVE + 0.05 + h1 * 0.3;
+      md.fdur = 0.26 + h2 * 0.16;
+      md.axis = h2 > 0.5 ? "x" : "y";
+      md.dir = h1 > 0.5 ? 1 : -1;
+    });
+    const leaving = cells.filter((q) => onScreen(q) && !q.taken);
+    leaving.forEach((q, n) => { q.t0 = LT + 0.05 + (Math.abs(q.y) / 9.3) * 0.5 + (n % 3) * 0.05; q.ex = q.x < 0 ? -22 : 22; });
+    const io = (u) => { u = clamp01(u); return u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2; };
+
+    // the two other styles, turned half a turn so they read right after the module's own half turn
+    const tileGeo = (() => {
+      const b = 0.04, w = 1 - 2 * b, h = w / 2, r = 0.035;
+      const sh = new THREE.Shape();
+      sh.moveTo(-h + r, -h); sh.lineTo(h - r, -h); sh.quadraticCurveTo(h, -h, h, -h + r);
+      sh.lineTo(h, 0); sh.absarc(0, 0, h, 0, Math.PI / 2, false);
+      sh.lineTo(-h + r, h); sh.quadraticCurveTo(-h, h, -h, h - r);
+      sh.lineTo(-h, -h + r); sh.quadraticCurveTo(-h, -h, -h + r, -h);
+      const g = new THREE.ExtrudeGeometry(sh, { depth: w, bevelEnabled: true, bevelThickness: b, bevelSize: b, bevelSegments: 5, curveSegments: 24 });
+      g.translate(0, 0, -w / 2); g.computeVertexNormals();
+      return g;
+    })();
+    // pre-turned copies: a module that turns half over about x (or y) shows the face that was at the back
+    const tileY = tileGeo.clone().rotateY(Math.PI), tileX = tileGeo.clone().rotateX(Math.PI);
+    const discGeo = (() => { const g = new THREE.CylinderGeometry(0.5, 0.5, 1, 64); g.rotateX(Math.PI / 2); g.rotateY(Math.PI); return g; })();
+
+    const FLAT = (t) => smoother((t - 4.8) / 0.2);
+    const placeLetters = (t) => {
+      leaving.forEach((q) => { const u = io((t - q.t0) / 0.6); q.m.position.x = q.x + (q.ex - q.x) * u; });
+      mods.forEach((md) => {
+        const m = md.cell.m, t0 = md.t0;
+        if (t < t0) return;
+        const ta = t0 + LIFT * (1 - OVL), tb = ta + MOVE * (1 - OVL);
+        const up = io((t - t0) / LIFT), a = io((t - ta) / MOVE), b = io((t - tb) / MOVE), down = 0;
+        const sx = md.cell.x, sy = md.cell.y;
+        let x, y;
+        if (md.yFirst) { y = sy + (md.ty - sy) * a; x = sx + (md.tx - sx) * b; } else { x = sx + (md.tx - sx) * a; y = sy + (md.ty - sy) * b; }
+        m.position.set(x, y, Z * (up - down));
+        // the flip: half a turn about its own axis; past the quarter it is the new piece (a rounded cube looks the
+        // same at any quarter turn, so the four that turned earlier start square)
+        const f = io((t - md.flip) / md.fdur), ang = md.dir * f * Math.PI;
+        if (md.axis === "x") m.rotation.set(ang, 0, 0); else m.rotation.set(0, ang, 0);
+        m.geometry = f > 0.5 ? (md.L === 0 ? box : md.L === 1 ? (md.axis === "x" ? tileX : tileY) : discGeo) : box;
+        // 4.8-5.0 s: the letters press flat into the plane they stand on (their sides and shadows go), so the next
+        // shot can carry on with them as flat 2D pieces
+        m.scale.set(1, 1, 1 - 0.96 * FLAT(t));
+      });
+    };
+
+    // ---------------------------------------------------------------- timing (composition seconds, 1.8 s in all)
+    // 0-0.36 the square turns into a cube; 0.36-0.62 it rests; 0.62-1.25 it deals out three copies; 1.0-1.51 all four
+    // turn; 1.1-1.72 the camera pulls back until the grid fills the frame; it rests on the grid to 1.8 (6.0 s)
+    const backOut = (u) => { u = clamp01(u); const c1 = 1.25, c3 = c1 + 1; return 1 + c3 * Math.pow(u - 1, 3) + c1 * Math.pow(u - 1, 2); };
+    // The deal: ordered, but not mechanical. Each copy has its own start, pace, a small lift on the way out and a
+    // slight yaw that it settles out of, so the row assembles like hands placing objects rather than a machine
+    // stamping them. [slot, start, duration, lift (units), yaw (degrees)]
+    const DEAL = [[1, 0.62, 0.5, 0, 0], [2, 0.66, 0.44, 0.10, -9], [0, 0.75, 0.5, 0.14, 7], [3, 0.83, 0.42, 0.08, -6]];
+    // pulled back to 53 units: a cube reads 58 px and the grid fills the frame (as the reference at 4.95 s)
+    const DIST = (t) => D0 + (53 - D0) * smoother((t - 1.1) / 0.62);
+    const place = (t) => {
+      // 0-0.36 the square turns and shows it is a cube; it rests 0.36-0.62, then deals out its copies
+      const turned1 = -smoother((t - 0.0) / 0.36) * Math.PI / 2;
+      DEAL.forEach(([i, t0, dur, lift, yaw]) => {
+        const f = four[i], u = (t - t0) / dur, k = backOut(u), e = sm(u * 1.3);
+        const lead = i === 1;
+        f.m.visible = lead || t >= t0;
+        // a shallow arc: the copy lifts as it leaves the lead cube and lands back on the row
+        const arc = Math.sin(Math.PI * clamp01(u)) * lift;
+        f.m.position.set(f.x * k, arc, lead ? 0 : -0.45 * (1 - e));
+        f.m.scale.setScalar(lead ? 1 : 0.94 + 0.06 * e);
+        // after the row has settled, all four turn a quarter, a beat apart and not quite in step
+        const turn = smoother((t - 1.0 - [0.05, 0, 0.09, 0.13][i]) / 0.38);
+        f.m.rotation.set(0, (lead ? turned1 : (yaw * Math.PI / 180) * (1 - sm(u))) - turn * Math.PI / 2, 0);
+      });
+      // the shadow arrives with the depth: none on the flat square, full once it has turned
+      paper.material.opacity = 0.11 * sm((t - 0.05) / 0.55) * (1 - sm((t - 1.5) / 0.4));
+      paper2.material.opacity = 0.11 * sm((t - 3.3) / 0.5) * (1 - FLAT(t));
+      placeLetters(t);
+      // while the letters build, the camera swings a little off axis (yaw 11 deg, pitch 6 deg) so the depth reads
+      // and moves in, 53 -> 40 units, so the letters fill more of the frame (a third larger)
+      // swings off axis while they build and comes back square-on before they finish, so the letters face us
+      const sw = smoother((t - 1.6) / 0.9) * (1 - smoother((t - 2.7) / 1.1));
+      const lightUp = smoother((t - 1.5) / 1.5);
+      const d = DIST(t);
+      // the light opens up with it, so the whole row of letters is lit, not just the centre the first cube sat in
+      // the light spreads evenly over the whole row, at the level the first cube had at its centre, so the green stays
+      // the same green; the finish turns from smooth to finely grained, with only a soft sheen on the bevels
+      hemi.intensity = 0.05 + 0.03 * lightUp; key.intensity = 0.12 + 0.3 * lightUp; pool.intensity = 1.4 * (1 - lightUp);
+      pine.roughness = 0.48 + 0.12 * lightUp; pine.envMapIntensity = 0.6 * lightUp; pine.bumpScale = 0.012 * lightUp;
+      pine.color.set("#0e4a3b").lerp(PINE_DEEP, lightUp);
+      const yaw = -0.19 * sw, pitch = 0.105 * sw;
+      camera.position.set(Math.sin(yaw) * Math.cos(pitch) * d, Math.sin(pitch) * d, Math.cos(yaw) * Math.cos(pitch) * d);
+      camera.lookAt(0, 0, 0);
+      // keep the shadow map fitted to what is in frame, so shadows stay crisp close up and cover the grid far out
+      const half = d * Math.tan((10 * Math.PI) / 180) * (1920 / 1080) * 1.15 + 2;
+      const sc = key.shadow.camera;
+      sc.left = -half; sc.right = half; sc.top = half; sc.bottom = -half; sc.near = 1; sc.far = 60;
+      sc.updateProjectionMatrix();
+      renderer.render(scene, camera);
+    };
+    const clock = { t: 0 };
+    tl.fromTo(clock, { t: 0 }, { t: 5.05, duration: 5.05, ease: "none", immediateRender: false, onUpdate: () => place(clock.t) }, 0);
+    place(0);
+
+    window.__timelines["cubes2"] = tl;
+  </script>
+</template>

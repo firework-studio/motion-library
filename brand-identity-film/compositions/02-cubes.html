@@ -1,0 +1,173 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: #ecebe5;
+    }
+    .abs {
+      position: absolute;
+    }
+    #c-gl {
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+    }
+    #c-grain {
+      inset: 0;
+      opacity: 0.12;
+      mix-blend-mode: multiply;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0.6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    }
+  </style>
+  <div id="root" data-composition-id="cubes" data-width="1920" data-height="1080">
+    <canvas id="c-gl" class="abs" width="1920" height="1080"></canvas>
+    <div id="c-grain" class="abs"></div>
+  </div>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+    const clamp01 = (v) => Math.min(1, Math.max(0, v));
+    const sm = (u) => { u = clamp01(u); return u * u * (3 - 2 * u); };
+    const smoother = (u) => { u = clamp01(u); return u * u * u * (u * (u * 6 - 15) + 10); };
+
+    // ---------------------------------------------------------------- the scene: real cubes on a fixed grid
+    // Cubes are 1 x 1 x 1 units on a grid 3.7 units across by 4.3 down: at the start only the row of four is in
+    // frame (the next cubes in the row and the rows above and below sit just past the frame edges), so the grid enters from the edges.
+    // The camera has a long lens (20 degree field) and starts 20 units back, where one cube face reads exactly as the
+    // 153 px square the previous shot ends on, so the hand-over is seamless. The grid is there from the start; the
+    // camera only ever moves back, so neighbours come into view from the edges as the frame widens.
+    THREE.ColorManagement.legacyMode = false;   // colours below are sRGB, so they match the 2D shot exactly
+    const canvas = document.getElementById("c-gl");
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
+    renderer.setPixelRatio(1);
+    renderer.setSize(1920, 1080, false);
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(20, 1920 / 1080, 0.1, 1000);
+    const D0 = 1080 / (153 * 2 * Math.tan((10 * Math.PI) / 180));   // 153 px per unit at the start
+
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFShadowMap;   // PCF honours shadow.radius: a soft, contact-like shadow
+
+    // light: a soft key from the upper left and front that casts a soft shadow onto the paper behind, a sky/ground
+    // fill, and a faint cool rim from the lower right that picks out the bevels
+    scene.add(new THREE.HemisphereLight(0xf4f5f0, 0x50605a, 0.05));
+    const key = new THREE.DirectionalLight(0xffffff, 0.12);
+    key.position.set(-2.2, 3.0, 12);   // nearly frontal: the shadow sits close under the lower right edge
+    key.castShadow = true;
+    key.shadow.mapSize.set(4096, 4096);
+    key.shadow.radius = 14;
+    key.shadow.blurSamples = 16;
+    key.shadow.bias = -0.0004;
+    scene.add(key, key.target);
+    const rim = new THREE.DirectionalLight(0xdfe9e3, 0.05);
+    rim.position.set(8, -4, 5);
+    scene.add(rim);
+    // a soft fill from the right so the shaded sides stay deep green rather than going black
+    const fill = new THREE.DirectionalLight(0x7fc4a6, 0.16);   // tinted with the green, so a face turning through it stays green, not grey
+    fill.position.set(6, 1, 3);
+    scene.add(fill);
+    // a warm pool of light just in front of the upper left of the row: it lays the same soft upper-left-to-lower-right
+    // falloff across each face as the 2D square had, so the hand-over is seamless; far out it reads as a gentle pool
+    const pool = new THREE.PointLight(0xfffaf5, 1.4, 0, 2);
+    pool.position.set(-0.75, 0.75, 0.95);
+    scene.add(pool);
+    // the paper: invisible except for the shadows it catches, just behind the cubes
+    const paper = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.ShadowMaterial({ opacity: 0.0 }));
+    paper.position.z = -0.52;
+    paper.receiveShadow = true;
+    scene.add(paper);
+
+    // a cube with softly rounded edges (2.5 % bevel), so light runs along every edge: it reads as an object
+    const roundedCube = (b = 0.04) => {
+      const w = 1 - 2 * b, r = 0.035;
+      const sh = new THREE.Shape();
+      sh.moveTo(-w / 2 + r, -w / 2); sh.lineTo(w / 2 - r, -w / 2); sh.quadraticCurveTo(w / 2, -w / 2, w / 2, -w / 2 + r);
+      sh.lineTo(w / 2, w / 2 - r); sh.quadraticCurveTo(w / 2, w / 2, w / 2 - r, w / 2);
+      sh.lineTo(-w / 2 + r, w / 2); sh.quadraticCurveTo(-w / 2, w / 2, -w / 2, w / 2 - r);
+      sh.lineTo(-w / 2, -w / 2 + r); sh.quadraticCurveTo(-w / 2, -w / 2, -w / 2 + r, -w / 2);
+      const g = new THREE.ExtrudeGeometry(sh, { depth: w, bevelEnabled: true, bevelThickness: b, bevelSize: b, bevelSegments: 5, curveSegments: 6 });
+      g.translate(0, 0, -w / 2);
+      g.computeVertexNormals();
+      return g;
+    };
+    const box = roundedCube();
+    const pine = new THREE.MeshStandardMaterial({ color: new THREE.Color("#0e4a3b"), roughness: 0.48, metalness: 0.0 });
+    const cube = () => {
+      const m = new THREE.Mesh(box, pine);
+      m.castShadow = true;
+      scene.add(m);
+      return m;
+    };
+
+    const PITCH = 3.55;   // across: the four span about 1780 px, so even with perspective none touches the frame edge
+    const ROW_PITCH = 4.3;   // down: the next rows start just past the frame edge, so at first only the four are seen
+    const rowX = [-1.5, -0.5, 0.5, 1.5].map((k) => k * PITCH);
+    const four = rowX.map((x) => ({ m: cube(), x }));   // all pine: the four read as one family
+
+    // the rest of the grid, already standing, as one instanced mesh (the four row positions are left empty)
+    const COLS = 34, ROWS = 17;   // an even column count puts the row of four on the grid (x = ±1.775, ±5.325)
+    const inst = new THREE.InstancedMesh(box, pine, COLS * ROWS);
+    inst.castShadow = true;
+    {
+      const o = new THREE.Object3D();
+      let n = 0;
+      for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+        const x = (c - COLS / 2 + 0.5) * PITCH, y = (r - (ROWS - 1) / 2) * ROW_PITCH;
+        if (Math.abs(y) < 0.01 && rowX.some((rx) => Math.abs(rx - x) < 0.01)) continue;
+        o.position.set(x, y, 0);
+        o.updateMatrix();
+        inst.setMatrixAt(n++, o.matrix);
+      }
+      inst.count = n;
+      inst.instanceMatrix.needsUpdate = true;
+    }
+    scene.add(inst);
+
+    // ---------------------------------------------------------------- timing (composition seconds, 1.8 s in all)
+    // 0-0.36 the square turns into a cube; 0.36-0.62 it rests; 0.62-1.25 it deals out three copies; 1.0-1.51 all four
+    // turn; 1.1-1.72 the camera pulls back until the grid fills the frame; it rests on the grid to 1.8 (6.0 s)
+    const backOut = (u) => { u = clamp01(u); const c1 = 1.25, c3 = c1 + 1; return 1 + c3 * Math.pow(u - 1, 3) + c1 * Math.pow(u - 1, 2); };
+    // The deal: ordered, but not mechanical. Each copy has its own start, pace, a small lift on the way out and a
+    // slight yaw that it settles out of, so the row assembles like hands placing objects rather than a machine
+    // stamping them. [slot, start, duration, lift (units), yaw (degrees)]
+    const DEAL = [[1, 0.62, 0.5, 0, 0], [2, 0.66, 0.44, 0.10, -9], [0, 0.75, 0.5, 0.14, 7], [3, 0.83, 0.42, 0.08, -6]];
+    // pulled back to 53 units: a cube reads 58 px and the grid fills the frame (as the reference at 4.95 s)
+    const DIST = (t) => D0 + (53 - D0) * smoother((t - 1.1) / 0.62);
+    const place = (t) => {
+      // 0-0.36 the square turns and shows it is a cube; it rests 0.36-0.62, then deals out its copies
+      const turned1 = -smoother((t - 0.0) / 0.36) * Math.PI / 2;
+      DEAL.forEach(([i, t0, dur, lift, yaw]) => {
+        const f = four[i], u = (t - t0) / dur, k = backOut(u), e = sm(u * 1.3);
+        const lead = i === 1;
+        f.m.visible = lead || t >= t0;
+        // a shallow arc: the copy lifts as it leaves the lead cube and lands back on the row
+        const arc = Math.sin(Math.PI * clamp01(u)) * lift;
+        f.m.position.set(f.x * k, arc, lead ? 0 : -0.45 * (1 - e));
+        f.m.scale.setScalar(lead ? 1 : 0.94 + 0.06 * e);
+        // after the row has settled, all four turn a quarter, a beat apart and not quite in step
+        const turn = smoother((t - 1.0 - [0.05, 0, 0.09, 0.13][i]) / 0.38);
+        f.m.rotation.set(0, (lead ? turned1 : (yaw * Math.PI / 180) * (1 - sm(u))) - turn * Math.PI / 2, 0);
+      });
+      // the shadow arrives with the depth: none on the flat square, full once it has turned
+      paper.material.opacity = 0.11 * sm((t - 0.05) / 0.55);
+      const d = DIST(t);
+      camera.position.set(0, 0, d);
+      camera.lookAt(0, 0, 0);
+      // keep the shadow map fitted to what is in frame, so shadows stay crisp close up and cover the grid far out
+      const half = d * Math.tan((10 * Math.PI) / 180) * (1920 / 1080) * 1.15 + 2;
+      const sc = key.shadow.camera;
+      sc.left = -half; sc.right = half; sc.top = half; sc.bottom = -half; sc.near = 1; sc.far = 60;
+      sc.updateProjectionMatrix();
+      renderer.render(scene, camera);
+    };
+    const clock = { t: 0 };
+    tl.fromTo(clock, { t: 0 }, { t: 1.8, duration: 1.8, ease: "none", immediateRender: false, onUpdate: () => place(clock.t) }, 0);
+    place(0);
+
+    window.__timelines["cubes"] = tl;
+  </script>
+</template>

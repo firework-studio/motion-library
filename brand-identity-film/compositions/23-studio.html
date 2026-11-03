@@ -1,0 +1,111 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Space Grotesk";
+      font-weight: 300 700;
+      src: url("assets/fonts/SpaceGrotesk-Variable.ttf") format("truetype");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: #ecebe5;
+    }
+    #st-cv {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+    }
+    #st-grain {
+      position: absolute;
+      inset: 0;
+      opacity: 0.12;
+      mix-blend-mode: multiply;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0.6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    }
+  </style>
+  <div id="root" data-composition-id="studio" data-width="1920" data-height="1080">
+    <canvas id="st-cv" width="1920" height="1080"></canvas>
+    <div id="st-grain"></div>
+  </div>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+    const clamp01 = (v) => Math.min(1, Math.max(0, v));
+    const smoother = (u) => { u = clamp01(u); return u * u * u * (u * (u * 6 - 15) + 10); };
+    const lerp = (a, b, u) => a + (b - a) * u;
+    const hash = (n) => { const v = Math.sin(n * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v); };
+    const backOut = (u) => { u = clamp01(u); const c1 = 1.5, c3 = c1 + 1; return 1 + c3 * Math.pow(u - 1, 3) + c1 * Math.pow(u - 1, 2); };
+    const FR = 30, END = 2.6;
+    const cv = document.getElementById("st-cv");
+    const g = cv.getContext("2d");
+    const INK = "#0d1a16", PINE = ["#2b5545", "#1c4135", "#16382d"], VERD = "#4f8a78";
+    const lit = (x, y, w, h, c) => { const gr = g.createLinearGradient(x, y, x + w, y + h); gr.addColorStop(0, c[0]); gr.addColorStop(0.55, c[1]); gr.addColorStop(1, c[2]); return gr; };
+
+    // ---------------------------------------------------------------- the studio signs the film (2.6 s)
+    // The film ends on the Tilo tile (153 px, centred). The client's mark hands over to the studio's: the tile holds,
+    // then draws in to a point where the Firework mark will stand, the mark springs up from that point, and the
+    // studio's name decodes beside it letter by letter, as the film's own type decodes. One thing at a time.
+    const HOLD = 0.3, SHRINK = 0.42, MARK0 = 0.66, NAME0 = 1.0, STEP = 0.045, SETTLE = 0.16;
+    const NAME = "Firework Studio", FS = 100, MK = 176, GAP = 40;
+    const GLYPHS = "ABCDEFGHJKLMNPRSTUVWXYZ0123456789#*+";
+    let LAY = null, MARK = null;
+    const layout = () => {
+      g.font = `600 ${FS}px "Space Grotesk"`;
+      g.letterSpacing = `${-0.01 * FS}px`;
+      const tw = g.measureText(NAME).width, left = 960 - (MK + GAP + tw) / 2;
+      const chars = []; let x = left + MK + GAP;
+      for (let i = 0; i < NAME.length; i++) { const w = g.measureText(NAME.slice(0, i + 1)).width - g.measureText(NAME.slice(0, i)).width; chars.push({ ch: NAME[i], x, w }); x += w; }
+      g.letterSpacing = "0px";
+      LAY = { mx: left + MK / 2, my: 540, chars, base: 540 + FS * 0.35 };
+    };
+
+    // the tile exactly as the end shot leaves it: three corners at 5 %, the top-right a quarter circle
+    const tileAt = (cx, cy, a) => {
+      const x = cx - a / 2, y = cy - a / 2, r = a / 2, c = a * 0.05;
+      g.fillStyle = lit(x, y, a, a, PINE); g.beginPath();
+      g.moveTo(x + c, y + a); g.quadraticCurveTo(x, y + a, x, y + a - c); g.lineTo(x, y + c); g.quadraticCurveTo(x, y, x + c, y);
+      g.lineTo(x + a - r, y); g.arc(x + a - r, y + r, r, -Math.PI / 2, 0); g.lineTo(x + a, y + a - c); g.quadraticCurveTo(x + a, y + a, x + a - c, y + a); g.closePath(); g.fill();
+    };
+
+    const draw = (t) => {
+      g.clearRect(0, 0, 1920, 1080);
+      if (!LAY) return;
+      // the tile draws in to the mark's centre, accelerating
+      if (t < HOLD + SHRINK) {
+        const u = clamp01((t - HOLD) / SHRINK), e = u * u * u;
+        tileAt(lerp(960, LAY.mx, smoother(u)), 540, 153 * (1 - e));
+      }
+      // the mark springs up from that point
+      if (t >= MARK0 && MARK) {
+        const s = backOut((t - MARK0) / 0.42), a = MK * s;
+        g.globalAlpha = clamp01((t - MARK0) / 0.08);
+        g.drawImage(MARK, LAY.mx - a / 2, LAY.my - a / 2, a, a);
+        g.globalAlpha = 1;
+      }
+      // the name decodes left to right: each letter flickers through a few glyphs (changing every other frame,
+      // centred on its own place so nothing shifts), then lands in ink
+      g.font = `600 ${FS}px "Space Grotesk"`; g.textBaseline = "alphabetic"; g.textAlign = "center";
+      const f = Math.floor(t * FR / 2);
+      LAY.chars.forEach((c, i) => {
+        if (c.ch === " ") return;
+        const t0 = NAME0 + i * STEP;
+        if (t < t0) return;
+        const cx = c.x + c.w / 2;
+        if (t < t0 + SETTLE) { g.fillStyle = VERD; g.fillText(GLYPHS[Math.floor(hash(i * 31 + f) * GLYPHS.length)], cx, LAY.base); }
+        else { g.fillStyle = INK; g.fillText(c.ch, cx, LAY.base); }
+      });
+      g.textAlign = "left";
+    };
+    const clock = { t: 0 };
+    tl.fromTo(clock, { t: 0 }, { t: END, duration: END, ease: "none", immediateRender: false, onUpdate: () => draw(clock.t) }, 0);
+    window.__hf = window.__hf || {};
+    window.__hf.buildReady = window.__hf.buildReady || {};
+    const loadMark = new Promise((res) => { const im = new Image(); im.onload = () => { MARK = im; res(); }; im.src = "assets/brand/firework-mark.svg"; });
+    window.__hf.buildReady["studio"] = Promise.all([document.fonts.load('600 100px "Space Grotesk"'), loadMark]).then(() => { layout(); draw(clock.t); });
+
+    window.__timelines["studio"] = tl;
+  </script>
+</template>

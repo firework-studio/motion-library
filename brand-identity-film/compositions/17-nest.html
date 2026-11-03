@@ -1,0 +1,253 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Space Grotesk";
+      font-weight: 300 700;
+      src: url("assets/fonts/SpaceGrotesk-Variable.ttf") format("truetype");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: #ecebe5;
+    }
+    #ns-cv {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+    }
+    #ns-grain {
+      position: absolute;
+      inset: 0;
+      opacity: 0.12;
+      mix-blend-mode: multiply;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0.6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    }
+  </style>
+  <div id="root" data-composition-id="nest" data-width="1920" data-height="1080">
+    <canvas id="ns-cv" width="1920" height="1080"></canvas>
+    <div id="ns-grain"></div>
+  </div>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+    const clamp01 = (v) => Math.min(1, Math.max(0, v));
+    const smoother = (u) => { u = clamp01(u); return u * u * u * (u * (u * 6 - 15) + 10); };
+    const FR = 30;
+    const lerp = (a, b, u) => a + (b - a) * u;
+    const hash = (n) => { const v = Math.sin(n * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v); };
+    const cv = document.getElementById("ns-cv");
+    const g = cv.getContext("2d");
+    const BONE = "#ecebe5";
+    // the opening tiles' material, brand sheet v3
+    const C = {
+      pine: ["#2b5545", "#1c4135", "#16382d"], verdigris: ["#6a9f8d", "#4f8a78", "#3f7363"], celadon: ["#bcd2c6", "#a9c4b6", "#93b0a1"],
+      copper: ["#d89a72", "#b8704a", "#8a4c2f"], brass: ["#d6b27a", "#c49a5a", "#a48046"], oxide: ["#c27a63", "#a85d48", "#8a4a39"],
+    };
+    const tile = (x, y, s, col) => {
+      const gr = g.createLinearGradient(x - s / 2, y - s / 2, x + s / 2, y + s / 2);
+      gr.addColorStop(0, col[0]); gr.addColorStop(0.55, col[1]); gr.addColorStop(1, col[2]);
+      g.fillStyle = gr;
+      g.beginPath(); g.roundRect(x - s / 2, y - s / 2, s, s, s * 0.05); g.fill();
+    };
+
+    // ---------------------------------------------------------------- the works (shots 55-57, 1.5 s, timed on the reference)
+    // 55 (0-0.23 s): the heron's pine square (300 px) pulls in fast to 130 px.
+    // 56 (0.23-0.5 s): it changes colour every second frame: copper, oxide, brass, verdigris.
+    // 57 (0.5-1.5 s): the square opens as a window on a work, and inside that work a small window opens on the next,
+    //   and the camera keeps diving through, window into window: the film's own pictures and the generated
+    //   photographs, alternating. Each window is the frame's shape at a fifth of its size, edged in paper; the dive
+    //   speeds up and then eases out on the last work.
+    // A relay: each work keeps at least one clear feature of the one before and changes one thing, and the tile, the
+    // brand's shape, runs through all of them:
+    //   a wall relief of pine tiles -> a sphere of patinated tiles (keeps the tiles; becomes round) -> a ceramic ring of
+    //   verdigris and copper tiles (keeps the round; changes material) -> a painting of copper, brass and verdigris
+    //   squares (keeps the colours; becomes paint) -> letterpress type in a grid (keeps the cream ground and the grid;
+    //   becomes letters) -> a chrome figure holding a pine tile (keeps the tile; becomes a figure) -> a marble bust
+    //   streaked with verdigris (keeps the figure; changes material) -> a pine notebook stamped with the mark (lands
+    //   on a brand object). All eight generated for the film (FLUX.1-schnell, Apache 2.0).
+    // The anchor is the window itself: always the Tilo tile, pine-edged, in the middle, where the eye already is.
+    const WORKS = ["art-1.jpg", "art-2.jpg", "art-3.jpg", "art-4.jpg", "art-5.jpg", "art-6.jpg", "art-7.jpg", "art-8.jpg"];
+    const IMG = [];
+    const load = (src) => new Promise((res) => { const im = new Image(); im.onload = () => res(im); im.src = src; });
+    // ---------------------------------------------------------------- the sticker: the wordmark, inflated
+    // As the reference pastes a puffy, glossy 3D "base" on its chrome angel, the chrome figure here gets the wordmark
+    // as a sticker: each letter its own brand colour, blown up like a balloon (a height field from the blurred letter
+    // shapes, lit from the upper left with a hard specular glint), on a white sticker with a pearly sheen and a soft
+    // shadow. Built once, as a bitmap, when the font is in.
+    let STICKER = null;
+    const buildSticker = () => {
+      const W = 2000, H = 920, F = 600, mk = () => { const c = document.createElement("canvas"); c.width = W; c.height = H; return c; };
+      const parts = [["t", "#c27a63"], ["\u0131", "#4f8a78"], ["l", "#d6b27a"], ["o", "#2b6a56"]];
+      // the letters, set as the wordmark is, each in its colour; and their shared mask
+      const col = mk(), cx = col.getContext("2d"), mask = mk(), mx = mask.getContext("2d");
+      cx.font = mx.font = `700 ${F}px "Space Grotesk"`;
+      const widths = parts.map(([ch]) => cx.measureText(ch).width), gap = -12, total = widths.reduce((a, b) => a + b, 0) + gap * 3;
+      let x = (W - total) / 2; const base = 660;
+      parts.forEach(([ch, c], k) => { cx.fillStyle = c; cx.fillText(ch, x, base); mx.fillStyle = "#fff"; mx.fillText(ch, x, base); if (k === 1) { const dw = F * 0.13; cx.fillStyle = "#b8704a"; cx.beginPath(); cx.roundRect(x + widths[1] / 2 - dw / 2, base - F * 0.72, dw, dw, [0, dw / 2, 0, 0]); cx.fill(); mx.beginPath(); mx.roundRect(x + widths[1] / 2 - dw / 2, base - F * 0.72, dw, dw, [0, dw / 2, 0, 0]); mx.fill(); } x += widths[k] + gap; });
+      // fatten the letters a little (the balloon swells past the type's edge)
+      const fat = mk(), fx = fat.getContext("2d");
+      fx.filter = "blur(14px)"; fx.drawImage(mask, 0, 0); fx.filter = "none";
+      const fatD = fx.getImageData(0, 0, W, H).data;
+      // the colours spread outward as solid colour (the letters drawn again round a ring of offsets), not blurred
+      const colFat = mk(), cf = colFat.getContext("2d");
+      for (let r = 24; r >= 0; r -= 6) for (let a = 0; a < 20; a++) cf.drawImage(col, Math.cos((a / 20) * 2 * Math.PI) * r, Math.sin((a / 20) * 2 * Math.PI) * r);
+      const colD = cf.getImageData(0, 0, W, H).data;
+      // the height field: the fattened mask blurred again
+      const hc = mk(), hx = hc.getContext("2d");
+      const inside = new Uint8Array(W * H);
+      for (let i = 0; i < W * H; i++) inside[i] = fatD[i * 4 + 3] > 70 ? 1 : 0;
+      const im0 = hx.createImageData(W, H);
+      for (let i = 0; i < W * H; i++) { im0.data[i * 4 + 3] = inside[i] ? 255 : 0; }
+      hx.putImageData(im0, 0, 0);
+      const hb = mk(), hbx = hb.getContext("2d"); hbx.filter = "blur(32px)"; hbx.drawImage(hc, 0, 0); hbx.filter = "none";
+      const hD = hbx.getImageData(0, 0, W, H).data, Hh = (i) => Math.sqrt(hD[i * 4 + 3] / 255);
+      // the sticker: the letters' outline grown by 26 px
+      const st = mk(), sx = st.getContext("2d"); sx.filter = "blur(44px)"; sx.drawImage(hc, 0, 0); sx.filter = "none";
+      const sD = sx.getImageData(0, 0, W, H).data;
+      const out = mk(), ox = out.getContext("2d"), od = ox.createImageData(W, H), o = od.data;
+      const L = [-0.5, -0.65, 0.58], ln = Math.hypot(...L), Lx = L[0] / ln, Ly = L[1] / ln, Lz = L[2] / ln;
+      for (let y = 3; y < H - 3; y++) for (let xx = 3; xx < W - 3; xx++) {
+        const i = y * W + xx, k = i * 4;
+        if (inside[i]) {
+          const nx = (Hh(i - 3) - Hh(i + 3)) * 15, ny = (Hh(i - 3 * W) - Hh(i + 3 * W)) * 15, nz = 1, nl = Math.hypot(nx, ny, nz);
+          const ndl = Math.max(0, (nx * Lx + ny * Ly + nz * Lz) / nl);
+          const hx2 = Lx, hy2 = Ly, hz2 = Lz + 1, hl = Math.hypot(hx2, hy2, hz2);
+          const spec = Math.pow(Math.max(0, (nx * hx2 + ny * hy2 + nz * hz2) / (nl * hl)), 40);
+          // candy gloss: diffuse light, a hard glint, a soft broad sheen, and a studio window reflected as a bright band
+          // across the upper curve with a dark band under it (from the normal's tilt), plus a rim of bounce light
+          const ty = ny / nl, tx = nx / nl, sheen = Math.pow(Math.max(0, (nx * hx2 + ny * hy2 + nz * hz2) / (nl * hl)), 8);
+          const band = Math.max(0, 1 - Math.abs(ty - 0.42) / 0.12) * 0.55 - Math.max(0, 1 - Math.abs(ty + 0.25) / 0.2) * 0.22;
+          const rim = Math.pow(1 - nz / nl, 3) * 0.35;
+          for (let ch = 0; ch < 3; ch++) o[k + ch] = Math.max(0, Math.min(255, colD[k + ch] * (0.22 + 0.9 * ndl + 0.25 * sheen + rim) + 255 * (spec * 0.95 + band * (0.6 + 0.4 * tx))));
+          o[k + 3] = 255;
+        } else if (sD[k + 3] > 18) {
+          // holographic sticker: a pastel rainbow that shifts across it, with fine glitter
+          const ph = xx * 0.006 + y * 0.009, gl = hash(xx * 7 + y * 13) > 0.94 ? 40 : 0;
+          o[k] = 222 + 26 * Math.sin(ph) + gl; o[k + 1] = 228 + 22 * Math.sin(ph + 2.1) + gl; o[k + 2] = 236 + 18 * Math.sin(ph + 4.2) + gl; o[k + 3] = 255;
+        }
+      }
+      ox.putImageData(od, 0, 0);
+      // a soft shadow under the whole sticker
+      const fin = mk(), fz = fin.getContext("2d");
+      fz.shadowColor = "rgba(0,0,0,0.45)"; fz.shadowBlur = 48; fz.shadowOffsetY = 20; fz.drawImage(out, 0, 0);
+      STICKER = fin;
+    };
+    const ready = Promise.all([...WORKS.map((n) => load(`assets/images/${n}`)), document.fonts.load('700 100px "Space Grotesk"')]).then((ims) => { IM_PUSH(ims.slice(0, WORKS.length)); buildSticker(); });
+    const IM_PUSH = (ims) => IMG.push(...ims);
+    const FLICK = [[7 / FR, C.copper], [9 / FR, C.oxide], [11 / FR, C.brass], [13 / FR, C.verdigris], [15 / FR, C.pine]];
+    const W0 = 0.5, K = 5;   // the window is 1/K of the frame
+    // the dive: how many windows deep the camera is (0 = the first work fills the frame)
+    const DEPTH = (t) => {
+      const u = clamp01((t - W0) / (1.5 - W0));
+      return -Math.log(1920 / 130) / Math.log(K) + (WORKS.length - 1 + Math.log(1920 / 130) / Math.log(K)) * (u < 0.7 ? 0.7 * Math.pow(u / 0.7, 1.6) / 1 : 0.7 + 0.3 * (1 - Math.pow(1 - (u - 0.7) / 0.3, 2)));
+    };
+    // the Tilo tile as a path: a square of side a centred on the frame, its top-right corner a quarter circle
+    const tilePath = (a) => {
+      const x = 960 - a / 2, y = 540 - a / 2;
+      g.beginPath(); g.moveTo(x, y + a); g.lineTo(x, y); g.lineTo(x + a / 2, y);
+      g.arc(x + a / 2, y + a / 2, a / 2, -Math.PI / 2, 0); g.lineTo(x + a, y + a); g.closePath();
+    };
+    // draw work i to fill a frame-shaped box of width w centred on the frame; in its middle a tile-shaped window as
+    // tall as the next work's box, through which the next work shows (it fills that box, and the window crops it)
+    const work = (i, w, depthLeft) => {
+      if (i >= IMG.length || w < 3) return;
+      const h = (w * 9) / 16, x = 960 - w / 2, y = 540 - h / 2;
+      const im = IMG[i], s = Math.max(w / im.width, h / im.height), sw = w / s, sh = h / s;
+      g.drawImage(im, (im.width - sw) / 2, (im.height - sh) / 2, sw, sh, x, y, w, h);
+      if (depthLeft <= 0 || i + 1 >= IMG.length) return;
+      const ww = w / K, a = (ww * 9) / 16, e = Math.max(1.5, a * 0.04);
+      const gr = g.createLinearGradient(960 - a / 2, 540 - a / 2, 960 + a / 2, 540 + a / 2);
+      gr.addColorStop(0, C.pine[0]); gr.addColorStop(0.55, C.pine[1]); gr.addColorStop(1, C.pine[2]);
+      g.fillStyle = gr; tilePath(a + 2 * e); g.fill();
+      g.save(); tilePath(a); g.clip();
+      work(i + 1, ww, depthLeft - 1);
+      g.restore();
+      stickerOn(i, w, x, y, h);
+    };
+    const drawScene = (t) => {
+      g.clearRect(0, 0, 1920, 1080);
+      g.fillStyle = BONE; g.fillRect(0, 0, 1920, 1080);
+      if (t < W0) {
+        const sz = 130 + 170 * Math.exp(-t / 0.06), tf = Math.floor(t * FR + 1e-6) / FR;
+        let col = C.pine;
+        FLICK.forEach(([at, c]) => { if (tf >= at - 1e-6) col = c; });
+        tile(960, 540, sz, col);
+        return;
+      }
+      if (!IMG.length) return;
+      const d = DEPTH(t), k = Math.floor(d), frac = d - k;
+      if (k < 0) {
+        // the first window grows out of the square: the work behind it is the paper
+        const w = 1920 * Math.pow(K, d);
+        const e = Math.max(1, w * 0.012);
+        // the square's last colour stays as the window's edge as the first work opens in it
+        const a = Math.max(130, (w * 9) / 16);
+        tile(960, 540, a + 2 * e, C.pine);
+        g.save(); tilePath(a); g.clip();
+        work(0, w, 2);
+        g.restore();
+        return;
+      }
+      work(k, 1920 * Math.pow(K, frac), 2);
+    };
+    // the sticker is pasted on the first work, the tile wall, in its middle, over its window, as the reference pastes its
+    // sticker on a work: it arrives with that work and grows and leaves with it
+    let NOW = 0;
+    // the moment the first work is half the frame wide (found once by stepping the dive; seek-safe)
+    let STICK_CACHE = null;
+    const STICK_T = () => {
+      if (STICK_CACHE !== null) return STICK_CACHE;
+      for (let t = W0; t < 1.5; t += 1 / 240) { const d = DEPTH(t); if (d >= 0 || 1920 * Math.pow(K, d) >= 960) { STICK_CACHE = t; break; } }
+      if (STICK_CACHE === null) STICK_CACHE = W0;
+      return STICK_CACHE;
+    };
+    const stickerOn = (i, w, x, y, h) => {
+      if (i !== 0 || !STICKER) return;
+      // not there at first: the work comes up alone, and once it fills about half the frame's width the sticker
+      // springs on over eight frames (from nothing to 1.08 to 1, turning from a tilt to its rest angle); from then on
+      // it rides the work, growing with it, with a gentle bob
+      const STICK_AT = STICK_T();
+      if (NOW < STICK_AT) return;
+      const u = clamp01((NOW - STICK_AT) / (8 / FR));
+      const sc = u < 0.6 ? lerp(0, 1.08, Math.sin((u / 0.6) * Math.PI / 2)) : lerp(1.08, 1, smoother((u - 0.6) / 0.4));
+      if (sc <= 0) return;
+      const rot = lerp(-0.22, -0.05, smoother(u)) + 0.015 * Math.sin((NOW - STICK_AT) * 7);
+      const w2 = w * 0.36 * sc, h2 = (w2 * STICKER.height) / STICKER.width;
+      g.save(); g.translate(x + w * 0.5, y + h * 0.5); g.rotate(rot); g.drawImage(STICKER, -w2 / 2, -h2 / 2, w2, h2); g.restore();
+    };
+    // the close, as the reference: over the last 0.33 s the whole picture is pinched in from the left and right into
+    // a rounded square, which shrinks and rounds off into a circle (300 -> 150 px), then the circle turns pine: the
+    // next shot's orbit icon opens on it
+    const PINCH0 = 1.17;
+    const draw = (t) => {
+      NOW = t;
+      if (t < PINCH0) { drawScene(t); return; }
+      const u = smoother((t - PINCH0) / 0.22), v = smoother((t - PINCH0 - 0.15) / 0.18);
+      // render the scene at its last moment into a buffer, then show it through the closing shape
+      drawScene(PINCH0);
+      if (!BUF) { BUF = document.createElement("canvas"); BUF.width = 1920; BUF.height = 1080; }
+      const b = BUF.getContext("2d"); b.clearRect(0, 0, 1920, 1080); b.drawImage(cv, 0, 0);
+      g.fillStyle = BONE; g.fillRect(0, 0, 1920, 1080);
+      const w = lerp(1920, lerp(1000, 160, v), u), h = lerp(1080, lerp(1000, 160, v), u), r = Math.min(w, h) * lerp(0, 0.5, Math.max(u * 0.3, v));
+      g.save(); g.beginPath(); g.roundRect(960 - w / 2, 540 - h / 2, w, h, r); g.clip();
+      // the picture squeezes with the shape (the width more than the height), so it reads as being pinched, not cropped
+      const sx = lerp(1, 0.75, u) * lerp(1, 0.4, v), sy = lerp(1, 0.95, u) * lerp(1, 0.4, v);
+      g.drawImage(BUF, 960 - 960 * sx, 540 - 540 * sy, 1920 * sx, 1080 * sy);
+      // the circle fills pine as it lands
+      const fill = smoother((t - 1.38) / 0.08);
+      if (fill > 0) { g.globalAlpha = fill; g.fillStyle = "#1c4135"; g.fillRect(0, 0, 1920, 1080); g.globalAlpha = 1; }
+      g.restore();
+    };
+    let BUF = null;
+    const clock = { t: 0 };
+    tl.fromTo(clock, { t: 0 }, { t: 1.5, duration: 1.5, ease: "none", immediateRender: false, onUpdate: () => draw(clock.t) }, 0);
+    window.__hf = window.__hf || {};
+    window.__hf.buildReady = window.__hf.buildReady || {};
+    window.__hf.buildReady["nest"] = ready.then(() => draw(clock.t));
+
+    window.__timelines["nest"] = tl;
+  </script>
+</template>

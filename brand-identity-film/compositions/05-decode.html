@@ -1,0 +1,264 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Space Grotesk";
+      font-weight: 300 700;
+      src: url("assets/fonts/SpaceGrotesk-Variable.ttf") format("truetype");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: #ecebe5;
+    }
+    .abs {
+      position: absolute;
+    }
+    #d-cv {
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+    }
+    #d-grain {
+      inset: 0;
+      opacity: 0.12;
+      mix-blend-mode: multiply;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0.6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    }
+  </style>
+  <div id="root" data-composition-id="decode" data-width="1920" data-height="1080">
+    <canvas id="d-cv" class="abs" width="1920" height="1080"></canvas>
+    <div id="d-grain" class="abs"></div>
+  </div>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+    const clamp01 = (v) => Math.min(1, Math.max(0, v));
+    const sm = (u) => { u = clamp01(u); return u * u * (3 - 2 * u); };
+    const hash = (n) => { const v = Math.sin(n * 91.345 + 7.13) * 43758.5453; return v - Math.floor(v); };
+    const INK = "#0d1a16", PINE = "#1c4135", BONE = "#ecebe5";
+    const FPS = 30;
+
+    const cv = document.getElementById("d-cv");
+    const g = cv.getContext("2d");
+    const lit = (x, y, w, h) => {
+      const gr = g.createLinearGradient(x, y, x + w, y + h);
+      gr.addColorStop(0, "#2b5545"); gr.addColorStop(0.55, "#1c4135"); gr.addColorStop(1, "#16382d");
+      return gr;
+    };
+
+    // dot-matrix text: a classic 5 x 7 cell font, as the reference's lower lines. Every letter sits on the same grid,
+    // 5 cells wide with one cell between letters; cells are square and nearly touching, so the type reads full and even
+    const F7 = {
+      M: ["X...X", "XX.XX", "X.X.X", "X.X.X", "X...X", "X...X", "X...X"],
+      A: [".XXX.", "X...X", "X...X", "X...X", "XXXXX", "X...X", "X...X"],
+      K: ["X...X", "X..X.", "X.X..", "XX...", "X.X..", "X..X.", "X...X"],
+      E: ["XXXXX", "X....", "X....", "XXXX.", "X....", "X....", "XXXXX"],
+      R: ["XXXX.", "X...X", "X...X", "XXXX.", "X.X..", "X..X.", "X...X"],
+      S: [".XXXX", "X....", "X....", ".XXX.", "....X", "....X", "XXXX."],
+      T: ["XXXXX", "..X..", "..X..", "..X..", "..X..", "..X..", "..X.."],
+      L: ["X....", "X....", "X....", "X....", "X....", "X....", "XXXXX"],
+      O: [".XXX.", "X...X", "X...X", "X...X", "X...X", "X...X", ".XXX."],
+      N: ["X...X", "X...X", "XX..X", "X.X.X", "X..XX", "X...X", "X...X"],
+      H: ["X...X", "X...X", "X...X", "XXXXX", "X...X", "X...X", "X...X"],
+      P: ["XXXX.", "X...X", "X...X", "XXXX.", "X....", "X....", "X...."],
+      B: ["XXXX.", "X...X", "X...X", "XXXX.", "X...X", "X...X", "XXXX."],
+      2: [".XXX.", "X...X", "....X", "...X.", "..X..", ".X...", "XXXXX"],
+      0: [".XXX.", "X...X", "X..XX", "X.X.X", "XX..X", "X...X", ".XXX."],
+      6: ["..XX.", ".X...", "X....", "XXXX.", "X...X", "X...X", ".XXX."],
+      3: ["XXXXX", "...X.", "..X..", "...X.", "....X", "X...X", ".XXX."],
+      7: ["XXXXX", "....X", "...X.", "..X..", ".X...", ".X...", ".X..."],
+      8: [".XXX.", "X...X", "X...X", ".XXX.", "X...X", "X...X", ".XXX."],
+      "#": [".X.X.", ".X.X.", "XXXXX", ".X.X.", "XXXXX", ".X.X.", ".X.X."],
+    };
+    const SCRAMBLE = Object.keys(F7);
+    const CELL = 0.88;   // cell size as a share of the pitch
+    const glyph7 = (ch, x, top, p, colour) => {
+      g.fillStyle = colour;
+      const d = p * CELL;
+      F7[ch].forEach((row, r) => [...row].forEach((c, k) => { if (c === "X") g.fillRect(x + k * p, top + r * p, d, d); }));
+    };
+    const dotText = (str, x, top, p, colour) => {
+      [...str].forEach((ch, i) => glyph7(ch, x + i * 6 * p, top, p, colour));
+      return str.length * 6 * p;
+    };
+    // a cursor on a dot line: one character cell (5 x 7) with every cell lit
+    const dotCursor = (x, top, p) => {
+      const d = p * CELL;
+      g.fillStyle = lit(x, top, 5 * p, 7 * p);
+      for (let r = 0; r < 7; r++) for (let k = 0; k < 5; k++) g.fillRect(x + k * p, top + r * p, d, d);
+    };
+    // the cursor on a set line: a pine block the size of a character with a scrambled 5 x 7 glyph in paper inside it
+    const cursor = (x, top, w, h, seed) => {
+      g.fillStyle = lit(x, top, w, h);
+      g.fillRect(x, top, w, h);
+      const p = Math.min((w * 0.72) / 5, (h * 0.78) / 7);
+      glyph7(SCRAMBLE[Math.floor(hash(seed) * SCRAMBLE.length)], x + (w - 5 * p) / 2 + p * 0.06, top + (h - 7 * p) / 2 + p * 0.06, p, BONE);
+    };
+
+    // ---------------------------------------------------------------- scene A (0-1.0 s): one line decodes
+    // "Tilo Makeathon": a character a frame and a half, each showing a scrambled glyph for a frame under the cursor
+    const LINE = "Tilo Makeathon", SIZE_A = 132;
+    const sceneA = (t) => {
+      g.font = `600 ${SIZE_A}px "Space Grotesk"`;
+      g.textBaseline = "alphabetic";
+      const full = g.measureText(LINE).width, x0 = 960 - full / 2, base = 540 + SIZE_A * 0.35;
+      const step = 0.055;
+      const shown = Math.min(LINE.length, Math.max(0, Math.floor((t - 0.04) / step)));
+      g.fillStyle = INK;
+      g.fillText(LINE.slice(0, shown), x0, base);
+      if (shown < LINE.length || t < 0.04 + step * LINE.length + 0.12) {
+        const cx = x0 + g.measureText(LINE.slice(0, shown)).width + 4, cw = SIZE_A * 0.56, top = base - SIZE_A * 0.78;
+        cursor(cx, top, cw, SIZE_A * 0.86, Math.floor(t * FPS) * 7 + shown);
+        // a scout cursor runs a few characters ahead for the first half, as if two heads were reading the line
+        if (shown < LINE.length - 5) {
+          const ahead = Math.min(LINE.length, shown + 3);
+          cursor(x0 + g.measureText(LINE.slice(0, ahead)).width + 4, top, cw, SIZE_A * 0.86, Math.floor(t * FPS) * 11 + ahead);
+        }
+      }
+    };
+    // ---------------------------------------------------------------- scene B (1.0-1.95 s): three lines
+    // "Tilo" in the sans, "MAKERS" and "2026" in the 5 x 7 dot font, left aligned as a block centred in frame, laid
+    // out as the reference: the dot letters are as tall as the sans capitals (7 cells), one cell below its baseline,
+    // the second dot line 8 cells below the first. Every line decodes behind its own cursor, the lower two a beat later;
+    // the block then falls away (ease-in, to 80 %)
+    const sceneB = (t) => {
+      const u = t - 1.0, k = clamp01((u - 0.45) / 0.5), z = 1 - 0.2 * k * k;
+      const size = 190, cap = size * 0.7, p = cap / 7;
+      const x0 = 960 - (6 * 6 - 1) * p / 2, top = 540 - (cap + 16 * p) / 2, b0 = top + cap;
+      g.save();
+      g.translate(960, 540); g.scale(z, z); g.translate(-960, -540);
+      const seed = Math.floor(t * FPS);
+      // the first line
+      // set as the wordmark is: a dotless ı, whose dot is a small pine Tilo tile (top-right corner a quarter circle,
+      // 0.1165 em as in the brand sheet, its top on the cap line; a lighter pine than the ink, so it reads as colour); the line decodes first, then the tile drops in a few frames later
+      const WORD = "T\u0131lo";
+      const nT = Math.min(4, Math.max(0, Math.floor(u / 0.05)));
+      g.font = `600 ${size}px "Space Grotesk"`;
+      g.fillStyle = INK;
+      const tx = x0 - size * 0.04;
+      g.fillText(WORD.slice(0, nT), tx, b0);
+      if (nT < 4) cursor(x0 + g.measureText(WORD.slice(0, nT)).width + 6, top - p * 0.3, size * 0.5, cap + p * 0.6, seed * 3 + nT);
+      const drop = clamp01((u - 0.26) / 0.12);
+      if (drop > 0) {
+        const e = 1 - Math.pow(1 - drop, 3), dw = size * 0.1165;
+        // centred on the ı's ink (its stem), not its advance box; the T-ı kerning is taken from the pair
+        const im = g.measureText("\u0131"), stemL = tx + g.measureText("T\u0131").width - im.width - im.actualBoundingBoxLeft;
+        const dx = stemL + (im.actualBoundingBoxLeft + im.actualBoundingBoxRight - dw) / 2, dy = b0 - size * 0.7 - size * 0.35 * (1 - e);
+        g.save();
+        g.globalAlpha = Math.min(1, drop * 3);
+        const dg = g.createLinearGradient(dx, dy, dx + dw, dy + dw);
+        dg.addColorStop(0, "#3d7360"); dg.addColorStop(1, "#225442");
+        g.fillStyle = dg;
+        g.beginPath(); g.roundRect(dx, dy, dw, dw, [0, dw / 2, 0, 0]); g.fill();
+        g.restore();
+      }
+      [["MAKERS", 1], ["2026", 2]].forEach(([str, k]) => {
+        const v = u - 0.1 - (k - 1) * 0.03;
+        const shown = Math.min(str.length, Math.max(0, Math.floor(v / 0.065)));
+        const ltop = b0 + p + (k - 1) * 8 * p;
+        const w = dotText(str.slice(0, shown), x0, ltop, p, INK);
+        if (v > -0.1 && (shown < str.length || v < 0.065 * str.length + 0.12)) dotCursor(x0 + w, ltop, p);
+      });
+      g.restore();
+    };
+    // ---------------------------------------------------------------- scene C (1.95-2.45 s): the tile, very close
+    // the tile fills the top left of the frame and only its bottom-right corner shows; as the camera eases back the
+    // tile grows a little and that corner opens from a tight round to the tile's full quarter circle
+    const sceneC = (t) => {
+      const u = sm((t - 1.95) / 0.5);
+      const right = 1000 + 150 * u, bottom = 575 + 140 * u, R = 90 + 470 * u;
+      g.fillStyle = lit(right - 900, bottom - 900, 900, 900);
+      g.beginPath(); g.roundRect(-400, -400, right + 400, bottom + 400, [0, 0, R, 0]); g.fill();
+    };
+    // ---------------------------------------------------------------- the lockup: symbol + wordmark
+    // The symbol (a square with its top-right corner a quarter circle) is exactly x-height tall and stands on the
+    // baseline, so its top edge and the top of the t's crossbar are one line; the crossbar reaches toward it across a
+    // narrow gap. Wordmark "tılo" in Space Grotesk Bold, tracked -10/240 em as in the brand sheet, the ı carrying its
+    // small tile for a dot. All lengths in em; measured on the face: x-height 0.496, t's crossbar starts at 0.026,
+    // ı ink 0.070-0.195, cap line 0.70.
+    const XH = 0.496, GAP = 0.16, TRACK = -10 / 240;
+    const symbol = (x, base, s) => {
+      g.fillStyle = lit(x, base - s, s, s);
+      g.beginPath();
+      g.moveTo(x, base); g.lineTo(x, base - s); g.lineTo(x + s / 2, base - s);
+      g.arc(x + s / 2, base - s / 2, s / 2, -Math.PI / 2, 0); g.lineTo(x + s, base); g.closePath();
+      g.fill();
+    };
+    const wordmark = (x, base, em, track = TRACK) => {
+      g.font = `700 ${em}px "Space Grotesk"`;
+      g.letterSpacing = `${track * em}px`;
+      g.fillStyle = INK;
+      g.fillText("t\u0131lo", x, base);
+      const ix = x + g.measureText("t").width;   // the ı's origin (measureText includes the tracking)
+      g.letterSpacing = "0px";
+      const dw = 0.1165 * em, dx = ix + 0.1325 * em - dw / 2, dy = base - 0.7 * em;
+      const dg = g.createLinearGradient(dx, dy, dx + dw, dy + dw);
+      dg.addColorStop(0, "#3d7360"); dg.addColorStop(1, "#225442");
+      g.fillStyle = dg;
+      g.beginPath(); g.roundRect(dx, dy, dw, dw, [0, dw / 2, 0, 0]); g.fill();
+    };
+    // the whole lockup with its left edge at x; gap in em (the space between the symbol and the end of the crossbar)
+    const lockup = (x, base, em, gap = GAP, column = false, track = TRACK) => {
+      const s = XH * em, tx = x + s + gap * em - 0.026 * em;
+      if (column) { g.fillStyle = "#dcdad3"; g.fillRect(x + s, 0, gap * em, 1080); }
+      symbol(x, base, s);
+      wordmark(tx, base, em, track);
+    };
+    // the full lockup is 2.07 em wide; at 720 px an em it spans about 1490 px, centred
+    const LOCK_EM = 720, LOCK_W = 2.07 * LOCK_EM;
+
+    // ---------------------------------------------------------------- scene D (2.45-3.0 s): symbol meets crossbar
+    // A close crop of the lockup: the symbol's flat top and its sweeping corner on the left, the gap as a pale column,
+    // the t's crossbar and stem on the right, the crossbar's top on the symbol's top line. The two close in on each
+    // other (gap 0.26 -> 0.16 em) as the camera eases back a little.
+    const sceneD = (t) => {
+      const v = sm((t - 2.45) / 0.55), z = 1 - 0.06 * v, em = 2000 * z;
+      const gap = 0.26 - 0.1 * (1 - Math.pow(1 - v, 2));
+      const top = 320, base = top + XH * em;
+      lockup(960 - (0.66 * 2000) * z, base, em, gap, true);
+    };
+    // ---------------------------------------------------------------- scene E (3.0-3.5 s): "lo", very close
+    // the end of the wordmark filling the frame, cut low; it drifts left a touch
+    const sceneE = (t) => {
+      const v = sm((t - 3.0) / 0.5), em = 2000;
+      g.font = `700 ${em}px "Space Grotesk"`;
+      g.letterSpacing = `${TRACK * em}px`;
+      g.fillStyle = INK;
+      g.fillText("lo", 60 - 50 * v, 1210);
+      g.letterSpacing = "0px";
+    };
+    // ---------------------------------------------------------------- scene F (3.5-4.1 s): the full lockup
+    // It tightens as the camera pulls back: the gap closes (0.24 -> 0.14 em) and the letters draw together (tracking
+    // +0.02 -> -0.05 em), while the whole lockup recedes (scale 1.06 -> 0.8). Every measure is taken from the lockup's
+    // centre, so it stays centred as it tightens.
+    const sceneF = (t) => {
+      const v = 1 - Math.pow(1 - Math.min(1, (t - 3.5) / 0.6), 2), u = sm((t - 3.5) / 0.6);
+      const em = LOCK_EM * (1.06 - 0.26 * u), gap = 0.24 - 0.1 * v, track = 0.02 - 0.07 * v;
+      g.font = `700 ${em}px "Space Grotesk"`;
+      g.letterSpacing = `${track * em}px`;
+      const ww = g.measureText("t\u0131lo").width - track * em;
+      g.letterSpacing = "0px";
+      const w = (XH + gap - 0.026) * em + ww;
+      lockup(960 - w / 2, 540 + (XH * em) / 2, em, gap, false, track);
+    };
+
+    const draw = (t) => {
+      g.clearRect(0, 0, 1920, 1080);
+      if (t < 1.0) sceneA(t);
+      else if (t < 1.95) sceneB(t);
+      else if (t < 2.45) sceneC(t);
+      else if (t < 3.0) sceneD(t);
+      else if (t < 3.5) sceneE(t);
+      else sceneF(t);
+    };
+    const clock = { t: 0 };
+    tl.fromTo(clock, { t: 0 }, { t: 4.1, duration: 4.1, ease: "none", immediateRender: false, onUpdate: () => draw(clock.t) }, 0);
+    window.__hf = window.__hf || {};
+    window.__hf.buildReady = window.__hf.buildReady || {};
+    window.__hf.buildReady["decode-fonts"] = Promise.all([document.fonts.load('600 92px "Space Grotesk"'), document.fonts.load('700 92px "Space Grotesk"')]).then(() => draw(clock.t));
+
+    window.__timelines["decode"] = tl;
+  </script>
+</template>

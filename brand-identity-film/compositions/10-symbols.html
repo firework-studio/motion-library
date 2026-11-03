@@ -1,0 +1,292 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Space Grotesk";
+      font-weight: 300 700;
+      src: url("assets/fonts/SpaceGrotesk-Variable.ttf") format("truetype");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: #1c4135;
+    }
+    #sy-cv {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+    }
+    #sy-wall {
+      position: absolute;
+      left: 0;
+      top: 0;
+    }
+    #sy-grain {
+      position: absolute;
+      inset: 0;
+      opacity: 0.12;
+      mix-blend-mode: multiply;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0.6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    }
+  </style>
+  <div id="root" data-composition-id="symbols" data-width="1920" data-height="1080">
+    <canvas id="sy-cv" width="1920" height="1080"></canvas>
+    <svg id="sy-wall" width="1920" height="1080" viewBox="0 0 1920 1080">
+      <defs><clipPath id="sy-base"><rect x="-4000" y="-4000" width="8000" height="4500"></rect></clipPath></defs>
+      <g id="sy-cam"></g>
+    </svg>
+    <div id="sy-grain"></div>
+  </div>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+    const clamp01 = (v) => Math.min(1, Math.max(0, v));
+    const sm = (u) => { u = clamp01(u); return u * u * (3 - 2 * u); };
+    const smoother = (u) => { u = clamp01(u); return u * u * u * (u * (u * 6 - 15) + 10); };
+    const lerp = (a, b, u) => a + (b - a) * u;
+    const out3 = (u) => 1 - Math.pow(1 - clamp01(u), 3);
+    const hash = (n) => { const v = Math.sin(n * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v); };
+    const BONE = "#ecebe5", INK = "#1c4135";
+    const cv = document.getElementById("sy-cv");
+    const g = cv.getContext("2d");
+    const pine = () => {
+      const gr = g.createLinearGradient(0, 0, 1920, 1080);
+      gr.addColorStop(0, "#2b5545"); gr.addColorStop(0.55, "#1c4135"); gr.addColorStop(1, "#16382d");
+      return gr;
+    };
+    // timing (composition seconds), from the reference frame by frame
+    const MORPH0 = 0.28, MORPH1 = 0.75, CUT33 = 2.0, END = 4.15;
+
+    // ---------------------------------------------------------------- 30-32 (0-2.0 s): the @ and the symbol wall
+    // One continuous shot. A hard cut to the pine field and an @ nearly the height of the frame, round. At 0.28 s it
+    // starts to square off (a slight tilt passing through it) and at the same moment the camera starts to pull back,
+    // without a cut: the @ turns out to be one cell of a wall of symbols, ¶ and & beside it, the face's alternates in
+    // the row above and the figures in paper Tilo tiles below.
+    // The wall is SVG, laid out in world units (the @ is 1000 tall, centred on the origin); the camera is a single
+    // parent group (#sy-cam) that only translates to the frame centre and scales. Columns 1.27 and rows 1.32 of the
+    // @'s height apart (measured on the reference); while the camera is close the wall's own spacing is opened a
+    // little, so at first only the @ is in frame.
+    const NS = "http://www.w3.org/2000/svg";
+    const cam = document.getElementById("sy-cam");
+    const el = (tag, attrs, parent = cam) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); parent.appendChild(e); return e; };
+    const U = 1000;
+    const CAMH = (t) => 940 * (1 - 0.57 * smoother((t - MORPH0) / (CUT33 - MORPH0 - 0.05)));   // the @'s height in px
+    const OPEN = (t) => 1 - smoother((t - MORPH0) / (CUT33 - MORPH0 - 0.3));
+    const pts = (arr) => arr.map((p, k) => `${k ? "L" : "M"}${(p[0] * U).toFixed(1)} ${(p[1] * U).toFixed(1)}`).join("");
+
+    // the @: as measured on the reference (outer stroke 0.135, bowl 0.145; bowl and stem half the height across);
+    // an upright oval bowl, a stem whose foot turns in a U into the outer ring, the ring round to a cut terminal.
+    // The ring is a superellipse, exponent 2 -> 8; it turns a few degrees and back while it changes. y down.
+    const se = (cx, cy, rx, ry, n, a) => {
+      const c = Math.cos(a), s = Math.sin(a);
+      return [cx + rx * Math.sign(c) * Math.pow(Math.abs(c), 2 / n), cy + ry * Math.sign(s) * Math.pow(Math.abs(s), 2 / n)];
+    };
+    const atBowl = el("path", { fill: "none", stroke: BONE, "stroke-width": 0.145 * U, "stroke-linejoin": "round" });
+    const atRing = el("path", { fill: "none", stroke: BONE, "stroke-width": 0.135 * U, "stroke-linejoin": "round" });
+    const atShape = (u, tw) => {
+      const ni = 2 + 0.5 * u, ro = 0.5 - 0.135 / 2, ci = [-0.02, 0], rx = 0.18, ry = 0.205;
+      const ring = (a) => { const p = se(0, 0, ro, ro, 2 + 6 * u, a), c = Math.cos(tw), s = Math.sin(tw); return [p[0] * c - p[1] * s, p[0] * s + p[1] * c]; };
+      const bowl = [];
+      for (let k = 0; k <= 120; k++) bowl.push(se(ci[0], ci[1], rx, ry, ni, (k / 120) * Math.PI * 2));
+      atBowl.setAttribute("d", pts(bowl) + "Z");
+      const xs = ci[0] + rx + 0.005, a0 = 0.2, a1 = a0 - Math.PI * 2 + 1.3, e = ring(a0), yf = ci[1] + ry * 0.55, dip = 0.16;
+      const tail = [];
+      for (let k = 1; k <= 160; k++) tail.push(ring(a0 + ((a1 - a0) * k) / 160));
+      const f = (p) => `${(p[0] * U).toFixed(1)} ${(p[1] * U).toFixed(1)}`;
+      atRing.setAttribute("d", `M${f([xs, ci[1] - ry - 0.0725])}L${f([xs, yf])}C${f([xs, yf + dip])} ${f([e[0], e[1] + dip])} ${f(e)}` + pts(tail).replace(/^M/, "L"));
+    };
+    const U31 = (t) => smoother((t - MORPH0) / (MORPH1 - MORPH0));
+    const TW31 = (t) => -0.13 * Math.sin(Math.PI * U31(t));
+
+    // ¶: the face's Bold outline, a fifth narrower, its bowl firming a little with the @ (as before)
+    const GL = {"&":{"adv":0.591,"c":[[[0.235,0.0],[0.2228,0.0002],[0.2108,0.0009],[0.1992,0.002],[0.1879,0.0036],[0.1769,0.0056],[0.1662,0.0081],[0.1558,0.011],[0.1457,0.0144],[0.136,0.0182],[0.1265,0.0225],[0.1174,0.0272],[0.1087,0.0323],[0.1004,0.0378],[0.0926,0.0437],[0.0851,0.05],[0.0781,0.0567],[0.0714,0.0638],[0.0652,0.0713],[0.0594,0.0792],[0.054,0.0875],[0.0491,0.0962],[0.0446,0.1052],[0.0407,0.1145],[0.0374,0.1241],[0.0345,0.1341],[0.0322,0.1444],[0.0303,0.1551],[0.029,0.1661],[0.0283,0.1774],[0.028,0.189],[0.0282,0.1975],[0.0286,0.2058],[0.0294,0.2138],[0.0305,0.2216],[0.0319,0.2293],[0.0336,0.2366],[0.0356,0.2438],[0.0379,0.2508],[0.0406,0.2575],[0.0435,0.264],[0.0467,0.2703],[0.0502,0.2764],[0.0538,0.2822],[0.0577,0.2878],[0.0619,0.2933],[0.0662,0.2984],[0.0708,0.3034],[0.0757,0.3082],[0.0807,0.3127],[0.086,0.317],[0.0915,0.3211],[0.097,0.325],[0.1027,0.3286],[0.1086,0.332],[0.1145,0.3352],[0.1206,0.3382],[0.1267,0.341],[0.133,0.3436],[0.1395,0.3459],[0.146,0.348],[0.146,0.362],[0.1362,0.3652],[0.1267,0.3689],[0.1176,0.373],[0.1089,0.3775],[0.1005,0.3825],[0.0925,0.3879],[0.0848,0.3938],[0.0775,0.4001],[0.0706,0.4068],[0.064,0.414],[0.0579,0.4216],[0.0525,0.4298],[0.0477,0.4384],[0.0435,0.4474],[0.04,0.457],[0.0371,0.467],[0.0349,0.4776],[0.0333,0.4886],[0.0323,0.5],[0.032,0.512],[0.0323,0.524],[0.0331,0.5356],[0.0344,0.5469],[0.0363,0.5578],[0.0387,0.5683],[0.0417,0.5784],[0.0452,0.5881],[0.0493,0.5974],[0.0539,0.6064],[0.059,0.615],[0.0646,0.6232],[0.0706,0.631],[0.077,0.6384],[0.0837,0.6453],[0.0909,0.6519],[0.0984,0.658],[0.1064,0.6638],[0.1147,0.6691],[0.1234,0.674],[0.1325,0.6785],[0.1419,0.6826],[0.1516,0.6862],[0.1616,0.6895],[0.1719,0.6923],[0.1824,0.6946],[0.1932,0.6966],[0.2042,0.6981],[0.2155,0.6991],[0.2271,0.6998],[0.239,0.7],[0.348,0.7],[0.348,0.596],[0.262,0.596],[0.2532,0.5958],[0.2446,0.595],[0.2364,0.5938],[0.2285,0.5922],[0.2209,0.59],[0.2136,0.5874],[0.2066,0.5842],[0.1999,0.5806],[0.1936,0.5766],[0.1875,0.572],[0.1819,0.567],[0.1769,0.5615],[0.1725,0.5555],[0.1686,0.5491],[0.1654,0.5423],[0.1627,0.5349],[0.1607,0.5271],[0.1592,0.5189],[0.1583,0.5102],[0.158,0.501],[0.1581,0.4945],[0.1586,0.4883],[0.1593,0.4823],[0.1603,0.4765],[0.1616,0.471],[0.1632,0.4657],[0.1651,0.4607],[0.1673,0.4559],[0.1697,0.4513],[0.1725,0.447],[0.1755,0.4429],[0.1787,0.439],[0.182,0.4354],[0.1855,0.432],[0.1893,0.4288],[0.1931,0.4258],[0.1972,0.423],[0.2015,0.4204],[0.2059,0.4181],[0.2105,0.416],[0.2152,0.4141],[0.2201,0.4124],[0.225,0.4109],[0.23,0.4096],[0.2351,0.4085],[0.2403,0.4076],[0.2456,0.4069],[0.251,0.4064],[0.2564,0.4061],[0.262,0.406],[0.359,0.406],[0.359,0.496],[0.485,0.496],[0.485,0.406],[0.577,0.406],[0.577,0.302],[0.485,0.302],[0.485,0.0]],[[0.258,0.104],[0.359,0.104],[0.359,0.302],[0.258,0.302],[0.2493,0.3018],[0.241,0.301],[0.2329,0.2998],[0.225,0.298],[0.2175,0.2958],[0.2102,0.293],[0.2033,0.2898],[0.1966,0.286],[0.1901,0.2818],[0.184,0.277],[0.1783,0.2718],[0.1732,0.266],[0.1687,0.2598],[0.1648,0.2532],[0.1615,0.246],[0.1588,0.2384],[0.1567,0.2302],[0.1552,0.2216],[0.1543,0.2126],[0.154,0.203],[0.1543,0.1933],[0.1553,0.184],[0.1568,0.1753],[0.159,0.1671],[0.1619,0.1594],[0.1653,0.1522],[0.1694,0.1455],[0.1742,0.1393],[0.1795,0.1337],[0.1855,0.1285],[0.1919,0.1238],[0.1985,0.1197],[0.2053,0.116],[0.2122,0.1128],[0.2194,0.1101],[0.2267,0.1079],[0.2343,0.1062],[0.242,0.105],[0.2499,0.1042],[0.258,0.104]]]},"\u00b6":{"adv":0.614,"c":[[[0.254,0.0],[0.254,0.284],[0.228,0.284],[0.2157,0.2843],[0.2038,0.2851],[0.1921,0.2864],[0.1806,0.2882],[0.1695,0.2906],[0.1586,0.2935],[0.1481,0.297],[0.1378,0.301],[0.1277,0.3055],[0.118,0.3105],[0.1086,0.316],[0.0996,0.3219],[0.0911,0.3281],[0.083,0.3347],[0.0752,0.3417],[0.068,0.3491],[0.0611,0.3569],[0.0546,0.3651],[0.0486,0.3736],[0.043,0.3825],[0.0379,0.3917],[0.0333,0.4012],[0.0292,0.4109],[0.0257,0.4209],[0.0227,0.4311],[0.0203,0.4416],[0.0184,0.4523],[0.0171,0.4633],[0.0163,0.4745],[0.016,0.486],[0.016,0.498],[0.0163,0.5099],[0.0171,0.5214],[0.0185,0.5327],[0.0205,0.5437],[0.023,0.5544],[0.0261,0.5648],[0.0297,0.5749],[0.0339,0.5847],[0.0387,0.5943],[0.044,0.6035],[0.0498,0.6124],[0.0561,0.6209],[0.0627,0.629],[0.0698,0.6367],[0.0774,0.644],[0.0853,0.6509],[0.0937,0.6574],[0.1026,0.6635],[0.1118,0.6692],[0.1215,0.6745],[0.1315,0.6793],[0.1418,0.6837],[0.1524,0.6875],[0.1633,0.6908],[0.1744,0.6936],[0.1858,0.6959],[0.1974,0.6977],[0.2093,0.699],[0.2215,0.6997],[0.234,0.7],[0.548,0.7],[0.548,0.0],[0.44,0.0],[0.44,0.598],[0.362,0.598],[0.362,0.0]],[[0.222,0.386],[0.254,0.386],[0.254,0.598],[0.222,0.598],[0.2136,0.5977],[0.2054,0.5969],[0.1976,0.5955],[0.1901,0.5935],[0.1829,0.591],[0.176,0.5879],[0.1694,0.5843],[0.1631,0.5801],[0.1572,0.5753],[0.1515,0.57],[0.1463,0.5642],[0.1416,0.558],[0.1375,0.5515],[0.1339,0.5446],[0.1309,0.5373],[0.1284,0.5296],[0.1265,0.5215],[0.1251,0.513],[0.1243,0.5042],[0.124,0.495],[0.124,0.489],[0.1243,0.4798],[0.1252,0.471],[0.1266,0.4625],[0.1286,0.4544],[0.1313,0.4467],[0.1344,0.4394],[0.1382,0.4325],[0.1426,0.426],[0.1475,0.4198],[0.153,0.414],[0.1589,0.4087],[0.165,0.4039],[0.1714,0.3997],[0.178,0.3961],[0.1847,0.393],[0.1918,0.3905],[0.199,0.3885],[0.2064,0.3871],[0.2141,0.3863],[0.222,0.386]]]}};
+    const WAIST = 0.357;
+    const BOWLS = {
+      "&": [{ o: [0.204, 0.53, 0.172], i: [0.252, 0.502, 0.095], side: 1 }, { o: [0.204, 0.178, 0.178], i: [0.253, 0.204, 0.1], side: -1 }],
+      "¶": [{ o: [0.224, 0.493, 0.207], i: [0.227, 0.493, 0.104], side: 0 }],
+    };
+    const warp = (ch, x, y, u) => {
+      for (const b of BOWLS[ch]) {
+        if ((b.side === 1 && y < WAIST - 0.012) || (b.side === -1 && y > WAIST + 0.012)) continue;
+        const di = Math.hypot(x - b.i[0], y - b.i[1]), dO = Math.hypot(x - b.o[0], y - b.o[1]);
+        const [cx, cy] = Math.abs(di - b.i[2]) < Math.abs(dO - b.o[2]) ? b.i : b.o;
+        const dx = x - cx, dy = y - cy, d = Math.hypot(dx, dy);
+        if (dx >= 0 || d < 1e-6 || d > 0.3) continue;
+        const c = -dx / d, sn = Math.abs(dy) / d, f = Math.pow(Math.pow(c, 4) + Math.pow(sn, 4), -1 / 4);
+        let nx = x + dx * (f - 1) * u, ny = y + dy * (f - 1) * u;
+        if (b.side === 1) ny = Math.max(ny, Math.min(y, WAIST));
+        if (b.side === -1) ny = Math.min(ny, Math.max(y, WAIST));
+        return [nx, ny];
+      }
+      return [x, y];
+    };
+    const NARROW = 0.8, EM = U / 0.7;
+    const U32 = (t) => smoother((t - MORPH0 - 0.3) / 0.6);
+    const pilcrow = el("path", { fill: BONE });
+    const pilcrowD = (u) => {
+      const w = GL["¶"].adv * NARROW;
+      return GL["¶"].c.map((cnt) => cnt.map(([px, py], k) => {
+        const [wx, wy] = warp("¶", px, py, u);
+        return `${k ? "L" : "M"}${((wx * NARROW - w / 2) * EM).toFixed(1)} ${(500 - wy * EM).toFixed(1)}`;
+      }).join("") + "Z").join("");
+    };
+
+    // the &: built from strokes so its top loop can really open (proportions measured on the reference). A round
+    // top loop; from its lower left (the joint J) a straight leg runs down to a foot cut on the baseline, and the
+    // lower bowl leaves the same joint down to the left, round the bottom and up to a tail at the right, cut flat.
+    // Closed, the loop's stroke runs all the way round back to J, its lower part lying along the leg. From 0.9 s to
+    // 1.55 s the free end of that stroke retracts: it leaves the leg at the lower
+    // right, so the loop opens there and the field comes in, and it climbs the right side to just below mid-height,
+    // where its butt end, square to a now vertical stroke, sits flat. Bowl, leg and tail never change.
+    const AW = 0.15;
+    // it starts the moment the & comes into frame (0.9 s, its left edge at the frame edge) and opens over the pull-back
+    const OPEN_AMP = (t) => smoother((t - 0.9) / 0.65);
+    const ampLoop = el("path", { fill: "none", stroke: BONE, "stroke-width": AW * U, "stroke-linecap": "butt", "stroke-linejoin": "round", "clip-path": "url(#sy-base)" });
+    const ampBowl = el("path", { fill: "none", stroke: BONE, "stroke-width": AW * U, "stroke-linecap": "butt", "stroke-linejoin": "round" });
+    const ampGeo = (open) => {
+      // y up, origin the glyph's left on the baseline, in @ heights; out in the wall's y-down frame, centred
+      const x0 = -0.47, L = [0.38, 1 - 0.19 - AW / 2], LR = [0.19, 0.19];
+      const loop = (a) => [L[0] + LR[0] * Math.cos(a), L[1] + LR[1] * Math.sin(a)];
+      const W = (p) => [x0 + p[0], 0.5 - p[1]];
+      const JA = Math.PI * 1.28, J = loop(JA);
+      const free = JA - Math.PI * 2 + Math.PI * 0.72 * open;   // closed: a full turn back to J; open: at mid right, where the stroke is vertical and the cut lies flat
+      const arc = [];
+      for (let k = 0; k <= 140; k++) arc.push(W(loop(free + ((JA - free) * k) / 140)));
+      const foot = [0.95, -0.08];
+      const BC = [AW / 2 + 0.25, AW / 2 + 0.25], BR = 0.25;
+      // the bowl starts a little back along the loop, inside its stroke, so the two never meet on a hairline seam
+      const bowl = [W(loop(JA - 0.14)), W(J)];
+      const cb = (p0, p1, p2, p3, v) => p0.map((_, i) => Math.pow(1 - v, 3) * p0[i] + 3 * Math.pow(1 - v, 2) * v * p1[i] + 3 * (1 - v) * v * v * p2[i] + v * v * v * p3[i]);
+      const A = [BC[0] - BR, BC[1]];
+      for (let k = 1; k <= 24; k++) bowl.push(W(cb(J, [J[0] - 0.08, J[1] - 0.1], [A[0], A[1] + 0.16], A, k / 24)));
+      for (let k = 1; k <= 60; k++) { const a = Math.PI + (Math.PI * k) / 60; bowl.push(W([BC[0] + BR * Math.cos(a), BC[1] + BR * Math.sin(a)])); }
+      bowl.push(W([BC[0] + BR, 0.5]));   // the tail rises straight and ends flat
+      // loop and leg are one stroke (round join at J): no seam where the leg leaves the loop
+      return { loop: pts([...arc, W(foot)]), bowl: pts(bowl) };
+    };
+    const ampGroup = el("g", {});
+    [ampLoop, ampBowl].forEach((e) => ampGroup.appendChild(e));
+
+    // the rest of the wall
+    const ROW0 = ["/", "(", "¶", "@", "&", "%", ")", "#"];
+    const ALTS = [["a", "ss01"], ["g", "ss02"], ["y", "ss03"], ["B", "ss04"], ["D", "ss04"], ["J", "ss04"], ["I", "ss05"], ["a", "ss01"], ["g", "ss02"]];
+    const DIG = "0123456789".split("");
+    const textStyle = (size, ss) => `font-family:'Space Grotesk';font-weight:700;font-size:${size}px;${ss ? `font-feature-settings:'${ss}';` : ""}`;
+    const row0 = ROW0.map((ch) => {
+      if (ch === "@") { const g0 = el("g", {}); g0.appendChild(atBowl); g0.appendChild(atRing); return g0; }
+      if (ch === "¶") { const g0 = el("g", {}); g0.appendChild(pilcrow); return g0; }
+      if (ch === "&") return ampGroup;
+      const g0 = el("g", {});
+      el("text", { x: 0, y: 500, "text-anchor": "middle", fill: BONE, style: textStyle(EM) }, g0).textContent = ch;
+      return g0;
+    });
+    const alts = ALTS.map(([ch, ss]) => {
+      const g0 = el("g", {});
+      el("text", { x: 0, y: 500, "text-anchor": "middle", fill: BONE, style: textStyle(EM * 0.85, ss) }, g0).textContent = ch;
+      return g0;
+    });
+    const TS = 0.8 * U;
+    const digs = DIG.map((d) => {
+      const g0 = el("g", {});
+      el("path", { fill: BONE, d: `M${-TS / 2} ${TS / 2}V${-TS / 2}H0A${TS / 2} ${TS / 2} 0 0 1 ${TS / 2} 0V${TS / 2}Z` }, g0);
+      el("text", { x: -TS * 0.03, y: TS * 0.28, "text-anchor": "middle", fill: INK, style: textStyle(TS * 0.8) }, g0).textContent = d;
+      return g0;
+    });
+    const wall = (t) => {
+      const o = OPEN(t), cp = (1.27 + 0.6 * o) * U, rp = (1.32 + 0.45 * o) * U, mid = ROW0.indexOf("@");
+      cam.setAttribute("transform", `translate(960 540) scale(${(CAMH(t) / U).toFixed(5)})`);
+      row0.forEach((g0, k) => g0.setAttribute("transform", `translate(${((k - mid) * cp).toFixed(1)} 0)`));
+      alts.forEach((g0, k) => g0.setAttribute("transform", `translate(${((k - 4) * cp).toFixed(1)} ${(-rp).toFixed(1)})`));
+      digs.forEach((g0, k) => g0.setAttribute("transform", `translate(${((k - 5) * cp).toFixed(1)} ${rp.toFixed(1)})`));
+      atShape(U31(t), TW31(t));
+      pilcrow.setAttribute("d", pilcrowD(U32(t)));
+      const a = ampGeo(OPEN_AMP(t));
+      ampLoop.setAttribute("d", a.loop); ampBowl.setAttribute("d", a.bowl);
+    };
+
+    // ---------------------------------------------------------------- 33 (2.0-3.15 s): the character set
+    // A hard cut to paper and two characters, an r and a 0 one above the other, a little left of centre at 122 px
+    // pitch. The camera pulls straight back (pitch 122 -> 69 px, fast at first, settling) and the table opens out
+    // around them frame by frame in a ragged round until it fills the frame: 25 x 16 cells, 38 px type at the end.
+    // Inside, the table is never still: about one cell in seven is empty; on its own frames a character blinks out
+    // for a few frames and comes back, a gap fills with a character that pops in, and some characters slide sideways
+    // into the empty cell next to them. All of it on whole frames, from fixed seeds, so every render is the same.
+    const TROWS = ["ĆĈĊČĎĐÈÉÊËĒĔĖĘĚĜĞĠĢĤĦĨĪĬĮ", "ĹĻĽĿŁÑŃŅŇŊÒÓÔÕÖØŌŎŐŒŔŖŘŚŜ", "ÙÚÛÜŨŪŬŮŰŲŴẀẂẄŶŸỲÝŹŻŽÀÁÂÃ", "ćĉċčďđèéêëēĕėęěĝğġģĥħĩīĭį", "ĺļľŀłñńņňŋòóôõöøōŏőœŕŗřśŝ", "ùúûüũūŭůűųŵẁẃẅŷÿỳýźżžàáâã", "ħĥhḥmnńņňñŋrŕřŗuúùûüűūůųw", "9012345678901234567890123", "½⅓⅔¼¾⅛⁰¹²³⁴⁵⁶⁷⁸⁹₀₁₂₃₄₅₆₇₈", "!¡?¿.,:;…·•*#/\\|¦‹›«»“”‘’", "()[]{}§¶©®™°†‡ℓ№℮ΩΔπµ$¢£¥", "€₹₺₽₿₩₦₫₭₱₲₵₡₣₤₧+-×÷=<>±%", "%‰←↑→↓↔↕↖↗↘ƒɑəȷıĳŀßþðæœ&@", "ǍǎǏǐǑǒǓǔǕǖǗǘǙǚǛǜǦǧǪǫǺǻǼǽǾ", "ȘșȚțḌḍḤḥḶḷṂṃṄṅṆṇṚṛṢṣṬṭẞẠạ", "ẢảẤấẦầẨẩẪẫẬậẮắẰằẸẹẺẻẼẽẾếỀ"].map((r) => [...r]);
+    const TC = 25, TR = 16, AC = 11, AR = 6.5;                 // the anchor: between the r (row 6) and the 0 (row 7)
+    const A0 = [902, 432], A1 = [960 + (AC - 12) * 69, 30 + AR * 70];
+    const FR = 30;
+    const cellsT = [];
+    for (let r = 0; r < TR; r++) for (let c = 0; c < TC; c++) {
+      const i = r * TC + c, h = hash(i * 13 + 5), anchor = c === AC && (r === 6 || r === 7);
+      const d = Math.hypot(c - AC, (r - AR) * 1.35) + 1.6 * (hash(i * 7 + 3) - 0.5);
+      const cell = { ch: TROWS[r][c], c, r, i, d: anchor ? 0 : d, anchor, empty: !anchor && h < 0.14 };
+      // a slide: a character next to an empty cell moves into it once, a few frames long
+      if (!cell.empty && !anchor && hash(i * 17 + 1) < 0.3) cell.slideAt = 6 + Math.floor(hash(i * 19 + 2) * 22);
+      cellsT.push(cell);
+    }
+    const at2 = (c, r) => (c >= 0 && c < TC && r >= 0 && r < TR ? cellsT[r * TC + c] : null);
+    cellsT.forEach((cell) => {
+      if (cell.slideAt === undefined) return;
+      const L = at2(cell.c - 1, cell.r), R = at2(cell.c + 1, cell.r);
+      cell.dir = R && R.empty ? 1 : L && L.empty ? -1 : 0;
+      if (!cell.dir) delete cell.slideAt;
+    });
+    // 34 (from 1.15 s after the cut, 1.0 s): the camera keeps pulling back (pitch 69 -> 31 px) and the table turns
+    // out to repeat: copies of it open out beyond the first, each copy a block that drifts its own small way, while
+    // more and more cells drop out (up to six in ten), so the wall breaks into thinning patches
+    const P34 = 1.15;
+    const RAD = (f) => (f < 1 ? 0.6 : 0.6 + 13.2 * (1 - Math.exp(-f / 3.4)) + Math.max(0, f - P34 * FR) * 1.3);
+    const table = (t) => {
+      g.fillStyle = BONE; g.fillRect(0, 0, 1920, 1080);
+      const tt = t - CUT33, f = Math.floor(tt * FR + 1e-6), k = Math.exp(-tt * FR / 5), u34 = smoother((tt - P34) / 1.0);
+      const pitch = (69 + 53 * k) * (1 - 0.55 * u34), ax = A1[0] + (A0[0] - A1[0]) * k, ay = A1[1] + (A0[1] - A1[1]) * k;
+      g.textAlign = "center"; g.fillStyle = INK;
+      g.font = `600 ${(pitch * 0.55).toFixed(1)}px "Space Grotesk"`;
+      const rad = RAD(f), py = pitch * (70 / 69);
+      const nx = Math.ceil(960 / pitch / TC) + 1, ny = Math.ceil(540 / py / TR) + 1;
+      for (let tj = -ny; tj <= ny; tj++) for (let ti = -nx; ti <= nx; ti++) {
+        const tid = (tj + 9) * 19 + ti + 9;
+        const home = ti === 0 && tj === 0;
+        const ddx = home ? 0 : (hash(tid * 3 + 1) - 0.5) * 3 * u34, ddy = home ? 0 : (hash(tid * 3 + 2) - 0.5) * 2 * u34;
+        const ox = ti * TC + ddx, oy = tj * TR + ddy;
+        cellsT.forEach((cell) => {
+          const d = home ? cell.d : Math.hypot(cell.c + ti * TC - AC, (cell.r + tj * TR - AR) * 1.35) + 1.6 * (hash(cell.i * 7 + tid) - 0.5);
+          if (d > rad) return;
+          const x = ax + (cell.c + ox - AC) * pitch, y = ay + (cell.r + oy - AR) * py + pitch * 0.2;
+          if (x < -40 || x > 1960 || y < -40 || y > 1120) return;
+          // thinning: each cell has its own moment, and fades out over a short stretch rather than popping
+          const fade = clamp01((hash(cell.i * 5 + tid * 11) - 0.6 * u34) / 0.08 + 1) * (u34 > 0 ? clamp01((hash(cell.i * 5 + tid * 11) - 0.6 * u34) / 0.08) : 1);
+          if (fade <= 0) return;
+          // blinks: in some 3-frame windows a character goes, or an empty cell gets one
+          const bucket = Math.floor(f / 3), blink = !(cell.anchor && f < 8) && u34 === 0 && hash(cell.i * 31 + bucket * 7 + tid) < 0.06;   // the r and 0 hold while the table opens
+          let present = cell.empty ? blink : !blink;
+          let cx = 0;
+          if (cell.slideAt !== undefined && f >= cell.slideAt) { cx = cell.dir * smoother((f - cell.slideAt) / 4); present = true; }
+          if (!present) return;
+          g.globalAlpha = fade;
+          g.fillText(cell.ch, x + cx * pitch, y);
+          g.globalAlpha = 1;
+        });
+      }
+      g.textAlign = "start";
+    };
+
+    const svg = document.getElementById("sy-wall");
+    const draw = (t) => {
+      g.clearRect(0, 0, 1920, 1080);
+      if (t >= CUT33) { svg.style.display = "none"; table(t); return; }
+      svg.style.display = "";
+      g.fillStyle = pine(); g.fillRect(0, 0, 1920, 1080);
+      wall(t);
+    };
+    const clock = { t: 0 };
+    tl.fromTo(clock, { t: 0 }, { t: END, duration: END, ease: "none", immediateRender: false, onUpdate: () => draw(clock.t) }, 0);
+    window.__hf = window.__hf || {};
+    window.__hf.buildReady = window.__hf.buildReady || {};
+    window.__hf.buildReady["symbols-font"] = Promise.all([document.fonts.load('600 100px "Space Grotesk"'), document.fonts.load('700 100px "Space Grotesk"')]).then(() => draw(clock.t));
+
+    window.__timelines["symbols"] = tl;
+  </script>
+</template>

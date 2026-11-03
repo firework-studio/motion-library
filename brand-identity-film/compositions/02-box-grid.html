@@ -1,0 +1,81 @@
+<template>
+<style>
+#root{position:absolute;inset:0;overflow:hidden;background:#ecebe5}
+#bg-box-canvas{position:absolute;inset:0;width:1920px;height:1080px}
+#bg-paper{position:absolute;inset:0;pointer-events:none;opacity:.12;mix-blend-mode:multiply;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0.6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}
+</style>
+<div data-hf-id="hf-8nmz" id="root" data-composition-id="box-grid" data-width="1920" data-height="1080">
+
+<div data-hf-id="hf-0cx5" id="bg-paper"></div>
+</div>
+<script>
+const canvas=document.getElementById('bg-box-canvas');
+const ctx=canvas.getContext('2d');
+const WIDTH=1920,HEIGHT=1080,DURATION=5.5,SIDE=153,FOCAL=2400;
+const clamp=x=>Math.max(0,Math.min(1,x));
+const smooth=x=>{x=clamp(x);return x*x*(3-2*x)};
+const lerp=(a,b,t)=>a+(b-a)*t;
+// A true cube: every edge has the same length, without a rounded extrusion.
+const outline=[[-.5,-.5],[.5,-.5],[.5,.5],[-.5,.5]];
+const vertices=[...outline.map(([x,y])=>[x,y,-.5]),...outline.map(([x,y])=>[x,y,.5])];
+const N=outline.length;
+const faces=[{indices:Array.from({length:N},(_,i)=>i),tone:0},{indices:Array.from({length:N},(_,i)=>i+N),tone:1}];
+for(let i=0;i<N;i++)faces.push({indices:[i,(i+1)%N,(i+1)%N+N,i+N],tone:2});
+const grid=[];
+for(let row=-4;row<=4;row++)for(let col=0;col<22;col++){
+ const column=col-10.5;
+ const hero=row===0&&Math.abs(column)<=1.5;
+ grid.push({row,column,hero,heroIndex:hero?column+1.5:-1,x:column*440,y:row*680});
+}
+function stateAt(t){
+ const formation=smooth((t-.08)/.52);
+ const pull=smooth((t-1.70)/3.4);
+ const cameraDistance=lerp(FOCAL+SIDE/2,FOCAL/.17+SIDE/2,pull);
+ return {formation,pull,cameraDistance,screenScale:FOCAL/(cameraDistance-SIDE/2)};
+}
+function pointsAt(tile,t,state){
+ const delay=tile.hero?tile.heroIndex*.055:0;
+ const angle=tile.hero?-Math.PI*84/180*smooth((t-.67-delay)/.72):-Math.PI*84/180;
+ const c=Math.cos(angle),s=Math.sin(angle);
+ const cx=tile.hero?tile.x*state.formation:tile.x;
+ return vertices.map(v=>{
+  const x=(v[0]*c+v[2]*s)*SIDE+cx;
+  const y=v[1]*SIDE+tile.y;
+  const z=(-v[0]*s+v[2]*c)*SIDE;
+  const scale=FOCAL/(state.cameraDistance-z);
+  return {x:WIDTH/2+x*scale,y:HEIGHT/2+y*scale,z};
+ });
+}
+function box(tile,t,state){
+ const points=pointsAt(tile,t,state);
+ const xs=points.map(p=>p.x),ys=points.map(p=>p.y);
+ const bounds={left:Math.min(...xs),right:Math.max(...xs),top:Math.min(...ys),bottom:Math.max(...ys)};
+ if(bounds.right<0||bounds.left>WIDTH||bounds.bottom<0||bounds.top>HEIGHT)return null;
+ const ordered=faces.map(f=>({...f,z:f.indices.reduce((sum,i)=>sum+points[i].z,0)/f.indices.length})).sort((a,b)=>a.z-b.z);
+ for(const face of ordered){
+  const pp=face.indices.map(i=>points[i]);
+  ctx.beginPath();pp.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();
+  const gradient=ctx.createLinearGradient(bounds.left,bounds.top,bounds.right,bounds.bottom);
+  const colors=face.tone===1?['#2a5c4a','#173a31','#11291f']:face.tone===0?['#294e40','#193a2d','#102a21']:['#497763','#315c4a','#204333'];
+  gradient.addColorStop(0,colors[0]);gradient.addColorStop(.55,colors[1]);gradient.addColorStop(1,colors[2]);
+  ctx.fillStyle=gradient;ctx.fill();ctx.strokeStyle=gradient;ctx.lineWidth=.5;ctx.stroke();
+ }
+ return bounds;
+}
+function renderAt(time){
+ const t=Math.max(0,Math.min(DURATION,time));const state=stateAt(t);
+ ctx.fillStyle='#ecebe5';ctx.fillRect(0,0,WIDTH,HEIGHT);
+ const visible=[];
+ for(const tile of grid.filter(tile=>!tile.hero)){const bounds=box(tile,t,state);if(bounds)visible.push({row:tile.row,column:tile.column,hero:false,...bounds})}
+ for(const tile of grid.filter(tile=>tile.hero)){const bounds=box(tile,t,state);if(bounds)visible.push({row:tile.row,column:tile.column,hero:true,...bounds})}
+ window.__fourBoxGridState={time:t,...state,visibleCount:visible.length,visible};
+}
+const clock={time:0};
+const tl=gsap.timeline({paused:true});
+tl.fromTo(clock,{time:0},{time:DURATION,duration:DURATION,ease:'none',immediateRender:false,onUpdate:()=>renderAt(clock.time)},0);
+window.__timelines=window.__timelines||{};
+window.__timelines['box-grid']=tl;
+window.__fourBoxGrid={renderAt,stateAt};
+renderAt(0);
+</script>
+</template>

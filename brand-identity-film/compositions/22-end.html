@@ -1,0 +1,263 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Space Grotesk";
+      font-weight: 300 700;
+      src: url("assets/fonts/SpaceGrotesk-Variable.ttf") format("truetype");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: #ecebe5;
+    }
+    #en-cv {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+    }
+    #en-grain {
+      position: absolute;
+      inset: 0;
+      opacity: 0.12;
+      mix-blend-mode: multiply;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0.6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    }
+  </style>
+  <div id="root" data-composition-id="end" data-width="1920" data-height="1080">
+    <canvas id="en-cv" width="1920" height="1080"></canvas>
+    <div id="en-grain"></div>
+  </div>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+    const clamp01 = (v) => Math.min(1, Math.max(0, v));
+    const smoother = (u) => { u = clamp01(u); return u * u * u * (u * (u * 6 - 15) + 10); };
+    const lerp = (a, b, u) => a + (b - a) * u;
+    const hash = (n) => { const v = Math.sin(n * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v); };
+    const FR = 30;
+    const cv = document.getElementById("en-cv");
+    const g = cv.getContext("2d");
+    const INK = "#0d1a16", BONE = "#ecebe5";
+    const PINE = ["#2b5545", "#1c4135", "#16382d"], VERD = ["#6a9f8d", "#4f8a78", "#3f7363"], BRASS = ["#d6b27a", "#c49a5a", "#a48046"];
+    const COPPER = ["#d89a72", "#b8704a", "#8a4c2f"], OXIDE = ["#c27a63", "#a85d48", "#8a4a39"];
+    const tilePath = (x, y, a) => { g.beginPath(); g.moveTo(x, y + a); g.lineTo(x, y); g.lineTo(x + a / 2, y); g.arc(x + a / 2, y + a / 2, a / 2, -Math.PI / 2, 0); g.lineTo(x + a, y + a); g.closePath(); };
+    const lit = (x, y, w, h, c) => { const gr = g.createLinearGradient(x, y, x + w, y + h); gr.addColorStop(0, c[0]); gr.addColorStop(0.55, c[1]); gr.addColorStop(1, c[2]); return gr; };
+    const block = (cx, cy, w, h, c, r = 0.05, rot = 0) => { g.save(); g.translate(cx, cy); g.rotate(rot); g.fillStyle = lit(-w / 2, -h / 2, w, h, c); g.beginPath(); g.roundRect(-w / 2, -h / 2, w, h, Math.min(w, h) * r); g.fill(); g.restore(); };
+    const tile = (cx, cy, a, c, rot = 0) => { g.save(); g.translate(cx, cy); g.rotate(rot); g.fillStyle = lit(-a / 2, -a / 2, a, a, c); tilePath(-a / 2, -a / 2, a); g.fill(); g.restore(); };
+    const SANS = (w, s) => `${w} ${s}px "Space Grotesk"`;
+
+    // timing (composition seconds), after the reference's 53.0-62.0 s
+    const REW = 2.2, BAR = 2.5, LINE0 = 2.5, LINE1 = 3.1, MOD0 = 4.37, MORPH0 = 5.27, WM_HOLD = 5.77, PIX0 = 7.37, MERGE0 = 7.57, SPIN0 = 7.8, BIG0 = 8.3, END = 9.3;
+
+    // ---------------------------------------------------------------- 77-93 (0-2.2 s): the film rewinds
+    // The film's shots go by backwards, newest first, each held a few frames, the holds shortening as it gathers
+    // speed (5 frames down to 1), every still drifting the wrong way, like the reel running back to its start.
+    const N = 37, IMG = [];
+    const load = (k) => new Promise((res) => { const im = new Image(); im.onload = () => { IMG[k] = im; res(); }; im.src = `assets/images/recap/r${String(k + 1).padStart(2, "0")}.jpg`; });
+    const REEL = [];
+    { let f = 0, k = N - 1; while (f < REW * FR && k >= 0) { const hold = Math.max(1, Math.round(5 - 4 * (f / (REW * FR)))); REEL.push([f, hold, k]); f += hold; k--; } }
+    const rewind = (t) => {
+      const f = Math.floor(t * FR + 1e-6);
+      let cur = REEL[0]; for (const r of REEL) if (r[0] <= f) cur = r;
+      const im = IMG[cur[2]]; if (!im) return;
+      const u = (f - cur[0]) / cur[1], z = 1.06 - 0.06 * u;   // each still slides back, not forward
+      g.drawImage(im, 960 - 960 * z, 540 - 540 * z, 1920 * z, 1080 * z);
+    };
+    // ---------------------------------------------------------------- 94 (2.2-2.5 s): the bars close
+    // A wide paper bar and pine bars squeeze in from both sides and leave paper behind.
+    const bars = (t) => {
+      const u = smoother((t - REW) / (BAR - REW));
+      g.fillStyle = PINE[1]; g.fillRect(0, 0, 1920, 1080);
+      const w = lerp(1400, 1920, u); g.fillStyle = BONE; g.fillRect(960 - w / 2, 0, w, 1080);
+      for (let k = 0; k < 6; k++) { const x = lerp(k * 70, -80, u); g.fillStyle = PINE[1]; g.fillRect(x, 0, 24, 1080); g.fillRect(1920 - x - 24, 0, 24, 1080); }
+    };
+
+    // ---------------------------------------------------------------- 95-96 (2.5-4.37 s): the closing line
+    // Paper. A small pine tile in the middle; then "Make something / that fits." types itself in, a character every
+    // frame or so, a tile cursor at its head and a frame of scrambled character before each lands; it then holds,
+    // still, to be read.
+    const L1 = "Make something", L2 = "that fits.", SCR = "#%&@*+=/<>?!0123456789";
+    const line = (t) => {
+      g.fillStyle = BONE; g.fillRect(0, 0, 1920, 1080);
+      g.font = SANS(500, 96); g.textBaseline = "alphabetic";
+      const n = (t - LINE0 - 0.12) * 34, all = L1.length + L2.length;
+      if (n <= 0) { tile(960, 540, 30, PINE); return; }
+      const w1 = g.measureText(L1).width, w2 = g.measureText(L2).width, y1 = 512, y2 = 624;
+      const show = (s, x0, y, start) => {
+        const k = Math.max(0, Math.min(s.length, Math.floor(n - start)));
+        g.fillStyle = INK; g.textAlign = "left"; g.fillText(s.slice(0, k), x0, y);
+        if (k < s.length && n - start > 0) {
+          const cx = x0 + g.measureText(s.slice(0, k)).width;
+          g.fillStyle = INK; g.fillText(SCR[Math.floor(hash(Math.floor(t * FR) + k) * SCR.length)], cx, y);
+          tile(cx + 66, y - 32, 34, PINE);
+        }
+      };
+      show(L1, 960 - w1 / 2, y1, 0); show(L2, 960 - w2 / 2, y2, L1.length);
+    };
+
+    // ---------------------------------------------------------------- 97-100 (4.37-7.37 s): the modules become the mark
+    // A hard cut to one pine tile in the middle. It parts into the wordmark's four modules: four square modules on an
+    // even pitch with clear gaps between them (the ı's carries its small square dot), each sliding out on its own beat
+    // with a soft settle, never touching. They hold. Then, one after another and overlapping, each module becomes its
+    // letter: it travels to its letter's place while its box reshapes to the letter's own proportions (tall and narrow
+    // for ı and l, wide for o), passes briefly through its colour (copper, oxide, verdigris, brass) and the letter
+    // resolves inside it, the box giving way to the type. The finished wordmark holds.
+    const EM = 230, BASE = 620, MOD = 96, PITCH = 128;
+    const LET = ["t", "ı", "l", "o"], FLASH = [COPPER, OXIDE, VERD, BRASS];
+    // each letter's place and ink box (measured once the font is in)
+    let GLY = null;
+    const measure = () => {
+      g.font = SANS(700, EM); g.letterSpacing = `${(-10 / 240) * EM}px`;
+      const total = g.measureText("tılo").width; let x = 960 - total / 2; GLY = [];
+      LET.forEach((ch) => { const m = g.measureText(ch), adv = g.measureText(ch).width; GLY.push({ x, adv, l: x - m.actualBoundingBoxLeft + 0, r: x + m.actualBoundingBoxRight, top: BASE - m.actualBoundingBoxAscent, bot: BASE + m.actualBoundingBoxDescent }); x += adv; });
+      g.letterSpacing = "0px";
+    };
+    const modX = (k) => 960 + (k - 1.5) * PITCH;
+    const backOut = (u) => { u = clamp01(u); const c1 = 1.3, c3 = c1 + 1; return 1 + c3 * Math.pow(u - 1, 3) + c1 * Math.pow(u - 1, 2); };
+    const DOT = 0.1165;
+    const dotBox = (G) => { const dw = DOT * EM; return [G.l + (G.r - G.l) / 2 - dw / 2, BASE - 0.7 * EM, dw]; };
+    const drawModuleAt = (k, cx, cy, size, col) => {
+      if (k === 3) tile(cx, cy, size, col); else block(cx, cy, size, size, col);
+      if (k === 1) block(cx, cy - size * 0.5 - size * 0.32, size * 0.36, size * 0.36, col);
+    };
+    // ---------------------------------------------------------------- the liquid morph between module and letter
+    // A module and its letter are drawn together as one mask: the module (sliding toward the letter's place) at
+    // weight 1 - u and the letter at weight u. The mask is blurred, most at mid-change, then cut at half again with a
+    // soft edge, so the two shapes melt into one another: you see a module become a letter, never a crossfade or a
+    // box. Colour moves from pine through a breath of the letter's own colour to ink. Seek-safe: it depends on u alone.
+    const MC = document.createElement("canvas"), mc = MC.getContext("2d", { willReadFrequently: true });
+    const hex = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+    const morph = (k, u, mx, my) => {
+      const G = GLY[k], pad = 40;
+      const x0 = Math.floor(Math.min(G.l, mx - MOD / 2) - pad), x1 = Math.ceil(Math.max(G.r, mx + MOD / 2) + pad);
+      const y0 = Math.floor(Math.min(G.top - 0.12 * EM, my - MOD) - pad), y1 = Math.ceil(Math.max(G.bot, my + MOD / 2) + pad);
+      const W = x1 - x0, H = y1 - y0; if (W <= 0 || H <= 0) return;
+      if (MC.width !== W || MC.height !== H) { MC.width = W; MC.height = H; } else mc.clearRect(0, 0, W, H);
+      const r = 11 * Math.sin(Math.PI * clamp01(u));
+      mc.filter = r > 0.3 ? `blur(${r.toFixed(2)}px)` : "none";
+      mc.fillStyle = "#fff";
+      // the module, sliding toward the letter as it fades into it
+      const ex = lerp(mx, (G.l + G.r) / 2, smoother(u)), ey = lerp(my, (G.top + G.bot) / 2, smoother(u)), es = lerp(MOD, Math.min(G.r - G.l, G.bot - G.top) * 0.9, smoother(u));
+      mc.globalAlpha = 1 - u;
+      if (k === 3) { mc.beginPath(); const x = ex - es / 2 - x0, y = ey - es / 2 - y0; mc.moveTo(x, y + es); mc.lineTo(x, y); mc.lineTo(x + es / 2, y); mc.arc(x + es / 2, y + es / 2, es / 2, -Math.PI / 2, 0); mc.lineTo(x + es, y + es); mc.closePath(); mc.fill(); }
+      else { mc.beginPath(); mc.roundRect(ex - es / 2 - x0, ey - es / 2 - y0, es, es, es * 0.05); mc.fill(); }
+      if (k === 1) { const sd = es * 0.36; mc.fillRect(ex - sd / 2 - x0, ey - es * 0.5 - es * 0.32 - sd / 2 - y0, sd, sd); }
+      // the letter
+      mc.globalAlpha = u;
+      mc.font = SANS(700, EM); mc.fillText(LET[k], G.x - x0, BASE - y0);
+      if (k === 1) { const [dx, dy, dw] = dotBox(G); mc.beginPath(); const x = dx - x0, y = dy - y0; mc.moveTo(x, y + dw); mc.lineTo(x, y); mc.lineTo(x + dw / 2, y); mc.arc(x + dw / 2, y + dw / 2, dw / 2, -Math.PI / 2, 0); mc.lineTo(x + dw, y + dw); mc.closePath(); mc.fill(); }
+      mc.globalAlpha = 1; mc.filter = "none";
+      // threshold the blurred weights back into a crisp shape, coloured on the way through
+      const img = mc.getImageData(0, 0, W, H), d = img.data;
+      const breath = Math.sin(Math.PI * clamp01(u)), c0 = hex(PINE[1]), c1 = hex(INK), cf = hex(FLASH[k][1]);
+      const col = c0.map((v, i) => Math.round(lerp(lerp(v, c1[i], smoother(u)), cf[i], 0.55 * breath)));
+      const edge = 0.025;   // a crisp edge: the shape stays sharp while it changes
+      for (let i = 0; i < d.length; i += 4) {
+        const a = d[i + 3] / 255, m = clamp01((a - 0.5 + edge) / (2 * edge));
+        d[i] = col[0]; d[i + 1] = col[1]; d[i + 2] = col[2]; d[i + 3] = Math.round(m * 255);
+      }
+      mc.putImageData(img, 0, 0);
+      g.drawImage(MC, x0, y0);
+      // the ı's dot keeps its copper once it has landed
+      if (k === 1 && u >= 0.98) { const [dx, dy, dw] = dotBox(G); g.fillStyle = lit(0, 0, dw, dw, COPPER); tilePath(dx, dy, dw); g.fill(); }
+    };
+    const mark = (t) => {
+      g.fillStyle = BONE; g.fillRect(0, 0, 1920, 1080);
+      if (!GLY) measure();
+      const cy0 = BASE - MOD / 2;
+      LET.forEach((ch, k) => {
+        // parting: each module slides out from the centre on its own beat
+        const part = backOut((t - MOD0 - 0.04 * Math.abs(k - 1.5)) / 0.32), mx0 = lerp(960, modX(k), part);
+        const m0 = MORPH0 + 0.12 * k, u = smoother((t - m0) / 0.5);
+        if (u <= 0) { drawModuleAt(k, mx0, cy0, t < MOD0 + 0.02 ? MOD : MOD, PINE); return; }
+        if (u >= 1) { g.font = SANS(700, EM); g.fillStyle = INK; g.fillText(ch, GLY[k].x, BASE); if (k === 1) { const [dx, dy, dw] = dotBox(GLY[k]); g.fillStyle = lit(0, 0, dw, dw, COPPER); tilePath(dx, dy, dw); g.fill(); } return; }
+        morph(k, u, mx0, cy0);
+      });
+    };
+
+    // ---------------------------------------------------------------- 101-104 (7.37-9.0 s): the mark folds back into the tile
+    // One continuous gesture, every step starting before the last has quite finished:
+    //  7.37-7.72  each letter draws back into its module (the reverse of how it came), a beat apart, through its colour;
+    //  7.62-7.92  the modules slide together, the gaps closing, the ı's dot dropping into its module;
+    //  7.86-8.16  the joined bar draws in from both ends to a single tile, its round corner forming as it narrows;
+    //  8.10-8.62  the tile fans: three copies in verdigris, brass and copper turn out from under it like a hand of
+    //             cards, a little apart, and close back under it;
+    //  8.56-9.00  the tile settles into the middle at the size the film opened on (153 px), easing to rest.
+    const fold = (t) => {
+      g.fillStyle = BONE; g.fillRect(0, 0, 1920, 1080);
+      if (!GLY) measure();
+      const cy0 = BASE - MOD / 2;
+      const close = smoother((t - 7.62) / 0.3), narrow = smoother((t - 7.86) / 0.3);
+      const fanOut = smoother((t - 8.1) / 0.24) - smoother((t - 8.36) / 0.26), settle = smoother((t - 8.56) / 0.44);
+      if (narrow <= 0) {
+        LET.forEach((ch, k) => {
+          const u = 1 - smoother((t - PIX0 - 0.06 * k) / 0.3), tx = lerp(modX(k), 960 + (k - 1.5) * MOD, close);
+          if (u <= 0) { drawModuleAt(k, tx, cy0, MOD, PINE); return; }
+          morph(k, u, tx, cy0);
+        });
+        return;
+      }
+      // one tile from here on, sized and placed by the settle
+      const size = lerp(MOD, 153, settle), cx = 960, cy = lerp(cy0, 540, settle);
+      if (narrow < 1) {
+        const w = lerp(4 * MOD, MOD, narrow);
+        g.fillStyle = lit(cx - w / 2, cy - MOD / 2, w, MOD, PINE);
+        g.beginPath(); const x = cx - w / 2, y = cy - MOD / 2, r = (MOD / 2) * narrow;
+        g.moveTo(x, y + MOD); g.lineTo(x, y); g.lineTo(x + w - r, y); if (r > 0.5) g.arc(x + w - r, y + r, r, -Math.PI / 2, 0); g.lineTo(x + w, y + MOD); g.closePath(); g.fill();
+        return;
+      }
+      // the spiral, measured on the reference (60.85-61.30 s there): the tile turns clockwise, slowly at first and
+      // gathering pace (to about 25 degrees for the outer edge by the cut); as it turns the front tile draws in toward the
+      // middle and uncovers the layers under it, brass, then copper, then verdigris, each turned a little further than
+      // the one over it turned less, each starting to draw in a beat after the one above. 0.45 s, then the cut.
+      const T0 = 8.1, STACK = [PINE, BRASS, COPPER, VERD, PINE];   // a pine back layer frames the stack, as the reference's blue does
+      const sp = t - T0, spin = 0.44 * Math.pow(clamp01(sp / 0.45), 2.4);
+      if (sp < 0.45) {
+        // every layer always sits inside the one under it: working up from the pine back layer, each layer's largest
+        // size is what fits inside the layer below at their difference in turn, and it draws in from there
+        const layers = [];
+        let below = null;
+        // nested like a tunnel: each layer sits inside the one below with the same narrow margin all round; the margins
+        // open smoothly one after another from the front down, so the stack draws inward evenly rather than in steps
+        const M = 8;
+        for (let k = STACK.length - 1; k >= 0; k--) {
+          const rot = spin * (1 + 0.5 * (4 - k));
+          const fit = below ? below.size / (Math.abs(Math.cos(rot - below.rot)) + Math.abs(Math.sin(rot - below.rot))) : MOD;
+          const open = k === 4 ? 0 : smoother((sp - 0.03 - 0.07 * k) / 0.26);   // front margin first, then each layer below
+          const l = { c: STACK[k], k, size: Math.max(0, fit - 2 * M * open - (k === 0 ? 40 * smoother(sp / 0.45) : 0)), rot };   // the front keeps drawing in to a point
+          layers.push(l); below = l;
+        }
+        // the layer underneath is always the larger one; at equal size the front (pine) stays on top
+        layers.sort((a, b) => (b.size - a.size) || (b.k - a.k));
+        layers.forEach((l) => { g.save(); g.translate(960, cy0); g.rotate(l.rot); g.fillStyle = lit(-l.size / 2, -l.size / 2, l.size, l.size, l.c); g.beginPath(); g.roundRect(-l.size / 2, -l.size / 2, l.size, l.size, l.size * 0.08); g.fill(); g.restore(); });
+        return;
+      }
+      // then, as the reference: a hard cut to the whole frame in pine, which draws back in, its corners closing and the
+      // top-right one rounding, until it is the tile the film opened on (153 px, centred)
+      const u = 1 - Math.pow(1 - clamp01((sp - 0.45) / 0.75), 3);
+      const w = lerp(1920, 153, u), h = lerp(1080, 153, u), x = 960 - w / 2, y = 540 - h / 2, r = (Math.min(w, h) / 2) * smoother((u - 0.2) / 0.8), c = Math.min(w, h) * 0.05 * u;
+      g.fillStyle = lit(x, y, w, h, PINE); g.beginPath();
+      g.moveTo(x + c, y + h); g.quadraticCurveTo(x, y + h, x, y + h - c); g.lineTo(x, y + c); g.quadraticCurveTo(x, y, x + c, y);
+      g.lineTo(x + w - r, y); if (r > 0.5) g.arc(x + w - r, y + r, r, -Math.PI / 2, 0); g.lineTo(x + w, y + h - c); g.quadraticCurveTo(x + w, y + h, x + w - c, y + h); g.closePath(); g.fill();
+    };
+
+    const draw = (t) => {
+      g.clearRect(0, 0, 1920, 1080);
+      if (t < REW) rewind(t);
+      else if (t < BAR) bars(t);
+      else if (t < MOD0) line(t);
+      else if (t < PIX0) mark(t);
+      else fold(t);
+    };
+    const clock = { t: 0 };
+    tl.fromTo(clock, { t: 0 }, { t: END, duration: END, ease: "none", immediateRender: false, onUpdate: () => draw(clock.t) }, 0);
+    window.__hf = window.__hf || {};
+    window.__hf.buildReady = window.__hf.buildReady || {};
+    window.__hf.buildReady["end"] = Promise.all([document.fonts.load('700 100px "Space Grotesk"'), document.fonts.load('500 100px "Space Grotesk"'), ...Array.from({ length: N }, (_, k) => load(k))]).then(() => draw(clock.t));
+
+    window.__timelines["end"] = tl;
+  </script>
+</template>

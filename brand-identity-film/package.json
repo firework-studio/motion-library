@@ -1,0 +1,11 @@
+{
+  "name": "brand-identity-film",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "npx --yes hyperframes@0.8.231 preview",
+    "check": "npx --yes hyperframes@0.8.231 check",
+    "render": "npx --yes hyperframes@0.8.231 render",
+    "publish": "npx --yes hyperframes@0.8.231 publish"
+  }
+}

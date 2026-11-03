@@ -1,0 +1,117 @@
+<template>
+  <style>
+    @font-face { font-family: "Plex Mono"; font-weight: 100; font-style: normal; src: url("assets/fonts/IBMPlexMono-Thin.ttf") format("truetype"); }
+    @font-face { font-family: "Plex Mono"; font-weight: 300; font-style: normal; src: url("assets/fonts/IBMPlexMono-Light.ttf") format("truetype"); }
+    @font-face { font-family: "Plex Mono"; font-weight: 400; font-style: normal; src: url("assets/fonts/IBMPlexMono-Regular.ttf") format("truetype"); }
+    @font-face { font-family: "Plex Mono"; font-weight: 500; font-style: normal; src: url("assets/fonts/IBMPlexMono-Medium.ttf") format("truetype"); }
+    @font-face { font-family: "Plex Mono"; font-weight: 100; font-style: italic; src: url("assets/fonts/IBMPlexMono-ThinItalic.ttf") format("truetype"); }
+    @font-face { font-family: "Plex Mono"; font-weight: 300; font-style: italic; src: url("assets/fonts/IBMPlexMono-LightItalic.ttf") format("truetype"); }
+    @font-face { font-family: "Plex Mono"; font-weight: 400; font-style: italic; src: url("assets/fonts/IBMPlexMono-Italic.ttf") format("truetype"); }
+    @font-face { font-family: "Plex Mono"; font-weight: 500; font-style: italic; src: url("assets/fonts/IBMPlexMono-MediumItalic.ttf") format("truetype"); }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: #ecebe5;
+    }
+    #mo-cv {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+    }
+    #mo-grain {
+      position: absolute;
+      inset: 0;
+      opacity: 0.12;
+      mix-blend-mode: multiply;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0.6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    }
+  </style>
+  <div id="root" data-composition-id="mono" data-width="1920" data-height="1080">
+    <canvas id="mo-cv" width="1920" height="1080"></canvas>
+    <div id="mo-grain"></div>
+  </div>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+    const clamp01 = (v) => Math.min(1, Math.max(0, v));
+    const smoother = (u) => { u = clamp01(u); return u * u * u * (u * (u * 6 - 15) + 10); };
+    const out3 = (u) => 1 - Math.pow(1 - clamp01(u), 3);
+    const hash = (n) => { const v = Math.sin(n * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v); };
+    const INK = "#1c4135", FR = 30;
+    const cv = document.getElementById("mo-cv");
+    const g = cv.getContext("2d");
+
+    // ---------------------------------------------------------------- the mono in four weights (shots 38-40)
+    // Paper and pine, the reverse of the sans. Four lines, "Tilo Mono Thin / Light / Regular / Medium", IBM Plex Mono
+    // at 170 px on a 168 px pitch, centred (as measured on the reference once settled: about 1470 px across).
+    // 38 (0-0.8 s): a hard cut in close: the lines stand a size too large and pushed left or right, running off the
+    //   frame, and each eases home on its own (out-cubic, 0.25-0.4 s). Then they rest, the list easing back a touch.
+    // 39 (0.8 s): the face's true italics take over, a line a frame apart from the top.
+    // 40 (0.95-2.17 s): "Tilo Mono" goes from every line (two frames of scrambled characters, then its room closes)
+    //   and "Italic" decodes in after the weight, each line easing to stay centred. Then the words go one by one,
+    //   broadly from the bottom up: each flickers two frames of scrambled characters and is gone, its place kept.
+    const WEIGHTS = [100, 300, 400, 500], NAMES = ["Thin", "Light", "Regular", "Medium"];
+    const SIZE = 170, PITCH = 168, ADV = 0.6;   // Plex Mono: every character 0.6 em
+    const SCR = "!?&%#@8BJ\\\\:+=/-.4035QDKIE7".split("");
+    // the order the words leave in (line, word), and when
+    // (as the reference: the Italics go first from the bottom, the weight names hold on longer)
+    const GONE = [[3, 3, 1.45], [1, 3, 1.55], [3, 2, 1.65], [0, 2, 1.82], [1, 2, 1.92], [2, 3, 2.0], [0, 3, 2.08]];
+    const lines = WEIGHTS.map((w, li) => ({
+      w, li,
+      x0: (li % 2 ? 1 : -1) * (0.08 + 0.1 * hash(li * 3 + 1)) * 1920, s0: 1.14 + 0.06 * hash(li * 5 + 2), d0: 0.25 + 0.15 * hash(li * 7 + 3),
+      words: ["Tilo", "Mono", NAMES[li], "Italic"].map((txt, wi) => {
+        const n = li * 4 + wi, gone = GONE.find(([l, k]) => l === li && k === wi);
+        return { txt, wi, n, out: wi < 2 ? 0.95 + 0.03 * li : gone ? gone[2] : 99, in: wi === 3 ? 1.02 + 0.035 * li : -1 };
+      }),
+    }));
+    const ITAL = (li, t) => t >= 0.8 + li / FR;
+    const ZOOM = (t) => 1 - 0.06 * smoother((t - 0.3) / 0.6) - 0.14 * smoother((t - 0.95) / 1.1);
+    const scramble = (word, f) => [...word.txt].map((_, k) => SCR[Math.floor(hash(word.n * 17 + k * 3 + f * 5) * SCR.length)]).join("");
+    // what a word shows at t: its text, scrambled characters, or nothing; and how much room it takes (0-1)
+    const state = (word, t) => {
+      if (word.in > 0) {
+        const f = Math.floor((t - word.in) * FR + 1e-6);
+        if (f < 0) return { txt: null, room: 0 };
+        return { txt: f < 2 ? scramble(word, f) : word.txt, room: smoother((t - word.in) / 0.16) };
+      }
+      const f = Math.floor((t - word.out) * FR + 1e-6);
+      if (f < 0) return { txt: word.txt, room: 1 };
+      if (f < 2) return { txt: scramble(word, f), room: 1 };
+      // the prefix gives its room back (the line re-centres); a word leaving later keeps its place
+      return { txt: null, room: word.wi < 2 ? 1 - smoother((t - word.out - 2 / FR) / 0.18) : 1 };
+    };
+    const draw = (t) => {
+      g.clearRect(0, 0, 1920, 1080);
+      g.fillStyle = INK; g.textBaseline = "alphabetic";
+      const z = ZOOM(t), adv = ADV * SIZE, gap = adv;
+      lines.forEach((ln) => {
+        const k = 1 - out3(t / ln.d0), sc = (1 + (ln.s0 - 1) * k) * z;
+        g.font = `${ITAL(ln.li, t) ? "italic " : ""}${ln.w} ${SIZE}px "Plex Mono"`;
+        const st = ln.words.map((word) => ({ word, ...state(word, t) }));
+        const total = st.reduce((s, it, i) => s + (it.word.txt.length * adv + (i ? gap : 0)) * it.room, 0);
+        let x = 960 + ln.x0 * k - (total * sc) / 2;
+        const base = 540 + ((ln.li - 1.5) * PITCH + SIZE * 0.36) * sc;
+        st.forEach((it, i) => {
+          if (i) x += gap * sc * it.room;
+          if (it.txt) {
+            g.save();
+            g.translate(x, base); g.scale(sc, sc);
+            g.fillText(it.txt, 0, 0);
+            g.restore();
+          }
+          x += it.word.txt.length * adv * sc * it.room;
+        });
+      });
+    };
+    const clock = { t: 0 };
+    tl.fromTo(clock, { t: 0 }, { t: 2.17, duration: 2.17, ease: "none", immediateRender: false, onUpdate: () => draw(clock.t) }, 0);
+    window.__hf = window.__hf || {};
+    window.__hf.buildReady = window.__hf.buildReady || {};
+    window.__hf.buildReady["mono-fonts"] = Promise.all([100, 300, 400, 500].flatMap((w) => [document.fonts.load(`${w} 100px "Plex Mono"`), document.fonts.load(`italic ${w} 100px "Plex Mono"`)])).then(() => draw(clock.t));
+
+    window.__timelines["mono"] = tl;
+  </script>
+</template>

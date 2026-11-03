@@ -1,0 +1,123 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Space Grotesk";
+      font-weight: 300 700;
+      src: url("assets/fonts/SpaceGrotesk-Variable.ttf") format("truetype");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: #1c4135;
+    }
+    #w8-cv {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+    }
+    #w8-grain {
+      position: absolute;
+      inset: 0;
+      opacity: 0.12;
+      mix-blend-mode: multiply;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0.6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    }
+  </style>
+  <div id="root" data-composition-id="weights" data-width="1920" data-height="1080">
+    <canvas id="w8-cv" width="1920" height="1080"></canvas>
+    <div id="w8-grain"></div>
+  </div>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+    const clamp01 = (v) => Math.min(1, Math.max(0, v));
+    const smoother = (u) => { u = clamp01(u); return u * u * u * (u * (u * 6 - 15) + 10); };
+    const BONE = "#ecebe5";
+    const cv = document.getElementById("w8-cv");
+    const g = cv.getContext("2d");
+
+    // ---------------------------------------------------------------- the weights of the sans (shots 35-37)
+    // As the reference does it, with every move eased:
+    // 35 (0-0.5 s): a hard cut to the list half set. Five lines, Light / Regular / Medium / SemiBold / Bold, each line
+    //   three words ("Tilo", "Sans", the weight), every word placed on its own at its final spot, so a missing word
+    //   leaves its gap. About half the words are there at the cut; the rest decode in on their own frames: two to four
+    //   frames of scrambled characters in the line's weight, then the word. A few words land a size too large or a
+    //   little off the line and ease home over a quarter second.
+    // 36 (0.5-0.78 s): the whole list leans together (0 -> 12 degrees, 0.2 s), then each line gains "Italic", decoding
+    //   the same way a frame or two apart, while the line eases over to stay centred.
+    // 37 (0.78-1.7 s): the setting loosens: each word eases to its own size (0.82-1.06) and height, the gaps open and
+    //   close a little, and the whole list falls back (1 -> 0.82). One slow ease each, nothing oscillates.
+    // Space Grotesk has no italic, so the lean is a slant.
+    const hash = (n) => { const v = Math.sin(n * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v); };
+    const FR = 30;
+    const W8 = [300, 400, 500, 600, 700], NAMES = ["Light", "Regular", "Medium", "SemiBold", "Bold"];
+    const SIZE = 150, PITCH = 178, GAP = 0.27;
+    const SCR = "!?&%#@8B:+=/-.40357§*<>".split("");
+    const lines = W8.map((w, li) => ({ w, li, words: ["Tilo", "Sans", NAMES[li], "Italic"].map((txt, wi) => {
+      const n = li * 4 + wi;
+      const atCut = wi < 3 && hash(n * 3 + 1) < 0.5;
+      const at = wi === 3 ? 0.56 + 0.035 * li + 0.04 * hash(n) : atCut ? -1 : 0.04 + 0.4 * hash(n * 3 + 2);
+      const off = wi < 3 && hash(n * 9 + 4) < 0.3;
+      return { txt, wi, n, at, scr: 2 + Math.floor(hash(n * 11) * 3),
+        big: off ? 1.12 + 0.12 * hash(n * 7) : 1, dy: off ? (hash(n * 5) - 0.5) * 0.4 : 0, at0: atCut ? 0 : at,
+        // shot 37: its own size and height to drift to
+        s37: 0.82 + 0.24 * hash(n * 13 + 1), y37: (hash(n * 17 + 2) - 0.5) * 0.12, g37: (hash(n * 19 + 3) - 0.5) * 0.25 };
+    }) }));
+    const SLANT = (t) => Math.tan((12 * Math.PI) / 180) * smoother((t - 0.5) / 0.2);
+    const ZOOM = (t) => 1 - 0.18 * smoother((t - 0.7) / 1.0);
+    const LOOSE = (t) => smoother((t - 0.78) / 0.85);
+    const textOf = (word, t) => {
+      if (word.at < 0) return word.txt;
+      const f = Math.floor((t - word.at) * FR + 1e-6);
+      if (f < 0) return null;
+      if (f < word.scr) return [...word.txt].map((_, k) => SCR[Math.floor(hash(word.n * 17 + k * 3 + f * 5) * SCR.length)]).join("");
+      return word.txt;
+    };
+    const draw = (t) => {
+      g.setTransform(1, 0, 0, 1, 0, 0);
+      g.clearRect(0, 0, 1920, 1080);
+      const bg = g.createLinearGradient(0, 0, 1920, 1080);
+      bg.addColorStop(0, "#2b5545"); bg.addColorStop(0.55, "#1c4135"); bg.addColorStop(1, "#16382d");
+      g.fillStyle = bg; g.fillRect(0, 0, 1920, 1080);
+      const z = ZOOM(t), sl = SLANT(t), lo = LOOSE(t);
+      g.fillStyle = BONE; g.textBaseline = "alphabetic";
+      lines.forEach(({ w, li, words }) => {
+        g.font = `${w} ${SIZE}px "Space Grotesk"`;
+        const base = 540 + (li - 2) * PITCH + SIZE * 0.36;
+        const items = words.map((word) => {
+          const settle = smoother((t - word.at0 - word.scr / FR) / 0.25);
+          const sc = (1 + (word.big - 1) * (1 - settle)) * (1 + (word.s37 - 1) * lo);
+          const dy = (word.dy * (1 - settle) + word.y37 * lo) * SIZE;
+          // the Italic word takes its room as it decodes, so the line re-centres smoothly
+          const room = word.wi === 3 ? smoother((t - word.at) / 0.18) : 1;
+          return { word, sc, dy, room, txt: textOf(word, t), wfull: g.measureText(word.txt).width * sc };
+        });
+        const gapAt = (it) => GAP * SIZE * (1 + it.word.g37 * lo);
+        const total = items.reduce((s, it, k) => s + (it.wfull + (k ? gapAt(it) : 0)) * it.room, 0);
+        let x = 960 - (total * z) / 2;
+        items.forEach((it, k) => {
+          if (k) x += gapAt(it) * z * it.room;
+          if (it.txt && it.room > 0) {
+            const by = 540 + (base - 540) * z + it.dy * z, s = it.sc * z;
+            // scrambled characters are fitted to the word's own width, so they never run into the next word
+            const fit = it.txt === it.word.txt ? 1 : Math.min(1, it.wfull / it.sc / g.measureText(it.txt).width);
+            g.setTransform(s * fit, 0, -sl * s, s, x, by);
+            g.fillText(it.txt, 0, 0);
+            g.setTransform(1, 0, 0, 1, 0, 0);
+          }
+          x += it.wfull * z * it.room;
+        });
+      });
+    };
+    const clock = { t: 0 };
+    tl.fromTo(clock, { t: 0 }, { t: 1.7, duration: 1.7, ease: "none", immediateRender: false, onUpdate: () => draw(clock.t) }, 0);
+    window.__hf = window.__hf || {};
+    window.__hf.buildReady = window.__hf.buildReady || {};
+    window.__hf.buildReady["weights-font"] = Promise.all([300, 400, 500, 600, 700].map((w) => document.fonts.load(`${w} 100px "Space Grotesk"`))).then(() => draw(clock.t));
+
+    window.__timelines["weights"] = tl;
+  </script>
+</template>

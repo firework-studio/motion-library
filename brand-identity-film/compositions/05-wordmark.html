@@ -1,0 +1,200 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+    }
+    .abs {
+      position: absolute;
+    }
+    #w-cv {
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+    }
+    #w-grain {
+      inset: 0;
+      opacity: 0.12;
+      mix-blend-mode: multiply;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0.6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    }
+  </style>
+  <div id="root" data-composition-id="wordmark" data-width="1920" data-height="1080">
+    <canvas id="w-cv" class="abs" width="1920" height="1080"></canvas>
+    <div id="w-grain" class="abs"></div>
+  </div>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+    const clamp01 = (v) => Math.min(1, Math.max(0, v));
+    const smoother = (u) => { u = clamp01(u); return u * u * u * (u * (u * 6 - 15) + 10); };
+    const lerp = (a, b, u) => a + (b - a) * u;
+    const hash = (n) => { const v = Math.sin(n * 127.1 + 31.7) * 43758.5453; return v - Math.floor(v); };
+    const FR = 1 / 30;
+    const BONE = "#ecebe5";
+
+    const cv = document.getElementById("w-cv");
+    const g = cv.getContext("2d");
+    const lit = (x, y, w, h) => {
+      const gr = g.createLinearGradient(x, y, x + w, y + h);
+      gr.addColorStop(0, "#2b5545"); gr.addColorStop(0.55, "#1c4135"); gr.addColorStop(1, "#16382d");
+      return gr;
+    };
+    const mix = (a, b, u) => `rgb(${a.map((v, i) => Math.round(lerp(v, b[i], u))).join(",")})`;
+
+    // ---------------------------------------------------------------- the three Ts, as the last shot leaves them
+    // Same layout as 04-cubes2 (6 x 8 modules, pitch 1.107 units, letters 1.6 apart), pressed flat into their plane,
+    // seen square-on from 40 units: 76.6 px a unit. Left letter square tiles, middle the Tilo tile, right discs; each
+    // letter's face colour as measured on the last frame of that shot, so the hand-over is a cross-fade of like on like.
+    const U = 76.6, MP = 1.1073, LW = 5 * MP + 1, GAP = 1.6;
+    const left0 = -(3 * LW + 2 * GAP) / 2 + 0.5, top0 = (7 * MP + 1) / 2 - 0.5;
+    const TT = ["XXXXXX", "XXXXXX", "..XX..", "..XX..", "..XX..", "..XX..", "..XX..", "..XX.."];
+    const FACE = [[49, 77, 66], [44, 74, 62], [41, 72, 60]];
+    const PINE = [28, 65, 53];
+    const S0 = U, PX = MP * U;
+    const mods = [];
+    for (let L = 0; L < 3; L++) TT.forEach((row, r) => row.split("").forEach((ch, c) => {
+      if (ch === "X") mods.push({ L, r, c, x: 960 + (left0 + L * (LW + GAP) + c * MP) * U, y: 540 - (top0 - r * MP) * U });
+    }));
+
+    // ---------------------------------------------------------------- the wordmark: four tiles and a dot
+    // t, ı, l, o: four 128 px tiles at a 141 px pitch, a little below the middle (as the reference's row); the ı's
+    // square dot above the second tile; the o is the Tilo tile, its top-right a quarter circle
+    const T = 128, ROW_X = 960 - (3 * 141 + T) / 2 + T / 2, ROW_Y = 568;
+    const SLOTS = [0, 1, 2, 3].map((i) => ({ x: ROW_X + i * 141, y: ROW_Y, s: T }));
+    SLOTS.push({ x: ROW_X + 141, y: ROW_Y - 64 - 28 - 26, s: 52 });
+
+    // ---------------------------------------------------------------- timing (composition seconds)
+    // 0.2 the flat letters take over from the pressed 3D ones (same places, same colours, so the swap is unseen); 0.22-0.4 every module squares off;
+    // 0.3-0.95 disorder: the camera closes in (x1.6) while modules merge into bars, blink out and jump about the grid
+    // in quick, frame-quantised moves, until about a dozen loose tiles are left; 0.95-1.5 five of them glide into the
+    // wordmark and the rest leave; 1.55 the colours flip and the wordmark settles back slowly
+    const IN = (t) => (t >= 0.2 ? 1 : 0);
+    const SQ = (t) => smoother((t - 0.22) / 0.18);
+    const ZOOM = (t) => 1 + 0.6 * smoother((t - 0.3) / 0.6);
+    const GATHER = 0.95, FLIP = 1.55;
+    const q = (t) => Math.round(t / FR) * FR;   // events land on frames, so the disorder reads digital, not floaty
+
+    // who survives: a dozen modules that stay in frame once the camera has closed in
+    const inner = mods.map((m, i) => i).filter((i) => Math.abs(mods[i].x - 960) < 560 && Math.abs(mods[i].y - 540) < 300);
+    const keep = new Set([...inner].sort((a, b) => hash(a) - hash(b)).slice(0, 12));
+    mods.forEach((m, i) => {
+      m.keep = keep.has(i);
+      m.die = q(0.3 + 0.45 * hash(i + 7));
+      m.jumps = [];
+      m.w = 1;   // width in modules (a bar is wider)
+    });
+    // merges: a module swallows its right-hand neighbour and becomes a bar (the neighbour goes at that instant)
+    mods.forEach((m, i) => {
+      const nb = mods.findIndex((o) => o.L === m.L && o.r === m.r && o.c === m.c + 1);
+      if (nb < 0 || mods[nb].keep || hash(i + 3) > 0.32) return;
+      if (mods[nb].mergedInto !== undefined || m.mergedInto !== undefined) return;
+      const at = q(0.34 + 0.4 * hash(i + 11));
+      if (!m.keep && m.die <= at + 0.1) m.die = q(at + 0.12 + 0.3 * hash(i + 5));
+      m.merge = at; mods[nb].mergedInto = i; mods[nb].die = at;
+    });
+    // survivors jump one or two pitches, twice, at their own moments, never onto a cell another survivor holds
+    // (the field has mostly cleared by then: everything else is gone by 0.62 s)
+    mods.forEach((m) => { if (!m.keep) m.die = Math.min(m.die, q(0.62)); });
+    const at = [...keep].map((i) => [mods[i].x, mods[i].y]);
+    [...keep].forEach((i, k) => {
+      const m = mods[i];
+      for (let j = 0; j < 2; j++) {
+        for (let tries = 0; tries < 12; tries++) {
+          const dx = Math.round((hash(i + j * 17 + tries * 41) - 0.5) * 4) * PX, dy = Math.round((hash(i * 5 + j + tries * 23) - 0.5) * 3) * PX;
+          const nx = at[k][0] + dx, ny = at[k][1] + dy;
+          if (at.some(([x, y], o) => o !== k && Math.abs(x - nx) < PX * 1.6 && Math.abs(y - ny) < PX * 1.2)) continue;
+          if (Math.abs(nx - 960) > 560 || Math.abs(ny - 540) > 300) continue;
+          m.jumps.push({ at: q(0.62 + 0.14 * j + 0.08 * hash(i * 3 + j)), dx, dy });
+          at[k] = [nx, ny];
+          break;
+        }
+      }
+      m.turn = k === 2 ? 34 : 0;   // one is knocked askew, as in the reference
+    });
+    // the five that make the wordmark: greedy, nearest first, measured where they stand at the gather
+    const zAt = ZOOM(GATHER);
+    const posAt = (m, t) => {
+      let x = m.x, y = m.y;
+      m.jumps.forEach((j) => { const u = smoother((t - j.at) / (4 * FR)); x += j.dx * u; y += j.dy * u; });
+      return [x, y];
+    };
+    const free = [...keep];
+    SLOTS.forEach((sl, si) => {
+      let best = -1, bd = 1e9;
+      free.forEach((i) => {
+        const [x, y] = posAt(mods[i], GATHER), sx = 960 + (x - 960) * zAt, sy = 540 + (y - 540) * zAt;
+        const d = Math.hypot(sx - sl.x, sy - sl.y);
+        if (d < bd) { bd = d; best = i; }
+      });
+      free.splice(free.indexOf(best), 1);
+      mods[best].slot = si;
+    });
+
+    const shape = (x, y, w, h, r, turn, fill) => {
+      g.save();
+      g.translate(x, y);
+      g.rotate((turn * Math.PI) / 180);
+      g.fillStyle = fill === "lit" ? lit(-w / 2, -h / 2, w, h) : fill;
+      g.beginPath(); g.roundRect(-w / 2, -h / 2, w, h, r); g.fill();
+      g.restore();
+    };
+    const draw = (t) => {
+      g.clearRect(0, 0, 1920, 1080);
+      if (t >= FLIP) {
+        // it settles back a little, then (from 2.02 s) falls away faster and faster until the cut (128 -> ~82 px)
+        const z = (1 - 0.12 * smoother((t - FLIP) / 0.6)) * (1 - 0.27 * Math.pow(clamp01((t - 2.02) / 0.5), 2));
+        g.fillStyle = lit(0, 0, 1920, 1080);
+        g.fillRect(0, 0, 1920, 1080);
+        g.save();
+        g.translate(960, ROW_Y); g.scale(z, z); g.translate(-960, -ROW_Y);
+        SLOTS.forEach((sl, i) => shape(sl.x, sl.y, sl.s, sl.s, i === 3 ? [6, T / 2, 6, 6] : i === 4 ? 4 : 6, 0, BONE));
+        g.restore();
+        return;
+      }
+      const a = IN(t);
+      g.globalAlpha = a;
+      g.fillStyle = BONE;
+      g.fillRect(0, 0, 1920, 1080);
+      const sq = SQ(t), z = ZOOM(Math.min(t, GATHER)), col = smoother((t - 0.3) / 0.4);
+      const ga = (k) => smoother((t - GATHER - 0.03 * k) / 0.5);
+      mods.forEach((m, i) => {
+        if (!m.keep && t >= m.die + 2 * FR) return;
+        if (m.mergedInto !== undefined && t >= m.die) return;
+        let [x, y] = posAt(m, t);
+        // a bar: the module stretches over its neighbour's place in three frames
+        const bw = m.merge !== undefined ? smoother((t - m.merge) / (3 * FR)) : 0;
+        let w = S0 * (1 + MP * bw), h = S0;
+        x += (MP * U * bw) / 2;
+        // blink out: gone in two frames, shrinking about its centre
+        if (!m.keep) { const k = 1 - clamp01((t - m.die) / (2 * FR)); w *= k; h *= k; }
+        // the shapes square off: tile corner and disc to the module's small round
+        const rr = m.L === 0 ? 5 : m.L === 1 ? [5, lerp(S0 / 2, 5, sq), 5, 5] : lerp(S0 / 2, 5, sq);
+        let sx = 960 + (x - 960) * z, sy = 540 + (y - 540) * z, sw = w * z, sh = h * z;
+        let turn = m.turn ? m.turn * smoother((t - 0.5) / (4 * FR)) : 0;
+        if (t > GATHER && m.keep) {
+          if (m.slot !== undefined) {
+            const sl = SLOTS[m.slot], u = ga(m.slot);
+            sx = lerp(sx, sl.x, u); sy = lerp(sy, sl.y, u); sw = lerp(sw, sl.s, u); sh = lerp(sh, sl.s, u); turn *= 1 - u;
+          } else {
+            // the rest leave the way they face, out from the middle
+            const u = smoother((t - GATHER) / 0.4), dx = sx - 960, dy = sy - 540, n = Math.hypot(dx, dy) || 1;
+            sx += (dx / n) * 1400 * u; sy += (dy / n) * 1400 * u;
+          }
+        }
+        const fill = col >= 1 ? "lit" : mix(FACE[m.L], PINE, col);
+        let r2 = typeof rr === "number" ? rr * z : rr.map((v) => v * z);
+        if (m.slot === 3) r2 = [5, lerp(5, T / 2, smoother((t - GATHER - 0.3) / 0.25)), 5, 5];
+        shape(sx, sy, sw, sh, r2, turn, fill);
+      });
+      g.globalAlpha = 1;
+    };
+    const clock = { t: 0 };
+    tl.fromTo(clock, { t: 0 }, { t: 2.52, duration: 2.52, ease: "none", immediateRender: false, onUpdate: () => draw(clock.t) }, 0);
+    draw(0);
+
+    window.__timelines["wordmark"] = tl;
+  </script>
+</template>

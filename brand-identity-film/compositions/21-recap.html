@@ -1,0 +1,82 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: #0d1a16;
+    }
+    #rc-cv {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+    }
+  </style>
+  <div id="root" data-composition-id="recap" data-width="1920" data-height="1080">
+    <canvas id="rc-cv" width="1920" height="1080"></canvas>
+  </div>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+    const clamp01 = (v) => Math.min(1, Math.max(0, v));
+    const smoother = (u) => { u = clamp01(u); return u * u * u * (u * (u * 6 - 15) + 10); };
+    const lerp = (a, b, u) => a + (b - a) * u;
+    const hash = (n) => { const v = Math.sin(n * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v); };
+    const FR = 30, END = 3.0;
+    const cv = document.getElementById("rc-cv");
+    const g = cv.getContext("2d");
+
+    // ---------------------------------------------------------------- 76 (3.0 s): the film looks back at itself
+    // A wall of the film's own shots, each cell playing (it steps through three stills of its shot, a frame every
+    // fourth, with a slow drift of its own). One camera over the whole wall: it opens filling the frame with the
+    // subway poster cell, pulls straight back so the wall opens out round it (fast, then slower and slower, to cells
+    // 150 px wide), drifts, and in the last 0.8 s pushes back in on one cell, the opening tile, which fills the frame.
+    // Cells are 16:9, 1920 x 1080 in wall units, on a 2000 x 1150 pitch.
+    const N = 37, IMG = [];
+    const load = (k) => new Promise((res) => { const im = new Image(); im.onload = () => { IMG[k] = im; res(); }; im.src = `assets/images/recap/r${String(k + 1).padStart(2, "0")}.jpg`; });
+    const COLS = 9, ROWS = 9, PX = 2000, PY = 1150;
+    // the cell the camera starts on and the one it ends on (both near the middle)
+    const START = [5, 4], FINISH = [4, 4];
+    // the start cell carries on from the subway poster, the finish cell is the opening tile (the film comes round to
+    // where it began); the rest cycle through the film's shots
+    const cellImgs = (c, r) => {
+      if (c === START[0] && r === START[1]) return [36, 36, 36];
+      if (c === FINISH[0] && r === FINISH[1]) return [1, 1, 1];
+      const b = (((c * 7 + r * 11) % (N - 1)) + (N - 1)) % (N - 1); return [b, (b + 1) % (N - 1), (b + 2) % (N - 1)];
+    };
+    // camera: [time, centre x, centre y (wall units), scale]
+    const KEYS = [[0, START, 1.0], [0.9, START, 0.16], [2.1, [4.6, 4.2], 0.085], [3.0, FINISH, 1.0]];
+    const cam = (t) => {
+      let k = 0; while (k < KEYS.length - 2 && t > KEYS[k + 1][0]) k++;
+      const [t0, a0, s0] = KEYS[k], [t1, a1, s1] = KEYS[k + 1], u = (t - t0) / (t1 - t0);
+      // scale moves in log space so the zoom reads even; out-in uses ease-out going away, ease-in coming back
+      const e = k === 0 ? 1 - Math.pow(1 - clamp01(u), 3) : k === KEYS.length - 2 ? Math.pow(clamp01(u), 2.4) : smoother(u);
+      return { x: lerp(a0[0], a1[0], e), y: lerp(a0[1], a1[1], e), s: Math.exp(lerp(Math.log(s0), Math.log(s1), e)) };
+    };
+    const draw = (t) => {
+      g.fillStyle = "#0d1a16"; g.fillRect(0, 0, 1920, 1080);
+      const { x, y, s } = cam(t), f = Math.floor(t * FR / 4);
+      // the wall runs well past the frame on every side at the farthest pull-back, so it is never seen to end and the
+      // margins stay even left and right, top and bottom
+      for (let r = -8; r < ROWS + 8; r++) for (let c = -9; c < COLS + 9; c++) {
+        const cx = 960 + (c * PX - x * PX) * s, cy = 540 + (r * PY - y * PY) * s, w = 1920 * s, h = 1080 * s;
+        if (cx + w / 2 < 0 || cx - w / 2 > 1920 || cy + h / 2 < 0 || cy - h / 2 > 1080) continue;
+        const ids = cellImgs(c, r), im = IMG[ids[(f + c + r) % 3]];
+        if (!im) continue;
+        const d = 1.04 + 0.03 * Math.sin(t * 1.3 + c + r * 2);   // each cell's own slow drift
+        g.save(); g.beginPath(); g.rect(cx - w / 2, cy - h / 2, w, h); g.clip();
+        g.drawImage(im, cx - (w * d) / 2, cy - (h * d) / 2, w * d, h * d);
+        g.restore();
+      }
+    };
+    const clock = { t: 0 };
+    tl.fromTo(clock, { t: 0 }, { t: END, duration: END, ease: "none", immediateRender: false, onUpdate: () => draw(clock.t) }, 0);
+    window.__hf = window.__hf || {};
+    window.__hf.buildReady = window.__hf.buildReady || {};
+    window.__hf.buildReady["recap"] = Promise.all(Array.from({ length: N }, (_, k) => load(k))).then(() => draw(clock.t));
+
+    window.__timelines["recap"] = tl;
+  </script>
+</template>

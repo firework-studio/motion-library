@@ -1,0 +1,332 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Space Grotesk";
+      font-weight: 300 700;
+      src: url("assets/fonts/SpaceGrotesk-Variable.ttf") format("truetype");
+    }
+    @font-face {
+      font-family: "Plex Mono";
+      font-weight: 400;
+      src: url("assets/fonts/IBMPlexMono-Regular.ttf") format("truetype");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: #0d1a16;
+    }
+    #ot-cv {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+    }
+    #ot-grain {
+      position: absolute;
+      inset: 0;
+      opacity: 0.12;
+      mix-blend-mode: multiply;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0.6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    }
+  </style>
+  <div id="root" data-composition-id="out" data-width="1920" data-height="1080">
+    <canvas id="ot-cv" width="1920" height="1080"></canvas>
+    <div id="ot-grain"></div>
+  </div>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+    const clamp01 = (v) => Math.min(1, Math.max(0, v));
+    const smoother = (u) => { u = clamp01(u); return u * u * u * (u * (u * 6 - 15) + 10); };
+    const lerp = (a, b, u) => a + (b - a) * u;
+    const hash = (n) => { const v = Math.sin(n * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v); };
+    const FR = 30;
+    const cv = document.getElementById("ot-cv");
+    let g = cv.getContext("2d");   // let: the plate shots point the drawing helpers at an offscreen canvas for a moment
+    const INK = "#0d1a16", PINE = "#1c4135", PINE_L = "#2b5545", VERD = "#4f8a78", CELADON = "#a9c4b6", MIST = "#dde5df";
+    const BONE = "#ecebe5", PAPER = "#f6f5f1", GREY = "#8a938f", BRASS = "#c49a5a", COPPER = "#b8704a", OXIDE = "#a85d48";
+    const SANS = (w, s) => `${w} ${s}px "Space Grotesk"`, MONO = (s) => `400 ${s}px "Plex Mono"`;
+    const text = (s, x, y, font, col, align = "left") => { g.font = font; g.fillStyle = col; g.textAlign = align; g.fillText(s, x, y); g.textAlign = "left"; };
+    const tilePath = (x, y, a) => { g.beginPath(); g.moveTo(x, y + a); g.lineTo(x, y); g.lineTo(x + a / 2, y); g.arc(x + a / 2, y + a / 2, a / 2, -Math.PI / 2, 0); g.lineTo(x + a, y + a); g.closePath(); };
+    const tile = (x, y, a, col) => { g.fillStyle = col; tilePath(x, y, a); g.fill(); };
+    const IMGS = {};
+    const load = (n) => new Promise((res) => { const im = new Image(); im.onload = () => { IMGS[n] = im; res(); }; im.src = `assets/images/${n}.jpg`; });
+    const cover = (im, x, y, w, h) => { if (!im) return; const s = Math.max(w / im.width, h / im.height), sw = w / s, sh = h / s; g.drawImage(im, (im.width - sw) / 2, (im.height - sh) / 2, sw, sh, x, y, w, h); };
+    // the wordmark, as the brand sheet sets it (tracked -10/240 em, the ı's dot a small tile)
+    const wordmark = (x, base, em, col, dotCol = COPPER, align = "left") => {
+      g.font = SANS(700, em); g.letterSpacing = `${(-10 / 240) * em}px`;
+      const w = g.measureText("t\u0131lo").width, x0 = align === "center" ? x - w / 2 : x;
+      g.fillStyle = col; g.fillText("t\u0131lo", x0, base);
+      const ix = x0 + g.measureText("t").width; g.letterSpacing = "0px";
+      const dw = 0.1165 * em; tile(ix + 0.1325 * em - dw / 2, base - 0.7 * em, dw, dotCol);
+    };
+    const T66 = 0.5, T67 = 1.0, INS = 5 / FR, END = 3.13;
+    // insert lengths in frames: the network holds longer (15) so its slow turn can read
+    const LENS = [5, 5, 24, 5, 5, 5, 5, 5, 5], STARTS = LENS.map((_, k) => LENS.slice(0, k).reduce((a, b) => a + b, 0) / FR);
+
+    // ---------------------------------------------------------------- 65 (0-0.5 s): the website, close
+    // A hard cut to a corner of Tilo's website: the tile, a live "makers online" counter, the heading "Read the
+    // latest from Tilo" and the top of a story image. The camera pulls back (1.5 -> 1) and the page's dark edge shows.
+    const site = (t) => {
+      g.fillStyle = INK; g.fillRect(0, 0, 1920, 1080);
+      // the run's one camera move starts here: a slow push in (1 -> 1.08 over the shot)
+      const z = 1 + 0.08 * (t / 0.5);
+      g.save(); g.translate(960, 540); g.scale(z, z); g.translate(-960, -540);
+      g.fillStyle = PAPER; g.beginPath(); g.roundRect(330, 170, 1380, 960, 18); g.fill();
+      tile(400, 240, 64, PINE);
+      g.fillStyle = MIST; g.beginPath(); g.roundRect(496, 252, 260, 40, 20); g.fill();
+      g.fillStyle = VERD; g.beginPath(); g.arc(520, 272, 7, 0, 7); g.fill();
+      text(`${(1284 + Math.floor(t * 60)).toLocaleString("en-US")} makers online`, 538, 279, MONO(17), INK);
+      text("Read the latest from Tilo", 400, 410, SANS(500, 66), INK);
+      g.save(); g.beginPath(); g.roundRect(400, 470, 1240, 600, 14); g.clip(); cover(IMGS["art-2"], 400, 470, 1240, 600); g.restore();
+      g.restore();
+    };
+
+    // ---------------------------------------------------------------- 66 (0.5-1.0 s): the posters, as prints in space
+    // The posters are real sheets laid out in depth on a pale wall: the middle one nearest, the others set back a
+    // little and overlapping the one inside them, each with a soft contact shadow and a faint fall of light. At the
+    // cut only the middle one is there; the others slide out from under it, each a beat after the last, while the
+    // camera keeps the run's one move, a slow push in. Nearer sheets grow more than farther ones (parallax), so the
+    // layers read without any added effect.
+    const POSTERS = [
+      (w, h) => { g.fillStyle = PINE; g.fillRect(0, 0, w, h); text("MAKE", 24, h * 0.3, SANS(700, w * 0.24), BONE); text("SHAPE", 24, h * 0.3 + w * 0.22, SANS(700, w * 0.24), BONE); text("SHIP.", 24, h * 0.3 + w * 0.44, SANS(700, w * 0.24), BRASS); wordmark(24, h - 30, w * 0.16, BONE); },
+      (w, h) => { cover(IMGS["art-3"], 0, 0, w, h); g.fillStyle = "rgba(13,26,22,0.35)"; g.fillRect(0, h * 0.7, w, h * 0.3); wordmark(24, h - 30, w * 0.16, BONE); text("Tilo Makeathon 2026", 24, h * 0.78, SANS(600, w * 0.06), BONE); },
+      (w, h) => { g.fillStyle = BONE; g.fillRect(0, 0, w, h); for (let k = 0; k < 16; k++) tile(24 + (k % 4) * (w - 48) / 4, 40 + Math.floor(k / 4) * (w - 48) / 4, (w - 48) / 4 - 8, [PINE, VERD, BRASS, COPPER][(k * 3) % 4]); text("Make something", 24, h - 80, SANS(600, w * 0.075), INK); text("that fits.", 24, h - 40, SANS(600, w * 0.075), INK); },
+      (w, h) => { g.fillStyle = COPPER; g.fillRect(0, 0, w, h); tile(w * 0.2, h * 0.18, w * 0.6, BONE); wordmark(w / 2, h - 50, w * 0.2, INK, PINE, "center"); },
+      (w, h) => { cover(IMGS["art-7"], 0, 0, w, h); wordmark(24, 70, w * 0.16, BONE); },
+      (w, h) => { g.fillStyle = VERD; g.fillRect(0, 0, w, h); text("kit", 24, h * 0.4, SANS(400, w * 0.2), BONE); text("grid", 24, h * 0.4 + w * 0.2, SANS(400, w * 0.2), BONE); text("ship", 24, h * 0.4 + w * 0.4, SANS(700, w * 0.2), INK); },
+      (w, h) => { cover(IMGS["art-8"], 0, 0, w, h); },
+    ];
+    // A small piece of design on each poster, drawn in once the poster has landed (v: 0 -> 1). Each one belongs to
+    // what is on that poster: a print tag on every sheet (number, size, a tile), plus one detail of its own.
+    const ease3 = (u) => 1 - Math.pow(1 - clamp01(u), 3);
+    const OVERLAYS = [
+      // MAKE SHAPE SHIP: a brass rule draws under SHIP., and a small tile drops in after the full stop
+      (w, h, v) => { const u = ease3(v); g.fillStyle = BRASS; g.fillRect(24, h * 0.3 + w * 0.44 + 14, (w * 0.62) * u, 4); if (v > 0.5) tile(24 + w * 0.66, h * 0.3 + w * 0.44 - w * 0.07, w * 0.07 * ease3((v - 0.5) * 2), BRASS); },
+      // the ring: a hairline circle traces round the sculpture and a mono caption ticks out beside it
+      (w, h, v) => { g.strokeStyle = "rgba(236,235,229,0.9)"; g.lineWidth = 1.5; g.beginPath(); g.arc(w * 0.5, h * 0.36, w * 0.36, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * ease3(v)); g.stroke();
+        const cap = "RING, 24 TILES", n = Math.floor(cap.length * clamp01((v - 0.3) / 0.7)); text(cap.slice(0, n), 24, h * 0.66, MONO(13), BONE); },
+      // the tile grid: one tile turns copper, a fine frame closes round it
+      (w, h, v) => { const cs = (w - 48) / 4, x = 24 + 2 * cs, y = 40 + cs; if (v > 0.3) tile(x, y, cs - 8, COPPER); g.strokeStyle = INK; g.lineWidth = 1.5; const e = 6, u = ease3(v);
+        g.beginPath(); g.moveTo(x - e, y - e); g.lineTo(x - e + (cs + 2 * e - 8) * u, y - e); g.moveTo(x + cs - 8 + e, y + cs - 8 + e); g.lineTo(x + cs - 8 + e - (cs + 2 * e - 8) * u, y + cs - 8 + e); g.stroke(); },
+      // the copper sheet: a small pine tile sits in the big tile's round corner, like the ı's dot
+      (w, h, v) => { const a = w * 0.12 * ease3(v); tile(w * 0.2 + w * 0.6 - w * 0.16 - a / 2 + w * 0.06, h * 0.18 + w * 0.06 - a / 2 + w * 0.04, a, PINE); },
+      // the bust: a leader line from the patina on the cheek to a label
+      (w, h, v) => { const u = ease3(v), x0 = w * 0.42, y0 = h * 0.55, x1 = w * 0.78, y1 = h * 0.42; g.strokeStyle = BONE; g.lineWidth = 1.5; g.beginPath(); g.moveTo(x0, y0); g.lineTo(lerp(x0, x1, u), lerp(y0, y1, u)); g.stroke();
+        g.fillStyle = BONE; g.beginPath(); g.arc(x0, y0, 4, 0, 7); g.fill(); if (v > 0.6) text("VERDIGRIS", x1 + 8, y1 + 5, MONO(13), BONE); },
+      // kit / grid / ship: a pine bar slides down from kit to rest behind ship
+      (w, h, v) => { const u = ease3(v), y = lerp(h * 0.4 - w * 0.17, h * 0.4 + w * 0.4 - w * 0.17, u); g.fillStyle = "rgba(28,65,53,0.25)"; g.fillRect(16, y, w - 32, w * 0.22); },
+      // the notebook: a fine pine corner bracket closes round it, and a caption names it
+      (w, h, v) => { const u = ease3(v); g.strokeStyle = PINE; g.lineWidth = 2; const L = 40 * u;
+        [[20, 20, 1, 1], [w - 20, 20, -1, 1], [20, h - 20, 1, -1], [w - 20, h - 20, -1, -1]].forEach(([x, y, sx, sy]) => { g.beginPath(); g.moveTo(x + sx * L, y); g.lineTo(x, y); g.lineTo(x, y + sy * L); g.stroke(); });
+        if (v > 0.5) text("NOTEBOOK, PINE CLOTH", 34, h - 34, MONO(12), INK); },
+    ];
+    const printTag = (w, h, n, v, dark) => {
+      const u = ease3(v), col = dark ? BONE : INK;
+      g.globalAlpha = u; text(`${String(n + 1).padStart(2, "0")} / 07`, w - 24, 34, MONO(12), col, "right"); text("A2 · 420 × 594", w - 24, 52, MONO(10), col, "right"); g.globalAlpha = 1;
+      g.fillStyle = col; g.fillRect(w - 24 - 60 * u, 62, 60 * u, 1);
+    };
+    const DARK = [true, true, false, true, true, true, false];
+    const posters = (t) => {
+      const tt = t - T66;
+      g.fillStyle = "#dedfda"; g.fillRect(0, 0, 1920, 1080);
+      const W = 520, H = 720, push = 0.78 + 0.08 * (tt / 0.5);
+      [[3, 0.9], [-3, 0.9], [2, 0.6], [-2, 0.6], [1, 0.3], [-1, 0.3], [0, 0]].forEach(([k, d]) => {
+        const i = Math.abs(k), show = i === 0 ? 1 : smoother((tt - 0.05 * i) / 0.22);
+        const z = push * (1 - 0.18 * d) * (1 + 0.05 * (1 - d) * (tt / 0.5));
+        // each sheet travels out by the sum of its own and its inner neighbours' progress, so until it moves it lies
+        // exactly under the one inside it and nothing shows before its turn
+        let off = 0; for (let j = 1; j <= i; j++) off += smoother((tt - 0.05 * j) / 0.22);
+        const x = 960 + Math.sign(k) * off * (W * 0.82) * z, y = 540 + d * 18;
+        const w = W * z, h = H * z;
+        g.save(); g.shadowColor = "rgba(13,26,22,0.18)"; g.shadowBlur = 30 * z; g.shadowOffsetY = 10 * z;
+        g.fillStyle = PAPER; g.fillRect(x - w / 2, y - h / 2, w, h); g.restore();
+        g.save(); g.translate(x - w / 2, y - h / 2); g.scale(z, z); g.beginPath(); g.rect(0, 0, W, H); g.clip(); const pi = (k + 7) % 7; POSTERS[pi](W, H);
+        { const land = i === 0 ? tt : tt - 0.05 * i - 0.22; const v = clamp01(land / 0.3); if (v > 0) { OVERLAYS[pi](W, H, v); printTag(W, H, pi, v, DARK[pi]); } }
+        const lg = g.createLinearGradient(0, 0, W, H); lg.addColorStop(0, "rgba(255,255,255,0.07)"); lg.addColorStop(1, "rgba(13,26,22,0.07)"); g.fillStyle = lg; g.fillRect(0, 0, W, H);
+        g.restore();
+      });
+    };
+
+    // ---------------------------------------------------------------- 67-72 (1.0-2.0 s): the brand out in the world
+    // Six five-frame inserts, hard cut to hard cut, each its own scene, each drifting a little.
+    // a plate photograph filling the frame (cover), pushed in slowly, with artwork set into the panel [x0, y0, x1, y1]
+    // given in the plate's own pixels (1344 x 768). To sit in the photograph rather than on it, the artwork is
+    //  1. graded to the plate: its blacks lifted and whites lowered to the panel's own range, contrast and saturation
+    //     eased, softened to the plate's sharpness;
+    //  2. lit by the plate: the blank panel's own shading (blurred, brightened so its average is neutral) multiplied
+    //     over it, so light falloff, lamp hot spots and shadows carry across the print;
+    //  3. given the panel's surface: what the panel reflects (its highlights) screened back over it, a hairline edge
+    //     where print meets frame, and the plate's grain;
+    //  4. for the billboard, a little of the sky's haze over it, as distance does.
+    const ART = document.createElement("canvas"), ax = ART.getContext("2d");
+    const onPlate = (name, u, box, art, mode) => {
+      const im = IMGS[name]; if (!im) return;
+      const z = 1 + 0.035 * u, S = (1920 / 1344) * z, ox = 960 - 672 * S, oy = 540 - 384 * S;
+      g.drawImage(im, ox, oy, 1344 * S, 768 * S);
+      const x = ox + box[0] * S, y = oy + box[1] * S, w = (box[2] - box[0]) * S, h = (box[3] - box[1]) * S;
+      const pw = box[2] - box[0], ph = box[3] - box[1];
+      // 1. render and grade the artwork offscreen
+      ART.width = Math.ceil(w); ART.height = Math.ceil(h);
+      ax.clearRect(0, 0, ART.width, ART.height);
+      const main = g; g = ax; art(ART.width, ART.height); g = main;
+      const P = {
+        screen: { f: "contrast(0.82) saturate(0.9) brightness(0.92) blur(0.6px)", light: 0.55, spec: 0.12, haze: 0 },
+        print: { f: "contrast(0.8) saturate(0.82) brightness(0.95) blur(0.7px)", light: 1, spec: 0.35, haze: 0 },
+        sky: { f: "contrast(0.78) saturate(0.78) brightness(0.96) blur(0.9px)", light: 1, spec: 0.15, haze: 0.14 },
+      }[mode];
+      g.save(); g.beginPath(); g.rect(x, y, w, h); g.clip();
+      g.filter = P.f; g.drawImage(ART, x, y, w, h); g.filter = "none";
+      // 2. light from the plate
+      g.globalCompositeOperation = "multiply"; g.globalAlpha = P.light;
+      // sampled a few pixels inside the panel, so the blur never pulls in what lies outside it (struts, frame)
+      g.filter = "blur(6px) brightness(1.18)"; g.drawImage(im, box[0] + 8, box[1] + 8, pw - 16, ph - 16, x, y, w, h); g.filter = "none";
+      // 3. surface: the panel's highlights back over the print, then a hairline edge
+      g.globalCompositeOperation = "screen"; g.globalAlpha = P.spec;
+      g.filter = "contrast(2.2) brightness(0.75)"; g.drawImage(im, box[0], box[1], pw, ph, x, y, w, h); g.filter = "none";
+      g.globalCompositeOperation = "source-over"; g.globalAlpha = 1;
+      if (P.haze) { g.fillStyle = `rgba(214,220,222,${P.haze})`; g.fillRect(x, y, w, h); }
+      g.strokeStyle = "rgba(0,0,0,0.25)"; g.lineWidth = 1.5; g.strokeRect(x + 0.75, y + 0.75, w - 1.5, h - 1.5);
+      // grain, fixed per scene
+      g.globalAlpha = 0.06; for (let k = 0; k < 900; k++) { g.fillStyle = hash(k + name.length * 7) > 0.5 ? "#fff" : "#000"; g.fillRect(x + hash(k * 3 + 1) * w, y + hash(k * 5 + 2) * h, 1.5, 1.5); }
+      g.globalAlpha = 1;
+      g.restore();
+    };
+    // the brand on things people wear: the artwork is a transparent print (ink only); the fabric's own light (the plate,
+    // blurred and lifted by `gain` so the cloth's shading reads as light, not colour) and its weave (the plate's fine
+    // detail, overlaid) are applied to the ink alone, so the print sits in the cloth, follows its folds and shows its
+    // texture through. A slight softening matches the plate's focus.
+    const MASK = document.createElement("canvas"), mx = MASK.getContext("2d");
+    const onFabric = (name, u, box, art, gain, ink = 0.94, soft = 0.8, tex = 0.55) => {
+      const im = IMGS[name]; if (!im) return;
+      const z = 1 + 0.035 * u, S = (1920 / 1344) * z, ox = 960 - 672 * S, oy = 540 - 384 * S;
+      g.drawImage(im, ox, oy, 1344 * S, 768 * S);
+      const x = ox + box[0] * S, y = oy + box[1] * S, w = (box[2] - box[0]) * S, h = (box[3] - box[1]) * S, pw = box[2] - box[0], ph = box[3] - box[1];
+      ART.width = MASK.width = Math.ceil(w); ART.height = MASK.height = Math.ceil(h);
+      ax.clearRect(0, 0, ART.width, ART.height);
+      const main = g; g = ax; art(ART.width, ART.height); g = main;
+      mx.clearRect(0, 0, MASK.width, MASK.height); mx.drawImage(ART, 0, 0);
+      ax.globalCompositeOperation = "multiply"; ax.filter = `grayscale(1) blur(5px) brightness(${gain})`;   // light only, never the cloth's colour
+      ax.drawImage(im, box[0], box[1], pw, ph, 0, 0, ART.width, ART.height); ax.filter = "none";
+      ax.globalCompositeOperation = "overlay"; ax.globalAlpha = tex; ax.filter = `grayscale(1) brightness(${Math.min(2.5, gain)}) contrast(1.6)`;
+      ax.drawImage(im, box[0], box[1], pw, ph, 0, 0, ART.width, ART.height); ax.filter = "none"; ax.globalAlpha = 1;
+      ax.globalCompositeOperation = "destination-in"; ax.drawImage(MASK, 0, 0); ax.globalCompositeOperation = "source-over";
+      g.save(); g.globalAlpha = ink; g.filter = `blur(${soft}px)`; g.drawImage(ART, x, y, w, h); g.filter = "none"; g.restore();
+    };
+    const INSERTS = [
+      // 67: a world-tour page, pine with a fine tile texture and paper type
+      (u) => { g.fillStyle = PINE; g.fillRect(0, 0, 1920, 1080);
+        for (let y = 0; y < 1080; y += 48) for (let x = 0; x < 1920; x += 48) { g.globalAlpha = 0.07 + 0.08 * hash(x * 3 + y); tile(x + 8 - u * 20, y + 8, 30, BONE); } g.globalAlpha = 1;
+        text("Tilo", 160, 470, SANS(700, 190), BONE); text("Around the World", 160, 640, SANS(500, 150), BONE); text("12 cities · 2026", 166, 740, MONO(36), CELADON); },
+      // 68: a loading page, ink with copper type
+      (u) => { g.fillStyle = INK; g.fillRect(0, 0, 1920, 1080); text("CONNECTING...", 960, 520, MONO(96), COPPER, "center"); text(`STAGE ${1 + Math.floor(u * 3)}`, 960, 640, MONO(54), COPPER, "center");
+        for (let k = 0; k < 12; k++) { g.fillStyle = k < u * 12 ? COPPER : "#2a2320"; g.fillRect(700 + k * 44, 700, 34, 12); } },
+      // 69: the network, built in depth (0.8 s). Several motions layered, each slow on its own:
+      //  - the camera: dollies in a little and orbits about the vertical axis while its tilt eases down;
+      //  - the build, staged outward: the mark first, then a curved line grows from it to each kit hub in turn, the hub
+      //    blooming when its line arrives; from each hub lines grow on to its makers, which bloom in turn;
+      //  - local life: every maker slowly circles its hub, every hub breathes a little;
+      //  - signals: once a line exists a short thin copper stroke runs out along it;
+      //  - depth: far nodes are smaller, translucent and very slightly soft. Hairlines, mono labels, a plain ground.
+      (u, T) => {
+        const bg = g.createLinearGradient(0, 0, 0, 1080); bg.addColorStop(0, "#e3e5e0"); bg.addColorStop(1, "#d4d8d2");
+        g.fillStyle = bg; g.fillRect(0, 0, 1920, 1080);
+        const KITS = ["kit", "grid", "studio", "lab", "ship"], COLS = [["#2b5545", PINE], ["#6a9f8d", VERD], ["#d6b27a", BRASS], ["#d08a62", COPPER], ["#c27a63", OXIDE]];
+        const yaw = -0.35 + 0.42 * smoother(T / 0.8), tilt = 0.5 - 0.12 * smoother(T / 0.8), F = 1500, dolly = 120 * smoother(T / 0.8);
+        const P3 = (x, y, z) => {
+          const cx = x * Math.cos(yaw) + z * Math.sin(yaw), cz = -x * Math.sin(yaw) + z * Math.cos(yaw);
+          const cy = y * Math.cos(tilt) - cz * Math.sin(tilt), dz = y * Math.sin(tilt) + cz * Math.cos(tilt) - dolly;
+          const s2 = 1.15 * F / (F + dz); return [960 + cx * s2, 520 + cy * s2, s2, dz];   // drawn 1.15x: the graph fills the frame
+        };
+        const blur = (dz) => Math.min(1.4, Math.abs(dz + dolly) / 420);
+        // the graph, with build times
+        const nodes = [{ p: [0, 0, 0], hub: -1, at: 0 }];
+        KITS.forEach((n, k) => {
+          const a = (k / 5) * Math.PI * 2 + 0.3, hp = [Math.cos(a) * 470, 12 * Math.sin(T * 3 + k), Math.sin(a) * 470], hAt = 0.06 + k * 0.05;
+          nodes.push({ p: hp, hub: 0, k, name: n, big: true, at: hAt });
+          const hi = nodes.length - 1;
+          for (let m = 0; m < 5; m++) {
+            const b = a + (m - 2) * 0.5 + 0.25 * T, r = 175 + 30 * hash(k * 7 + m);
+            nodes.push({ p: [hp[0] + Math.cos(b) * r, (hash(k * 3 + m) - 0.5) * 170, hp[2] + Math.sin(b) * r], hub: hi, k, at: hAt + 0.16 + m * 0.03 });
+          }
+        });
+        const pr = nodes.map((n) => P3(...n.p));
+        const grow = (n) => clamp01((T - n.at) / 0.14);   // the line reaches the node over 0.14 s, then the node blooms
+        // curved lines: a gentle arc lifted in the middle, growing from the parent outward
+        const arcPt = (a, b, q) => { const m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2 - 60, (a[2] + b[2]) / 2]; const i1 = (A, B, M) => (1 - q) * (1 - q) * A + 2 * (1 - q) * q * M + q * q * B; return [i1(a[0], b[0], m[0]), i1(a[1], b[1], m[1]), i1(a[2], b[2], m[2])]; };
+        nodes.forEach((n, i) => {
+          if (n.hub < 0) return; const gq = grow(n); if (gq <= 0) return;
+          const A = nodes[n.hub].p, B = n.p, steps = 24, alpha = n.big ? 0.55 : 0.32;
+          g.lineWidth = n.big ? 1.8 : 1.1;
+          for (let k = 0; k < steps * gq; k++) {
+            const p0 = P3(...arcPt(A, B, k / steps)), p1 = P3(...arcPt(A, B, Math.min(gq, (k + 1) / steps)));
+            g.strokeStyle = `rgba(13,26,22,${alpha * clamp01(1 - (p0[3] + dolly) / 1400)})`; g.beginPath(); g.moveTo(p0[0], p0[1]); g.lineTo(p1[0], p1[1]); g.stroke();
+          }
+          // the signal: a short, thin copper stroke that runs out along the finished line, nothing more
+          if (gq >= 1) {
+            const ph = ((T - n.at - 0.14) * 1.3 + hash(i) * 0.8) % 1;
+            if (ph < 0.6) {
+              const q0 = smoother(ph / 0.6), q1 = Math.min(1, q0 + 0.12);
+              g.strokeStyle = `rgba(184,112,74,${0.85 * clamp01(1 - (pr[i][3] + dolly) / 1400)})`; g.lineWidth = n.big ? 2.2 : 1.4; g.beginPath();
+              for (let k = 0; k <= 6; k++) { const pp = P3(...arcPt(A, B, lerp(q0, q1, k / 6))); k ? g.lineTo(pp[0], pp[1]) : g.moveTo(pp[0], pp[1]); }
+              g.stroke();
+            }
+          }
+        });
+        // nodes, far to near, blooming in, with focus falloff and floor shadows
+        const order = nodes.map((n, i) => i).sort((a, b) => pr[b][3] - pr[a][3]);
+        order.forEach((i) => {
+          const n = nodes[i], [x, y, s2, dz] = pr[i];
+          if (i === 0) { const b = smoother(T / 0.1); g.fillStyle = `rgba(246,245,241,${0.97 * b})`; g.beginPath(); g.arc(x, y, 86 * s2 * (0.8 + 0.2 * b), 0, 7); g.fill(); g.strokeStyle = `rgba(13,26,22,${0.18 * b})`; g.lineWidth = 1; g.stroke(); g.strokeStyle = `rgba(13,26,22,${0.08 * b})`; g.beginPath(); g.arc(x, y, 118 * s2, 0, 7); g.stroke(); g.globalAlpha = b; wordmark(x, y + 25 * s2, 72 * s2, INK, COPPER, "center"); g.globalAlpha = 1; return; }
+          const bl = clamp01((T - n.at - 0.12) / 0.12); if (bl <= 0) return;
+          const sz = (n.big ? 60 : 24) * s2 * (0.6 + 0.4 * smoother(bl)) * (n.big ? 1 + 0.03 * Math.sin(T * 4 + n.k) : 1);
+          g.save(); g.globalAlpha = (0.35 + 0.65 * clamp01(1 - (dz + dolly) / 1300)) * bl; g.filter = `blur(${blur(dz).toFixed(1)}px)`;
+          const gr = g.createLinearGradient(x - sz / 2, y - sz / 2, x + sz / 2, y + sz / 2); gr.addColorStop(0, COLS[n.k][0]); gr.addColorStop(1, COLS[n.k][1]);
+          g.fillStyle = gr; tilePath(x - sz / 2, y - sz / 2, sz); g.fill(); g.filter = "none";
+          if (n.big) { g.font = MONO(Math.max(10, Math.round(15 * s2))); g.letterSpacing = "2px"; g.fillStyle = INK; g.textAlign = "center"; g.fillText(n.name.toUpperCase(), x, y + sz / 2 + 24 * s2); g.textAlign = "left"; g.letterSpacing = "0px"; }
+          g.restore();
+        });
+      },
+      // 70-72: the brand in real places. Each is a generated photograph of an empty place (FLUX.1-schnell, Apache 2.0)
+      // with our artwork set into its blank panel, then lit by the photograph itself (the plate multiplied back over
+      // the panel), so it takes the place's light and grain. The camera keeps the run's slow push in.
+      (u) => onPlate("plate-hall", u, [354, 217, 1044, 567], (w, h) => {
+        g.fillStyle = PINE; g.fillRect(0, 0, w, h);
+        tile(w / 2 - h * 0.17, h * 0.2, h * 0.34, BONE); wordmark(w / 2, h * 0.8, h * 0.2, BONE, BRASS, "center");
+      }, "screen"),
+      (u) => onPlate("plate-subway", u, [534, 291, 808, 592], (w, h) => {
+        // one poster across the two door panels: the gap between the doors runs through its middle
+        g.fillStyle = BONE; g.fillRect(0, 0, w, h);
+        text("MAKE", 14, h * 0.2, SANS(700, h * 0.12), PINE); text("SHAPE", 14, h * 0.32, SANS(700, h * 0.12), PINE); text("SHIP.", 14, h * 0.44, SANS(700, h * 0.12), COPPER);
+        for (let k = 0; k < 9; k++) tile(w * 0.56 + (k % 3) * w * 0.13, h * 0.08 + Math.floor(k / 3) * w * 0.13, w * 0.11, [PINE, VERD, BRASS][(k + Math.floor(k / 3)) % 3]);
+        wordmark(14, h - 16, h * 0.08, INK);
+      }, "print"),
+      (u) => onPlate("plate-billboard", u, [337, 247, 969, 544], (w, h) => {
+        g.fillStyle = PAPER; g.fillRect(0, 0, w, h);
+        text("Make something", w * 0.06, h * 0.42, SANS(600, h * 0.17), INK); text("that fits.", w * 0.06, h * 0.62, SANS(600, h * 0.17), INK);
+        tile(w * 0.8, h * 0.18, h * 0.3, PINE); wordmark(w * 0.06, h * 0.88, h * 0.11, PINE, COPPER);
+      }, "sky"),
+      // 73: a woven label on a beanie: the wordmark in pine thread
+      (u) => onFabric("plate-beanie", u, [790, 326, 1066, 414], (w, h) => { wordmark(w / 2, h * 0.7, h * 0.62, PINE, COPPER, "center"); }, 1.15, 0.9, 0.9),
+      // 74: the back of a black tee: the mark and wordmark printed in bone
+      (u) => onFabric("plate-tee", u, [520, 170, 820, 470], (w, h) => { tile(w / 2 - w * 0.17, h * 0.12, w * 0.34, BONE); wordmark(w / 2, h * 0.86, w * 0.26, BONE, BRASS, "center"); }, 15, 0.9, 0.7, 0.18),
+      // 75: a verdigris tote: one big bone tile, printed
+      (u) => onFabric("plate-tote", u, [520, 230, 920, 600], (w, h) => { tile(w * 0.22, h * 0.14, w * 0.56, BONE); wordmark(w / 2, h * 0.94, w * 0.16, BONE, BRASS, "center"); }, 1.75, 0.92, 0.8),
+    ];
+    const draw = (t) => {
+      g.clearRect(0, 0, 1920, 1080);
+      if (t < T66) site(t);
+      else if (t < T67) posters(t);
+      else { let k = 0; while (k < LENS.length - 1 && t - T67 >= STARTS[k + 1]) k++; const T = t - T67 - STARTS[k]; INSERTS[k](clamp01(T / (LENS[k] / FR)), T); }
+    };
+    const clock = { t: 0 };
+    tl.fromTo(clock, { t: 0 }, { t: END, duration: END, ease: "none", immediateRender: false, onUpdate: () => draw(clock.t) }, 0);
+    window.__hf = window.__hf || {};
+    window.__hf.buildReady = window.__hf.buildReady || {};
+    window.__hf.buildReady["out"] = Promise.all([document.fonts.load('700 50px "Space Grotesk"'), document.fonts.load('500 50px "Space Grotesk"'), document.fonts.load('400 50px "Plex Mono"'), ...["art-2", "art-3", "art-7", "art-8", "plate-hall", "plate-subway", "plate-billboard", "plate-beanie", "plate-tee", "plate-tote"].map(load)]).then(() => draw(clock.t));
+
+    window.__timelines["out"] = tl;
+  </script>
+</template>

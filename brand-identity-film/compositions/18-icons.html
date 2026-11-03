@@ -1,0 +1,134 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: #ecebe5;
+    }
+    #ic-cv {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+    }
+    #ic-grain {
+      position: absolute;
+      inset: 0;
+      opacity: 0.12;
+      mix-blend-mode: multiply;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0.6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    }
+  </style>
+  <div id="root" data-composition-id="icons" data-width="1920" data-height="1080">
+    <canvas id="ic-cv" width="1920" height="1080"></canvas>
+    <div id="ic-grain"></div>
+  </div>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+    const clamp01 = (v) => Math.min(1, Math.max(0, v));
+    const smoother = (u) => { u = clamp01(u); return u * u * u * (u * (u * 6 - 15) + 10); };
+    const lerp = (a, b, u) => a + (b - a) * u;
+    const mix = (a, b, u) => { const p = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16)); const A = p(a), B = p(b); return `rgb(${A.map((v, i) => Math.round(lerp(v, B[i], u))).join(",")})`; };
+    const cv = document.getElementById("ic-cv");
+    const g = cv.getContext("2d");
+    // brand sheet v3
+    const BONE = "#ecebe5", INK = "#0d1a16", PINE = "#1c4135", VERD = "#4f8a78", CELADON = "#a9c4b6", COPPER = "#b8704a", BRASS = "#c49a5a", OXIDE = "#a85d48", LINE = "#a3aaa5";
+
+    // ---------------------------------------------------------------- the icons (drawn at unit size: a 100 x 100 cell)
+    // A small set in the reference's language: grey hairline structure, one solid brand colour accent, and each icon
+    // has a little life of its own (a phase p, 0-1, looping), so the wall is never still. All lines 3 units.
+    const st = (c, w = 3) => { g.strokeStyle = c; g.lineWidth = w; g.lineCap = "round"; g.lineJoin = "round"; };
+    const tilePath = (x, y, a) => { g.beginPath(); g.moveTo(x, y + a); g.lineTo(x, y); g.lineTo(x + a / 2, y); g.arc(x + a / 2, y + a / 2, a / 2, -Math.PI / 2, 0); g.lineTo(x + a, y + a); g.closePath(); };
+    const ICONS = {
+      // an orbit: two ellipses, a dot travelling along a diagonal to a second dot
+      orbit: (p) => { st(LINE); g.beginPath(); g.ellipse(50, 50, 20, 34, -0.5, 0, 7); g.stroke(); g.beginPath(); g.ellipse(50, 50, 12, 22, -0.5, 0, 7); g.stroke();
+        const u = 0.5 + 0.5 * Math.sin(p * 6.283); st(PINE, 4); g.beginPath(); g.moveTo(26, 70); g.lineTo(lerp(30, 70, u), lerp(66, 32, u)); g.stroke();
+        g.fillStyle = PINE; g.beginPath(); g.arc(26, 70, 7, 0, 7); g.fill(); g.beginPath(); g.arc(74, 28, 7, 0, 7); g.fill(); },
+      // a wireframe cube with the tile inside, turning a little
+      cube: (p) => { const o = 10 + 3 * Math.sin(p * 6.283); st(LINE); g.strokeRect(20, 30, 50, 50); g.strokeRect(20 + o, 30 - o, 50, 50);
+        g.beginPath(); g.moveTo(20, 30); g.lineTo(20 + o, 30 - o); g.moveTo(70, 30); g.lineTo(70 + o, 30 - o); g.moveTo(70, 80); g.lineTo(70 + o, 80 - o); g.moveTo(20, 80); g.lineTo(20 + o, 80 - o); g.stroke();
+        g.fillStyle = PINE; tilePath(37 + o / 2, 47 - o / 2, 16); g.fill(); },
+      // a friendly face in verdigris under a dial that sweeps
+      face: (p) => { st(LINE); g.beginPath(); g.arc(50, 52, 34, Math.PI * 1.1, Math.PI * 1.9); g.stroke();
+        for (let k = 0; k < 9; k++) { const a = Math.PI * (1.1 + 0.1 * k); g.beginPath(); g.moveTo(50 + Math.cos(a) * 34, 52 + Math.sin(a) * 34); g.lineTo(50 + Math.cos(a) * 39, 52 + Math.sin(a) * 39); g.stroke(); }
+        g.fillStyle = CELADON; g.beginPath(); g.roundRect(30, 38, 40, 34, 12); g.fill();
+        g.fillStyle = PINE; g.fillRect(40, 48, 5, 7); g.fillRect(55, 48, 5, 7); st(PINE, 3); g.beginPath(); g.arc(50, 58, 8, 0.2, Math.PI - 0.2); g.stroke();
+        st(LINE); g.strokeRect(28, 78, 44, 7); g.fillStyle = LINE; for (let k = 0; k < 3; k++) g.fillRect(48 + k * 7, 80, 4, 3);
+        const a = Math.PI * (1.1 + 0.8 * (0.5 + 0.5 * Math.sin(p * 6.283))); st(COPPER, 3); g.beginPath(); g.moveTo(50, 52); g.lineTo(50 + Math.cos(a) * 30, 52 + Math.sin(a) * 30); g.stroke(); },
+      // a target, the rings pulsing out
+      target: (p) => { for (let k = 0; k < 3; k++) { const r = 10 + ((k + p) % 3) * 12; st(mix(OXIDE, BONE, r / 40)); g.beginPath(); g.arc(50, 50, r, 0, 7); g.stroke(); } g.fillStyle = PINE; g.fillRect(44, 44, 12, 12); },
+      // a bar chart growing, an arrow up
+      bars: (p) => { st(LINE); g.beginPath(); g.moveTo(20, 80); g.lineTo(82, 80); g.stroke();
+        [0.4, 0.6, 0.8, 1].forEach((h, k) => { const hh = 46 * h * (0.7 + 0.3 * Math.sin(p * 6.283 + k)); g.fillStyle = k === 3 ? VERD : CELADON; g.fillRect(24 + k * 14, 80 - hh, 10, hh); });
+        st(PINE, 4); g.beginPath(); g.moveTo(22, 40); g.lineTo(50, 20); g.moveTo(42, 20); g.lineTo(50, 20); g.lineTo(48, 28); g.stroke(); },
+      // a cross of four blocks, breathing apart
+      cross: (p) => { const o = 8 + 4 * Math.sin(p * 6.283); g.fillStyle = OXIDE; [[-1, -1], [1, -1], [-1, 1], [1, 1], [0, 0]].forEach(([a, b]) => g.fillRect(50 + a * (o + 6) - 7, 50 + b * (o + 6) - 7, 14, 14)); },
+      // three discs in a row, one hopping
+      dots: (p) => { g.fillStyle = PINE; [0, 1, 2].forEach((k) => { const hop = k === Math.floor(p * 3) % 3 ? 8 * Math.sin((p * 3 % 1) * Math.PI) : 0; g.beginPath(); g.arc(28 + k * 22, 54 - hop, 9, 0, 7); g.fill(); }); },
+      // a check mark drawing itself
+      check: (p) => { const u = clamp01((p % 1) * 1.6); st(VERD, 8); g.beginPath(); g.moveTo(24, 52); g.lineTo(lerp(24, 42, clamp01(u * 2)), lerp(52, 70, clamp01(u * 2))); if (u > 0.5) g.lineTo(lerp(42, 78, (u - 0.5) * 2), lerp(70, 30, (u - 0.5) * 2)); g.stroke(); },
+      // a pin dropping onto a spot
+      pin: (p) => { const y = -6 * Math.abs(Math.sin(p * 6.283)); st(LINE); g.beginPath(); g.ellipse(50, 80, 16, 5, 0, 0, 7); g.stroke();
+        g.fillStyle = PINE; g.beginPath(); g.arc(50, 40 + y, 16, Math.PI, 0); g.lineTo(50, 74 + y); g.closePath(); g.fill(); g.fillStyle = BONE; g.beginPath(); g.arc(50, 40 + y, 6, 0, 7); g.fill(); },
+      // a grid of nine squares, one walking round
+      grid9: (p) => { const k0 = Math.floor(p * 8) % 8, ring = [0, 1, 2, 5, 8, 7, 6, 3]; for (let k = 0; k < 9; k++) { g.fillStyle = ring[k0] === k ? COPPER : CELADON; g.fillRect(24 + (k % 3) * 20, 24 + Math.floor(k / 3) * 20, 13, 13); } },
+      // a spinning wheel, half brass
+      dial: (p) => { st(LINE); g.beginPath(); g.arc(50, 50, 30, 0, 7); g.stroke(); g.fillStyle = BRASS; g.beginPath(); g.moveTo(50, 50); g.arc(50, 50, 22, p * 6.283, p * 6.283 + Math.PI); g.fill(); g.fillStyle = PINE; g.beginPath(); g.arc(50, 50, 5, 0, 7); g.fill(); },
+      // the tile itself, turning over
+      tile: (p) => { const s = Math.cos(p * 6.283); g.save(); g.translate(50, 50); g.scale(Math.abs(s) * 0.9 + 0.1, 1); g.fillStyle = s > 0 ? PINE : VERD; tilePath(-22, -22, 44); g.fill(); g.restore(); },
+    };
+    const ORDER = ["orbit", "cube", "face", "target", "bars", "cross", "dots", "check", "pin", "grid9", "dial", "tile"];
+    const icon = (name, x, y, s, p, build = 1) => {
+      if (build <= 0) return;
+      g.save(); g.translate(x - s / 2, y - s / 2); g.scale(s / 100, s / 100);
+      // building in: grows from its middle with a slight overshoot
+      const b = build < 1 ? lerp(0.3, 1, Math.sin(build * Math.PI / 2)) * (1 + 0.08 * Math.sin(build * Math.PI)) : 1;
+      g.translate(50, 50); g.scale(b, b); g.translate(-50, -50);
+      ICONS[name](p);
+      g.restore();
+    };
+
+    // ---------------------------------------------------------------- 58 (0-1.0 s): the icons, built one by one
+    // A hard cut to paper and one icon, large (the orbit, 420 px); the next ones build in beside it, one each 0.12 s,
+    // the row sliding left to keep the newest in view, and from 0.55 s the camera pulls back (420 -> 150 px a cell) as
+    // the row fills and a row below and above build in.
+    // ---------------------------------------------------------------- 59 (1.0-1.9 s): the wall
+    // The camera keeps pulling back (150 -> 70 px a cell) and the wall fills out to the frame's edges, every icon
+    // alive on its own phase.
+    // ---------------------------------------------------------------- 60 (1.9-2.2 s): paper to ink
+    // Over nine frames the ground darkens from paper through grey to ink, and the icons' greys lift to stay visible.
+    // ---------------------------------------------------------------- 61 (2.2-3.0 s): the wall on ink
+    // The dark wall holds, every icon still moving, the camera still easing back a little.
+    const SIZE = (t) => t < 0.55 ? 420 - 60 * smoother(t / 0.55) : t < 1.0 ? lerp(360, 150, smoother((t - 0.55) / 0.45)) : lerp(150, 66, smoother((t - 1.0) / 1.0)) * (t > 2.2 ? 1 - 0.12 * smoother((t - 2.2) / 0.8) : 1);   // 61: on ink, still drifting back
+    const DARK = (t) => smoother((t - 1.9) / 0.3);
+    const draw = (t) => {
+      g.clearRect(0, 0, 1920, 1080);
+      const dk = DARK(t);
+      g.fillStyle = mix(BONE, INK, dk); g.fillRect(0, 0, 1920, 1080);
+      const s = SIZE(t), pitch = s * 1.25;
+      // the first row is built one by one; the row slides so the newest sits right of centre
+      // the first icon opens alone in the middle; each new one slides the row a pitch left, easing into place
+      const built = 1 + t / 0.12, slide = smoother(clamp01(built - 1.5)) + smoother(clamp01(built - 2.5)) + smoother(clamp01(built - 3.5));
+      const cols = Math.ceil(1920 / pitch) + 2, rows = Math.ceil(1080 / pitch) + 2;
+      for (let r = -rows; r <= rows; r++) for (let c = -cols; c <= cols; c++) {
+        const k = ((c % 12) + 12 + 5 * ((r % 12) + 12)) % 12, name = ORDER[k];
+        const x = 960 + (c - slide * (t < 0.55 ? 1 : 1 - smoother((t - 0.55) / 0.45))) * pitch, y = 540 + r * pitch;
+        if (x < -pitch || x > 1920 + pitch || y < -pitch || y > 1080 + pitch) continue;
+        // which icons exist yet: the first row in order, then the rest from the middle outward
+        let b;
+        if (r === 0 && c >= 0 && c < 6) b = clamp01(built - c);
+        else { const d = Math.hypot(c - 2, r) + 0.5 * ((c * 7 + r * 13) % 5) / 5; b = clamp01((t - 0.5 - d * 0.09) / 0.12); }
+        icon(name, x, y, s, (t * 0.9 + ((c * 3 + r * 5) % 7) / 7) % 1, b);
+      }
+      if (dk > 0) { g.globalCompositeOperation = "screen"; g.globalAlpha = 0.18 * dk; g.fillStyle = BONE; g.fillRect(0, 0, 1920, 1080); g.globalAlpha = 1; g.globalCompositeOperation = "source-over"; }
+    };
+    const clock = { t: 0 };
+    tl.fromTo(clock, { t: 0 }, { t: 3.0, duration: 3.0, ease: "none", immediateRender: false, onUpdate: () => draw(clock.t) }, 0);
+    draw(0);
+
+    window.__timelines["icons"] = tl;
+  </script>
+</template>

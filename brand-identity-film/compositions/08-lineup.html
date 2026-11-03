@@ -1,0 +1,138 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Space Grotesk";
+      font-weight: 300 700;
+      src: url("assets/fonts/SpaceGrotesk-Variable.ttf") format("truetype");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: #ecebe5;
+    }
+    .abs {
+      position: absolute;
+    }
+    #l-cv {
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+    }
+    #l-grain {
+      inset: 0;
+      opacity: 0.12;
+      mix-blend-mode: multiply;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0.6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    }
+  </style>
+  <div id="root" data-composition-id="lineup" data-width="1920" data-height="1080">
+    <canvas id="l-cv" class="abs" width="1920" height="1080"></canvas>
+    <div id="l-grain" class="abs"></div>
+  </div>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+    const clamp01 = (v) => Math.min(1, Math.max(0, v));
+    const sm = (u) => { u = clamp01(u); return u * u * (3 - 2 * u); };
+    const INK = "#0d1a16";
+    const cv = document.getElementById("l-cv");
+    const g = cv.getContext("2d");
+
+    // ---------------------------------------------------------------- the lockup, close, at the frame's left edge
+    // Same lockup as the last shot (symbol x-height tall on the baseline, its top on the t's crossbar line), cut in
+    // close: 363 px an em, so the symbol is 180 px, baseline at 661 px, the symbol's left edge outside the frame.
+    // As measured on the reference: what shows of the symbol shrinks fast to a sliver (121 -> 3 px over 0.6 s, the
+    // lockup sliding left with it), then comes back faster and faster (to ~144 px at the end).
+    const EM = 363, XH = 0.496, S = XH * EM, BASE = 661, GAP = 0.16, TRACK = -10 / 240;
+    let VIS;   // set below, once smoothKeys is defined
+    const symbol = (x) => {
+      const gr = g.createLinearGradient(x, BASE - S, x + S, BASE);
+      gr.addColorStop(0, "#2b5545"); gr.addColorStop(0.55, "#1c4135"); gr.addColorStop(1, "#16382d");
+      g.fillStyle = gr;
+      g.beginPath();
+      g.moveTo(x, BASE); g.lineTo(x, BASE - S); g.lineTo(x + S / 2, BASE - S);
+      g.arc(x + S / 2, BASE - S / 2, S / 2, -Math.PI / 2, 0); g.lineTo(x + S, BASE); g.closePath();
+      g.fill();
+    };
+    const wordmark = (x) => {
+      g.font = `700 ${EM}px "Space Grotesk"`;
+      g.letterSpacing = `${TRACK * EM}px`;
+      g.fillStyle = INK;
+      g.fillText("tılo", x, BASE);
+      const ix = x + g.measureText("t").width, w = g.measureText("tılo").width - TRACK * EM;
+      g.letterSpacing = "0px";
+      const dw = 0.1165 * EM, dx = ix + 0.1325 * EM - dw / 2, dy = BASE - 0.7 * EM;
+      const dg = g.createLinearGradient(dx, dy, dx + dw, dy + dw);
+      dg.addColorStop(0, "#3d7360"); dg.addColorStop(1, "#225442");
+      g.fillStyle = dg;
+      g.beginPath(); g.roundRect(dx, dy, dw, dw, [0, dw / 2, 0, 0]); g.fill();
+      return x + w;
+    };
+
+    // ---------------------------------------------------------------- the line-up of names
+    // One column in the regular weight, the same size, left aligned just after the wordmark, at a fixed line pitch.
+    // Only the column moves, and it never stops dead: an overall progress P runs 0 -> 4 lines, slow at first and
+    // quicker later, and a detent folds it so the column slows to a tenth of its pace each time a name sits on the
+    // wordmark's baseline (a felt pause) and moves through each line change in one smooth sweep. It comes to rest on
+    // the last name. A short shutter (half a frame) smears the column by however far it moves, so the steps read as
+    // motion, not jumps. Names above and below stay in view and are cut by the frame edges.
+    // Opening: "kit" types itself in beside the wordmark while "grid", a line below, types in just after it.
+    const NAMES = ["kit", "grid", "studio", "lab", "ship"];
+    const PITCH = 0.95 * EM;
+    const smoothKeys = (K) => {
+      const n = K.length, d = [], m = [];
+      for (let i = 0; i < n - 1; i++) d.push((K[i + 1][1] - K[i][1]) / (K[i + 1][0] - K[i][0]));
+      m.push(0);
+      for (let i = 1; i < n - 1; i++) m.push(d[i - 1] * d[i] <= 0 ? 0 : (2 * d[i - 1] * d[i]) / (d[i - 1] + d[i]));
+      m.push(0);
+      return (t) => {
+        if (t <= K[0][0]) return K[0][1];
+        if (t >= K[n - 1][0]) return K[n - 1][1];
+        let i = 0;
+        while (K[i + 1][0] < t) i++;
+        const h = K[i + 1][0] - K[i][0], u = (t - K[i][0]) / h, u2 = u * u, u3 = u2 * u;
+        return (2 * u3 - 3 * u2 + 1) * K[i][1] + (u3 - 2 * u2 + u) * h * m[i] + (-2 * u3 + 3 * u2) * K[i + 1][1] + (u3 - u2) * h * m[i + 1];
+      };
+    };
+    // what shows of the symbol: in fast, easing to a sliver, turning round smoothly (no kink) and opening out again
+    VIS = smoothKeys([[0, 121], [0.22, 38], [0.48, 6], [0.68, 4], [0.98, 14], [1.35, 52], [1.92, 150]]);
+    // the name on the baseline: kit to 0.5 s, then grid ~0.8, studio ~1.05, lab ~1.27, ship from ~1.5
+    const P = smoothKeys([[0.42, 0], [0.8, 1], [1.05, 2], [1.27, 3], [1.5, 4], [1.56, 4]]);
+    const DETENT = 0.9;
+    const CUR = (t) => { const p = P(t); return p - (DETENT * Math.sin(2 * Math.PI * p)) / (2 * Math.PI); };
+    const TYPE = [-0.01, 0.12];   // when kit and grid start typing (a letter a frame); the rest are simply there
+    const names = (t, c, x, alpha) => {
+      g.globalAlpha = alpha;
+      NAMES.forEach((name, k) => {
+        const y = BASE + (k - c) * PITCH;
+        if (y < -0.3 * EM || y > 1080 + 0.75 * EM) return;
+        const n = k < TYPE.length ? Math.max(0, Math.min(name.length, Math.floor((t - TYPE[k]) * 30) + 1)) : name.length;
+        if (n > 0) g.fillText(name.slice(0, n), x, y);
+      });
+      g.globalAlpha = 1;
+    };
+    const draw = (t) => {
+      g.clearRect(0, 0, 1920, 1080);
+      const vis = VIS(t);
+      symbol(vis - S);
+      const end = wordmark(vis + 71 - 0.026 * EM);
+      const x = end + 0.1 * EM;
+      g.font = `400 ${EM}px "Space Grotesk"`;
+      g.fillStyle = INK;
+      // the shutter: half a frame, centred on this moment
+      const c0 = CUR(t - 1 / 120), c1 = CUR(t + 1 / 120), smear = Math.abs(c1 - c0) * PITCH;
+      if (smear < 1.5) { names(t, CUR(t), x, 1); return; }
+      const N = Math.min(12, Math.ceil(smear / 6) + 2), a = 1 - Math.pow(0.03, 1 / N);
+      for (let i = 0; i < N; i++) names(t, c0 + ((c1 - c0) * (i + 0.5)) / N, x, a);
+    };
+    const clock = { t: 0 };
+    tl.fromTo(clock, { t: 0 }, { t: 1.92, duration: 1.92, ease: "none", immediateRender: false, onUpdate: () => draw(clock.t) }, 0);
+    window.__hf = window.__hf || {};
+    window.__hf.buildReady = window.__hf.buildReady || {};
+    window.__hf.buildReady["lineup-font"] = Promise.all([document.fonts.load('700 100px "Space Grotesk"'), document.fonts.load('400 100px "Space Grotesk"')]).then(() => draw(clock.t));
+
+    window.__timelines["lineup"] = tl;
+  </script>
+</template>

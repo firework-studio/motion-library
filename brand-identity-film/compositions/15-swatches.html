@@ -1,0 +1,138 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: #ecebe5;
+    }
+    #sw-cv {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+    }
+    #sw-grain {
+      position: absolute;
+      inset: 0;
+      opacity: 0.12;
+      mix-blend-mode: multiply;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0.6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    }
+  </style>
+  <div id="root" data-composition-id="swatches" data-width="1920" data-height="1080">
+    <canvas id="sw-cv" width="1920" height="1080"></canvas>
+    <div id="sw-grain"></div>
+  </div>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+    const clamp01 = (v) => Math.min(1, Math.max(0, v));
+    const smoother = (u) => { u = clamp01(u); return u * u * u * (u * (u * 6 - 15) + 10); };
+    const lerp = (a, b, u) => a + (b - a) * u;
+    const cv = document.getElementById("sw-cv");
+    const g = cv.getContext("2d");
+
+    // Brand sheet v3, "Patina", and nothing else: the metals (copper, oxide, brass) and the patina they turn into
+    // (verdigris, celadon, lichen, slate, spruce, pine), with ink and mist. Colour moves the way patina forms:
+    // copper -> oxide -> brass -> verdigris -> pine. Each colour is three stops for the opening tiles' light (copper's
+    // are the brand sheet's own); pine's are the opening tile's.
+    const C = {
+      pine: ["#2b5545", "#1c4135", "#16382d"], spruce: ["#356552", "#22503f", "#1b4134"], verdigris: ["#6a9f8d", "#4f8a78", "#3f7363"],
+      celadon: ["#bcd2c6", "#a9c4b6", "#93b0a1"], mist: ["#e9efeb", "#dde5df", "#c9d3cc"], ink: ["#24302c", "#0d1a16", "#08110e"],
+      lichen: ["#93a89f", "#7e968c", "#697f76"], slate: ["#728385", "#5c6f70", "#4c5d5e"], copper: ["#d89a72", "#b8704a", "#8a4c2f"],
+      brass: ["#d6b27a", "#c49a5a", "#a48046"], oxide: ["#c27a63", "#a85d48", "#8a4a39"],
+    };
+    const block = (x, y, s, rot, col) => {
+      g.save();
+      g.translate(x, y); g.rotate(rot);
+      const gr = g.createLinearGradient(-s / 2, -s / 2, s / 2, s / 2);
+      gr.addColorStop(0, col[0]); gr.addColorStop(0.55, col[1]); gr.addColorStop(1, col[2]);
+      g.fillStyle = gr;
+      g.beginPath(); g.roundRect(-s / 2, -s / 2, s, s, s * 0.05); g.fill();
+      g.restore();
+    };
+    const CUT48 = 0.5, CUT49 = 1.0, END = 1.5;   // three shots of half a second, hard cuts, one centre
+
+    // ---------------------------------------------------------------- 47 (0-0.5 s): a fan of cards closes
+    // Measured frame by frame on the reference (34.52-34.98 s). Every card rides one and the same path: an orbit
+    // clockwise round the frame centre (radius ~130 px) while it turns with the orbit, fast at first (about 30 degrees
+    // a frame) and slowing to a stop as it draws in a little. Each card is two frames behind the one above it, so at
+    // any moment the stack shows the path at six moments: a fan whose cards stand about 15-30 degrees apart, closing
+    // into a neat stack as the path slows. P is the path, one entry a frame (s = -5..17): turn in degrees, x, y in
+    // reference px from the centre. Top card first: pine, celadon, copper, brass, verdigris, oxide.
+    const P = [[58, 129, -80], [72, 134, -47], [89, 131, -16], [110, 122, 45], [140, 83, 100], [179, 2, 129], [218, -77, 105],
+      [248, -122, 48], [271, -131, -1], [288, -124, -40], [301, -112, -67], [312, -97, -86], [320, -83, -99], [327, -69, -107],
+      [333, -58, -113], [338, -47, -116], [343, -38, -117], [346, -31, -117], [349, -24, -115], [352, -18, -113],
+      [354, -13, -110], [356, -10, -106], [357, -7, -100]];
+    const S0 = -5;
+    const FAN = [C.pine, C.celadon, C.copper, C.brass, C.verdigris, C.oxide];
+    const path = (sv) => {
+      const f = Math.max(0, Math.min(P.length - 1.0001, sv - S0)), i = Math.floor(f), u = f - i;
+      return P[i].map((v, k) => lerp(v, P[i + 1][k], u));
+    };
+    const shot47 = (t) => {
+      const j = t * 30;   // this shot's frame; the reference's frame 3 is its frame 0
+      const F47 = 1.15 / K;   // reference px to this canvas's layout units (the layout is drawn K times larger)
+      for (let k = FAN.length - 1; k >= 0; k--) {
+        const [deg, x, y] = path(3 + j - 2 * k), sz = lerp(260, 245, clamp01(j / 14)) * F47;
+        block(960 + x * F47, 540 + y * F47, sz, (deg * Math.PI) / 180, FAN[k]);
+      }
+    };
+
+    // ---------------------------------------------------------------- 48 (0.5-1.0 s): nine swatches
+    // Measured frame by frame on the reference (35.02-35.48 s): a complete 3 x 3 tilted 7 degrees anticlockwise turns
+    // clockwise back to level, quickly then easing (square by frame 9); its pitch opens a touch and closes again
+    // (307 -> 320 -> 304 px) while every swatch keeps shrinking (174 -> 153 px), so the swatches seem to draw away
+    // from each other and recede. One entry a frame: [turn deg, pitch, swatch], reference px.
+    const G48 = [[-7, 307, 174], [-5.2, 312, 171], [-3.9, 315, 169], [-2.8, 318, 168], [-2, 319, 166], [-1.3, 320, 165],
+      [-0.8, 320, 163], [-0.5, 319, 162], [-0.2, 318, 161], [0, 316, 160], [0, 314, 158], [0, 312, 157], [0, 310, 156],
+      [0, 306, 154], [0, 304, 153]];
+    const GRID = [[C.copper, C.oxide, C.brass], [C.verdigris, C.pine, C.celadon], [C.slate, C.ink, C.mist]];
+    const shot48 = (t) => {
+      const F = 1.15 / K, f = Math.min(G48.length - 1.0001, Math.max(0, (t - CUT48) * 30)), i = Math.floor(f), u = f - i;
+      const [deg, pitch, sw] = G48[i].map((v, k) => lerp(v, G48[i + 1][k], u));
+      const rot = (deg * Math.PI) / 180, c = Math.cos(rot), s = Math.sin(rot);
+      GRID.forEach((row, r) => row.forEach((col, k) => {
+        const x = (k - 1) * pitch * F, y = (r - 1) * pitch * F;
+        block(960 + x * c - y * s, 540 + x * s + y * c, sw * F, rot, col);
+      }));
+    };
+
+    // ---------------------------------------------------------------- 49 (1.0-1.5 s): a chain folds as the camera pulls back
+    // Measured frame by frame on the reference (35.52-35.98 s): six swatches step down the diagonal from the upper
+    // left, the same colour at both ends. As the camera pulls back every swatch shrinks (220 -> 150 px, faster and
+    // faster) and the step between them closes (126 -> 0 px), so the chain folds into one swatch; the two end swatches
+    // lie on top, and on the last frame only one swatch is left. One entry a frame: [step, swatch], reference px.
+    const G49 = [[126, 220], [124, 217], [123.5, 214], [120.5, 212], [118, 209], [116, 205], [112.5, 201], [107, 197],
+      [100, 195], [92.5, 191], [82, 185], [70, 179], [50, 171], [20.5, 162], [0, 150]];
+    const CHAIN = [C.pine, C.verdigris, C.celadon, C.brass, C.copper, C.pine];
+    const shot49 = (t) => {
+      const F = 1.15 / K, f = Math.min(G49.length - 1.0001, Math.max(0, (t - CUT49) * 30)), i = Math.floor(f), u = f - i;
+      const [step, sw] = G49[i].map((v, k) => lerp(v, G49[i + 1][k], u));
+      // every swatch lies over the next one down the chain: the upper-left pine on top, the lower-right one at the
+      // very bottom; the chain folds into the top pine swatch
+      [5, 4, 3, 2, 1, 0].forEach((k) => {
+        const d = (k - 2.5) * step * F;
+        block(960 + d, 540 + d, sw * F, 0, CHAIN[k]);
+      });
+    };
+
+    // everything is laid out at 1/1.6 and drawn 1.6 times larger about the centre
+    const K = 1.6;
+    const draw = (t) => {
+      g.setTransform(1, 0, 0, 1, 0, 0);
+      g.clearRect(0, 0, 1920, 1080);
+      g.setTransform(K, 0, 0, K, 960 * (1 - K), 540 * (1 - K));
+      if (t < CUT48) shot47(t);
+      else if (t < CUT49) shot48(t);
+      else shot49(t);
+    };
+    const clock = { t: 0 };
+    tl.fromTo(clock, { t: 0 }, { t: END, duration: END, ease: "none", immediateRender: false, onUpdate: () => draw(clock.t) }, 0);
+    draw(0);
+
+    window.__timelines["swatches"] = tl;
+  </script>
+</template>
