@@ -5,6 +5,8 @@ node_modules/
 .hyperframes/
 renders/
 *.mp4
+# clips a page plays are part of its source
+!*/assets/**/*.mp4
 
 # Environment and secrets
 .env

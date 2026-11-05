@@ -16,6 +16,7 @@ Each entry is a self-contained [HyperFrames](https://github.com/heygen-com/hyper
 | [chat-app-promo](chat-app-promo) | 2026-10-31 | Product film for a concept chat app: typed headlines, an icon grown from a camera hole, a film card reply, one-tap actions, an emoji reaction and a ring of light that draws the tagline into the logo |
 | [thinking-orbs-intro](thinking-orbs-intro) | 2026-11-02 | Voiced intro to an open-source orb set: word-by-word captions, state-switching orbs, a ring that settles into a turning grid, spinners swapped for orbs, a dark-to-light pill tour and a reduced-motion switch |
 | [brand-identity-film](brand-identity-film) | 2026-11-02 | Identity film grown from one tile: cubes flattening into a wordmark, a pixel-font decode, a character wall, a spiralling colour ring, photo treatments, live app screens, the brand on posters and merch, and a liquid morph from modules to letters |
+| [swarm-build](swarm-build) | 2026-11-05 | A web page rebuilt by a swarm of cursors: a scan-line wipe, a prism of light from the avatar, frames with handles and size tags, typed text, a row copied down, videos clicked into play and cursors flying home into the logo |
 
 ## Run an entry
 
